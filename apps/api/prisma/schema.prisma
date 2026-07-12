@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CONTADOR
+  VIEWER
+}
+
+enum TaxRegime {
+  ORDINARIO
+  RST
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum NcfType {
+  B01
+  B02
+  B14
+  B15
+  B16
+  E31
+  E32
+  E33
+  E34
+  E41
+  E43
+  E44
+  E45
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  VOIDED
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  companyRoles UserCompanyRole[]
+}
+
+model Company {
+  id             String            @id @default(cuid())
+  name           String
+  rnc            String            @unique
+  tradeName      String?
+  taxRegime      TaxRegime         @default(ORDINARIO)
+  address        String?
+  phone          String?
+  email          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  userRoles      UserCompanyRole[]
+  accounts       Account[]
+  journalEntries JournalEntry[]
+  ncfSequences   NcfSequence[]
+}
+
+model UserCompanyRole {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  role      UserRole
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+}
+
+model Account {
+  id         String             @id @default(cuid())
+  companyId  String
+  code       String
+  name       String
+  type       AccountType
+  parentId   String?
+  isActive   Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent     Account?           @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children   Account[]          @relation("AccountHierarchy")
+  entryLines JournalEntryLine[]
+
+  @@unique([companyId, code])
+}
+
+model JournalEntry {
+  id          String             @id @default(cuid())
+  companyId   String
+  date        DateTime           @db.Date
+  description String
+  reference   String?
+  status      JournalEntryStatus @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lines       JournalEntryLine[]
+}
+
+model JournalEntryLine {
+  id             String       @id @default(cuid())
+  journalEntryId String
+  accountId      String
+  debit          Decimal      @default(0) @db.Decimal(18, 2)
+  credit         Decimal      @default(0) @db.Decimal(18, 2)
+  description    String?
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account        Account      @relation(fields: [accountId], references: [id])
+}
+
+model NcfSequence {
+  id        String   @id @default(cuid())
+  companyId String
+  type      NcfType
+  prefix    String
+  current   Int      @default(0)
+  max       Int
+  isActive  Boolean  @default(true)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, type])
+}
