@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cmhub
+      POSTGRES_PASSWORD: cmhub_password
+      POSTGRES_DB: cmhub_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - cmhub_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  cmhub_postgres_data:
