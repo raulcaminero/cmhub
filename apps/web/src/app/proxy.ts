@@ -3,16 +3,18 @@ import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
-  const isPublic = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
+  const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
   if (!token && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
+
   if (token && isPublic) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
+
   return NextResponse.next();
 }
 

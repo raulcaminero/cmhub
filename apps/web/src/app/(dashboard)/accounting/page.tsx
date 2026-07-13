@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccountsView } from '@/components/features/accounting/accounts-view';
 
@@ -29,6 +30,20 @@ export default function AccountingPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Acciones rápidas</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Link href="/dashboard/accounting/expenses" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            Ver gastos
+          </Link>
+          <Link href="/dashboard/accounting" className="rounded-md border px-4 py-2 text-sm font-medium">
+            Ver cuentas
+          </Link>
+        </CardContent>
+      </Card>
 
       <AccountsView />
     </div>

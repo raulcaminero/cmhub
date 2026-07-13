@@ -16,7 +16,7 @@ import { UserRepository } from '@infrastructure/persistence/repositories/user.re
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
+        secret: config.get<string>('JWT_SECRET') ?? 'dev-jwt-secret',
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '15m') },
       }),
     }),
