@@ -10,12 +10,14 @@ import {
   Receipt,
   Settings,
   Building2,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/accounting', label: 'Contabilidad', icon: BookOpen },
+  { href: '/dashboard/contacts', label: 'Contactos', icon: Users },
   { href: '/dashboard/tax', label: 'Impuestos', icon: Receipt },
   { href: '/dashboard/reports', label: 'Reportes', icon: BarChart3 },
   { href: '/dashboard/ncf', label: 'NCF', icon: FileText },

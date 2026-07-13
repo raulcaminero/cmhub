@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { getCookie, setCookie, eraseCookie } from '@/lib/cookies';
 
 interface AuthState {
   accessToken: string | null;
@@ -11,10 +12,13 @@ interface Credentials {
   refreshToken: string;
 }
 
+const initialAccessToken = getCookie('accessToken');
+const initialRefreshToken = getCookie('refreshToken');
+
 const initialState: AuthState = {
-  accessToken: null,
-  refreshToken: null,
-  isAuthenticated: false,
+  accessToken: initialAccessToken,
+  refreshToken: initialRefreshToken,
+  isAuthenticated: !!initialAccessToken,
 };
 
 const authSlice = createSlice({
@@ -25,11 +29,15 @@ const authSlice = createSlice({
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
       state.isAuthenticated = true;
+      setCookie('accessToken', action.payload.accessToken, 7);
+      setCookie('refreshToken', action.payload.refreshToken, 7);
     },
     logout(state) {
       state.accessToken = null;
       state.refreshToken = null;
       state.isAuthenticated = false;
+      eraseCookie('accessToken');
+      eraseCookie('refreshToken');
     },
   },
 });

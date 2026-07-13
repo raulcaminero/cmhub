@@ -74,6 +74,9 @@ model Company {
   accounts       Account[]
   journalEntries JournalEntry[]
   ncfSequences   NcfSequence[]
+  expenses       Expense[]
+  invoices       Invoice[]
+  contacts       Contact[]
 }
 
 model UserCompanyRole {
@@ -117,6 +120,47 @@ model JournalEntry {
   updatedAt   DateTime           @updatedAt
   company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   lines       JournalEntryLine[]
+  expense     Expense?
+  invoice     Invoice?
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  companyId      String
+  clientRnc      String
+  clientName     String
+  ncf            String
+  ncfType        NcfType
+  date           DateTime      @db.Date
+  amount         Decimal       @db.Decimal(18, 2)
+  itbis          Decimal       @default(0) @db.Decimal(18, 2)
+  paymentMethod  String
+  journalEntryId String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+}
+
+model Expense {
+  id             String        @id @default(cuid())
+  companyId      String
+  providerRnc    String
+  providerName   String
+  ncf            String
+  expenseType    String
+  date           DateTime      @db.Date
+  paymentDate    DateTime?     @db.Date
+  amount         Decimal       @db.Decimal(18, 2)
+  itbis          Decimal       @default(0) @db.Decimal(18, 2)
+  itbisRetained  Decimal       @default(0) @db.Decimal(18, 2)
+  isrRetained    Decimal       @default(0) @db.Decimal(18, 2)
+  paymentMethod  String
+  journalEntryId String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
 }
 
 model JournalEntryLine {
@@ -144,4 +188,26 @@ model NcfSequence {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, type])
+}
+
+enum ContactType {
+  CLIENT
+  PROVIDER
+  BOTH
+}
+
+model Contact {
+  id        String      @id @default(cuid())
+  companyId String
+  rnc       String
+  name      String
+  type      ContactType @default(CLIENT)
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, rnc])
 }

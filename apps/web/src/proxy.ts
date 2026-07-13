@@ -5,7 +5,13 @@ const PUBLIC_PATHS = ['/login', '/register'];
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
-  const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  const { pathname } = request.nextUrl;
+
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(token ? '/dashboard' : '/login', request.url));
+  }
+
+  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
   if (!token && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url));
