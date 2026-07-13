@@ -1,3 +1,4 @@
+import type { JournalEntry as PrismaJournalEntry, JournalEntryLine as PrismaJournalEntryLine } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -8,19 +9,43 @@ import {
 import { JournalEntryEntity } from '@domain/entities/journal-entry.entity';
 import { JournalEntryStatus } from '@domain/enums';
 
+const mapJournalEntryLine = (line: PrismaJournalEntryLine) => ({
+  id: line.id,
+  journalEntryId: line.journalEntryId,
+  accountId: line.accountId,
+  description: line.description,
+  debit: Number(line.debit),
+  credit: Number(line.credit),
+});
+
+const mapJournalEntry = (
+  entry: PrismaJournalEntry & { lines: PrismaJournalEntryLine[] },
+): JournalEntryEntity => ({
+  id: entry.id,
+  companyId: entry.companyId,
+  date: entry.date,
+  description: entry.description,
+  reference: entry.reference,
+  status: entry.status as JournalEntryStatus,
+  lines: entry.lines.map(mapJournalEntryLine),
+  createdAt: entry.createdAt,
+  updatedAt: entry.updatedAt,
+});
+
 @Injectable()
 export class JournalEntryRepository implements IJournalEntryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string, companyId: string): Promise<JournalEntryEntity | null> {
-    return this.prisma.journalEntry.findFirst({
+    const entry = await this.prisma.journalEntry.findFirst({
       where: { id, companyId },
       include: { lines: true },
-    }) as Promise<JournalEntryEntity | null>;
+    });
+    return entry ? mapJournalEntry(entry) : null;
   }
 
   async findByCompany(companyId: string, filters: JournalEntryFilters = {}): Promise<JournalEntryEntity[]> {
-    return this.prisma.journalEntry.findMany({
+    const entries = await this.prisma.journalEntry.findMany({
       where: {
         companyId,
         ...(filters.startDate && { date: { gte: filters.startDate } }),
@@ -29,11 +54,12 @@ export class JournalEntryRepository implements IJournalEntryRepository {
       },
       include: { lines: true },
       orderBy: { date: 'desc' },
-    }) as Promise<JournalEntryEntity[]>;
+    });
+    return entries.map(mapJournalEntry);
   }
 
   async create(data: CreateJournalEntryData): Promise<JournalEntryEntity> {
-    return this.prisma.journalEntry.create({
+    const entry = await this.prisma.journalEntry.create({
       data: {
         companyId: data.companyId,
         date: data.date,
@@ -42,22 +68,25 @@ export class JournalEntryRepository implements IJournalEntryRepository {
         lines: { create: data.lines },
       },
       include: { lines: true },
-    }) as Promise<JournalEntryEntity>;
+    });
+    return mapJournalEntry(entry);
   }
 
   async post(id: string, companyId: string): Promise<JournalEntryEntity> {
-    return this.prisma.journalEntry.update({
+    const entry = await this.prisma.journalEntry.update({
       where: { id, companyId },
       data: { status: JournalEntryStatus.POSTED },
       include: { lines: true },
-    }) as Promise<JournalEntryEntity>;
+    });
+    return mapJournalEntry(entry);
   }
 
   async void(id: string, companyId: string): Promise<JournalEntryEntity> {
-    return this.prisma.journalEntry.update({
+    const entry = await this.prisma.journalEntry.update({
       where: { id, companyId },
       data: { status: JournalEntryStatus.VOIDED },
       include: { lines: true },
-    }) as Promise<JournalEntryEntity>;
+    });
+    return mapJournalEntry(entry);
   }
 }

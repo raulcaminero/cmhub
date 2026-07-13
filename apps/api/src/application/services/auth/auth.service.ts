@@ -48,12 +48,23 @@ export class AuthService {
 
   private generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
+    const accessSecret = this.config.get<string>('JWT_SECRET');
+    const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
+
+    if (!accessSecret && process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET must be set in production');
+    }
+
+    if (!refreshSecret && process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_REFRESH_SECRET must be set in production');
+    }
+
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_SECRET'),
+      secret: accessSecret ?? 'dev-jwt-secret',
       expiresIn: this.config.get('JWT_EXPIRES_IN', '15m'),
     });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_REFRESH_SECRET'),
+      secret: refreshSecret ?? 'dev-refresh-jwt-secret',
       expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
     });
     return { accessToken, refreshToken };

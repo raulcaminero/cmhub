@@ -1,5 +1,6 @@
 import { JournalEntryEntity } from '../entities/journal-entry.entity';
 import { JournalEntryLineEntity } from '../entities/journal-entry-line.entity';
+import { JournalEntryStatus } from '../enums';
 
 export interface CreateJournalEntryData {
   companyId: string;
@@ -12,7 +13,7 @@ export interface CreateJournalEntryData {
 export interface JournalEntryFilters {
   startDate?: Date;
   endDate?: Date;
-  status?: string;
+  status?: JournalEntryStatus;
 }
 
 export interface IJournalEntryRepository {
