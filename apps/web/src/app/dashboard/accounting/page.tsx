@@ -1,29 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccountsView } from '@/components/features/accounting/accounts-view';
 import { JournalEntriesView } from '@/components/features/accounting/journal-entries-view';
 import { InvoicesView } from '@/components/features/accounting/invoices-view';
+import { PayrollView } from '@/components/features/accounting/payroll-view';
+import { ReconciliationView } from '@/components/features/accounting/reconciliation-view';
 import { Button } from '@/components/ui/button';
-import { BookOpen, FileText, Receipt } from 'lucide-react';
+import { BookOpen, FileText, Receipt, Users, Landmark } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetAccountsQuery, useGetJournalEntriesQuery } from '@/services/accounting.api';
 
 export default function AccountingPage() {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'entries' | 'invoices'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'entries' | 'invoices' | 'payroll' | 'reconciliation'>('accounts');
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const [mounted, setMounted] = useState(false);
 
   const { data: accounts } = useGetAccountsQuery(
     { companyId: companyId! },
-    { skip: !companyId },
+    { skip: !companyId || !mounted },
   );
 
   const { data: entries } = useGetJournalEntriesQuery(
     { companyId: companyId! },
-    { skip: !companyId },
+    { skip: !companyId || !mounted },
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  if (!companyId) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver los datos contables.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   let totalActivos = 0;
   let totalPasivos = 0;
@@ -113,6 +134,22 @@ export default function AccountingPage() {
             <Receipt className="w-4 h-4" />
             Facturación / Ventas
           </Button>
+          <Button
+            variant={activeTab === 'payroll' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('payroll')}
+            className="gap-2"
+          >
+            <Users className="w-4 h-4" />
+            Nómina / TSS
+          </Button>
+          <Button
+            variant={activeTab === 'reconciliation' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('reconciliation')}
+            className="gap-2"
+          >
+            <Landmark className="w-4 h-4" />
+            Conciliación Bancaria
+          </Button>
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/accounting/expenses" className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
@@ -125,8 +162,12 @@ export default function AccountingPage() {
         <AccountsView />
       ) : activeTab === 'entries' ? (
         <JournalEntriesView />
-      ) : (
+      ) : activeTab === 'invoices' ? (
         <InvoicesView />
+      ) : activeTab === 'payroll' ? (
+        <PayrollView />
+      ) : (
+        <ReconciliationView />
       )}
     </div>
   );

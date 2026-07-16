@@ -77,6 +77,9 @@ model Company {
   expenses       Expense[]
   invoices       Invoice[]
   contacts       Contact[]
+  employees      Employee[]
+  payrolls       Payroll[]
+  bankTransactions BankTransaction[]
 }
 
 model UserCompanyRole {
@@ -105,6 +108,7 @@ model Account {
   parent     Account?           @relation("AccountHierarchy", fields: [parentId], references: [id])
   children   Account[]          @relation("AccountHierarchy")
   entryLines JournalEntryLine[]
+  bankTransactions BankTransaction[]
 
   @@unique([companyId, code])
 }
@@ -122,6 +126,7 @@ model JournalEntry {
   lines       JournalEntryLine[]
   expense     Expense?
   invoice     Invoice?
+  payrolls    Payroll[]
 }
 
 model Invoice {
@@ -172,6 +177,7 @@ model JournalEntryLine {
   description    String?
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   account        Account      @relation(fields: [accountId], references: [id])
+  bankTransactions BankTransaction[]
 }
 
 model NcfSequence {
@@ -210,4 +216,73 @@ model Contact {
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, rnc])
+}
+
+model Employee {
+  id           String        @id @default(cuid())
+  companyId    String
+  cedula       String
+  name         String
+  salary       Decimal       @db.Decimal(18, 2)
+  jobTitle     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  payrollItems PayrollItem[]
+
+  @@unique([companyId, cedula])
+}
+
+model Payroll {
+  id             String        @id @default(cuid())
+  companyId      String
+  period         String // Format: YYYYMM (e.g., "202607")
+  grossSalary    Decimal       @db.Decimal(18, 2)
+  sfsEmployee    Decimal       @db.Decimal(18, 2)
+  sfsEmployer    Decimal       @db.Decimal(18, 2)
+  afpEmployee    Decimal       @db.Decimal(18, 2)
+  afpEmployer    Decimal       @db.Decimal(18, 2)
+  arlEmployer    Decimal       @db.Decimal(18, 2)
+  isrDeduction   Decimal       @db.Decimal(18, 2)
+  netSalary      Decimal       @db.Decimal(18, 2)
+  journalEntryId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+  items          PayrollItem[]
+
+  @@unique([companyId, period])
+}
+
+model PayrollItem {
+  id           String   @id @default(cuid())
+  payrollId    String
+  employeeId   String
+  grossSalary  Decimal  @db.Decimal(18, 2)
+  sfsEmployee  Decimal  @db.Decimal(18, 2)
+  afpEmployee  Decimal  @db.Decimal(18, 2)
+  isrDeduction Decimal  @db.Decimal(18, 2)
+  netSalary    Decimal  @db.Decimal(18, 2)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  payroll      Payroll  @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  employee     Employee @relation(fields: [employeeId], references: [id])
+}
+
+model BankTransaction {
+  id                  String            @id @default(cuid())
+  companyId           String
+  accountId           String
+  date                DateTime
+  description         String
+  amount              Decimal           @db.Decimal(18, 2)
+  reference           String?
+  reconciled          Boolean           @default(false)
+  journalEntryLineId  String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  company             Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account             Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  journalEntryLine    JournalEntryLine? @relation(fields: [journalEntryLineId], references: [id])
 }
