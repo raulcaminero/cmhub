@@ -25,7 +25,7 @@ export default function RegisterPage() {
     const result = await register({ email, firstName, lastName, password });
     if ('data' in result && result.data) {
       dispatch(setCredentials(result.data));
-      router.push('/dashboard');
+      router.push('/cmhub');
     }
   }
 

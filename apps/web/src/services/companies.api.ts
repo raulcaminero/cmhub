@@ -27,7 +27,20 @@ export const companiesApi = api.injectEndpoints({
       query: (body) => ({ url: '/companies', method: 'POST', body }),
       invalidatesTags: ['Company'],
     }),
+    updateCompany: builder.mutation<Company, { id: string; body: Partial<CreateCompanyDto> }>({
+      query: ({ id, body }) => ({
+        url: `/companies/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['Company'],
+    }),
   }),
 });
 
-export const { useGetCompaniesQuery, useGetCompanyQuery, useCreateCompanyMutation } = companiesApi;
+export const { 
+  useGetCompaniesQuery, 
+  useGetCompanyQuery, 
+  useCreateCompanyMutation,
+  useUpdateCompanyMutation 
+} = companiesApi;

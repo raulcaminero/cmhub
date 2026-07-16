@@ -15,13 +15,13 @@ import {
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/dashboard/accounting', label: 'Contabilidad', icon: BookOpen },
-  { href: '/dashboard/contacts', label: 'Contactos', icon: Users },
-  { href: '/dashboard/tax', label: 'Impuestos', icon: Receipt },
-  { href: '/dashboard/reports', label: 'Reportes', icon: BarChart3 },
-  { href: '/dashboard/ncf', label: 'NCF', icon: FileText },
-  { href: '/dashboard/settings', label: 'Configuración', icon: Settings },
+  { href: '/cmhub', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/cmhub/accounting', label: 'Contabilidad', icon: BookOpen },
+  { href: '/cmhub/contacts', label: 'Contactos', icon: Users },
+  { href: '/cmhub/tax', label: 'Impuestos', icon: Receipt },
+  { href: '/cmhub/reports', label: 'Reportes', icon: BarChart3 },
+  { href: '/cmhub/ncf', label: 'NCF', icon: FileText },
+  { href: '/cmhub/settings', label: 'Configuración', icon: Settings },
 ];
 
 export function Sidebar() {
