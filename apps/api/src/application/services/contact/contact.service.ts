@@ -40,6 +40,29 @@ export class ContactService {
     return this.contactRepository.delete(id, companyId);
   }
 
+  async updateContact(companyId: string, id: string, dto: any) {
+    const existing = await this.contactRepository.findById(id, companyId);
+    if (!existing) {
+      throw new BadRequestException('Contacto no encontrado.');
+    }
+
+    if (dto.rnc && dto.rnc !== existing.rnc) {
+      const duplicate = await this.contactRepository.findByRnc(companyId, dto.rnc);
+      if (duplicate) {
+        throw new BadRequestException(`Un contacto con el RNC ${dto.rnc} ya existe en esta empresa.`);
+      }
+    }
+
+    return this.contactRepository.update(id, companyId, {
+      rnc: dto.rnc,
+      name: dto.name,
+      type: dto.type,
+      email: dto.email !== undefined ? dto.email : undefined,
+      phone: dto.phone !== undefined ? dto.phone : undefined,
+      address: dto.address !== undefined ? dto.address : undefined,
+    });
+  }
+
   async findOrCreateContact(
     companyId: string,
     rnc: string,

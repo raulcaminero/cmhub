@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, Param } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ContactService } from '@application/services/contact/contact.service';
 import { CreateContactDto } from '@application/dtos/contact/create-contact.dto';
+import { UpdateContactDto } from '@application/dtos/contact/update-contact.dto';
 
 @ApiTags('contacts')
 @ApiBearerAuth()
@@ -19,6 +20,16 @@ export class ContactsController {
   @ApiOperation({ summary: 'Create a new contact (Client or Provider)' })
   createContact(@Param('companyId') companyId: string, @Body() dto: CreateContactDto) {
     return this.contactService.createContact(companyId, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update a contact' })
+  updateContact(
+    @Param('companyId') companyId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateContactDto,
+  ) {
+    return this.contactService.updateContact(companyId, id, dto);
   }
 
   @Delete(':id')

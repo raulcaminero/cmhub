@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetFinancialsQuery, useGetIt1SummaryQuery } from '@/services/reports.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
 export default function ReportsPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const token = useAppSelector((state) => state.auth.accessToken);
+  const [mounted, setMounted] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'tax' | 'financials'>('tax');
   const [period, setPeriod] = useState(() => {
@@ -34,13 +35,21 @@ export default function ReportsPage() {
 
   const { data: it1, isLoading: isLoadingIt1 } = useGetIt1SummaryQuery(
     { companyId: companyId!, period },
-    { skip: !companyId || activeTab !== 'tax' },
+    { skip: !companyId || activeTab !== 'tax' || !mounted },
   );
 
   const { data: financials, isLoading: isLoadingFinancials } = useGetFinancialsQuery(
     { companyId: companyId! },
-    { skip: !companyId || activeTab !== 'financials' },
+    { skip: !companyId || activeTab !== 'financials' || !mounted },
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   if (!companyId) {
     return (

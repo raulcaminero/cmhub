@@ -44,6 +44,14 @@ export const contactsApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Contact'],
     }),
+    updateContact: builder.mutation<Contact, { companyId: string; id: string; body: Partial<CreateContactDto> }>({
+      query: ({ companyId, id, body }) => ({
+        url: `/companies/${companyId}/accounting/contacts/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['Contact'],
+    }),
   }),
 });
 
@@ -51,4 +59,5 @@ export const {
   useGetContactsQuery,
   useCreateContactMutation,
   useDeleteContactMutation,
+  useUpdateContactMutation,
 } = contactsApi;

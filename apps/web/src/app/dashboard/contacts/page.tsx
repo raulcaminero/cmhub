@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetContactsQuery, useCreateContactMutation, useDeleteContactMutation, ContactType } from '@/services/contacts.api';
+import {
+  useGetContactsQuery,
+  useCreateContactMutation,
+  useDeleteContactMutation,
+  useUpdateContactMutation,
+  Contact,
+  ContactType,
+} from '@/services/contacts.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Loader2, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Loader2, Users } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -34,8 +41,10 @@ export default function ContactsPage() {
 
   const [createContact, { isLoading: isCreating }] = useCreateContactMutation();
   const [deleteContact] = useDeleteContactMutation();
+  const [updateContact, { isLoading: isUpdating }] = useUpdateContactMutation();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [rnc, setRnc] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<ContactType>('CLIENT');
@@ -62,6 +71,29 @@ export default function ContactsPage() {
     );
   }
 
+  function handleStartEdit(contact: Contact) {
+    setEditingContact(contact);
+    setRnc(contact.rnc);
+    setName(contact.name);
+    setType(contact.type);
+    setEmail(contact.email || '');
+    setPhone(contact.phone || '');
+    setAddress(contact.address || '');
+    setIsOpen(true);
+  }
+
+  function handleCloseModal() {
+    setIsOpen(false);
+    setEditingContact(null);
+    setRnc('');
+    setName('');
+    setType('CLIENT');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setErrorMessage('');
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!companyId) return;
@@ -74,26 +106,36 @@ export default function ContactsPage() {
     }
 
     try {
-      await createContact({
-        companyId,
-        body: {
-          rnc: cleanRnc,
-          name,
-          type,
-          email: email || undefined,
-          phone: phone || undefined,
-          address: address || undefined,
-        },
-      }).unwrap();
+      if (editingContact) {
+        await updateContact({
+          companyId,
+          id: editingContact.id,
+          body: {
+            rnc: cleanRnc,
+            name,
+            type,
+            email: email || undefined,
+            phone: phone || undefined,
+            address: address || undefined,
+          },
+        }).unwrap();
+      } else {
+        await createContact({
+          companyId,
+          body: {
+            rnc: cleanRnc,
+            name,
+            type,
+            email: email || undefined,
+            phone: phone || undefined,
+            address: address || undefined,
+          },
+        }).unwrap();
+      }
       
-      setIsOpen(false);
-      setRnc('');
-      setName('');
-      setEmail('');
-      setPhone('');
-      setAddress('');
+      handleCloseModal();
     } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al registrar el contacto.');
+      setErrorMessage(err.data?.message || 'Error al guardar el contacto.');
     }
   }
 
@@ -165,7 +207,15 @@ export default function ContactsPage() {
                     </TableCell>
                     <TableCell className="text-sm">{contact.email || '-'}</TableCell>
                     <TableCell className="text-sm">{contact.phone || '-'}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStartEdit(contact)}
+                        className="h-8 w-8 text-muted-foreground hover:bg-accent"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -183,13 +233,17 @@ export default function ContactsPage() {
         </CardContent>
       </Card>
 
-      {/* Modal Registrar Contacto */}
+      {/* Modal Registrar/Editar Contacto */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Registrar Contacto</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {editingContact ? 'Editar Contacto' : 'Registrar Contacto'}
+            </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Registra los datos fiscales de tu cliente o proveedor.
+              {editingContact
+                ? 'Modifica los datos del cliente o proveedor.'
+                : 'Registra los datos fiscales de tu cliente o proveedor.'}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
@@ -268,19 +322,16 @@ export default function ContactsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setErrorMessage('');
-                  }}
-                  disabled={isCreating}
+                  onClick={handleCloseModal}
+                  disabled={isCreating || isUpdating}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating}>
-                  {isCreating ? (
+                <Button type="submit" size="sm" disabled={isCreating || isUpdating}>
+                  {isCreating || isUpdating ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Registrando...
+                      Guardando...
                     </>
                   ) : (
                     'Guardar'

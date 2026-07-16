@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetNcfSequencesQuery, useCreateNcfSequenceMutation } from '@/services/ncf.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,10 +36,11 @@ const NCF_TYPE_LABELS: Record<NcfType, string> = {
 
 export default function NcfPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const [mounted, setMounted] = useState(false);
 
   const { data: sequences, isLoading } = useGetNcfSequencesQuery(
     { companyId: companyId! },
-    { skip: !companyId },
+    { skip: !companyId || !mounted },
   );
 
   const [createSequence, { isLoading: isCreating }] = useCreateNcfSequenceMutation();
@@ -50,6 +51,14 @@ export default function NcfPage() {
   const [max, setMax] = useState(100);
   const [expiresAt, setExpiresAt] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   if (!companyId) {
     return (
