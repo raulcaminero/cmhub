@@ -53,16 +53,23 @@ export class NcfSequenceRepository implements INcfSequenceRepository {
   }
 
   async increment(id: string, companyId: string): Promise<NcfSequenceEntity> {
-    const seq = await this.prisma.ncfSequence.findFirst({ where: { id, companyId } });
-    if (!seq) throw new BadRequestException('NCF Sequence not found');
-    if (seq.current >= seq.max) throw new BadRequestException(`NCF Sequence ${seq.type} has reached its maximum limit (${seq.max})`);
-    if (!seq.isActive) throw new BadRequestException(`NCF Sequence ${seq.type} is not active`);
-    if (new Date(seq.expiresAt) < new Date()) throw new BadRequestException(`NCF Sequence ${seq.type} has expired`);
+    return this.prisma.$transaction(async (tx) => {
+      const seqs = await tx.$queryRaw<PrismaNcfSequence[]>`
+        SELECT * FROM "NcfSequence" 
+        WHERE "id" = ${id} AND "companyId" = ${companyId}
+        FOR UPDATE
+      `;
+      const seq = seqs[0];
+      if (!seq) throw new BadRequestException('NCF Sequence not found');
+      if (seq.current >= seq.max) throw new BadRequestException(`NCF Sequence ${seq.type} has reached its maximum limit (${seq.max})`);
+      if (!seq.isActive) throw new BadRequestException(`NCF Sequence ${seq.type} is not active`);
+      if (new Date(seq.expiresAt) < new Date()) throw new BadRequestException(`NCF Sequence ${seq.type} has expired`);
 
-    const updated = await this.prisma.ncfSequence.update({
-      where: { id },
-      data: { current: { increment: 1 } },
+      const updated = await tx.ncfSequence.update({
+        where: { id },
+        data: { current: { increment: 1 } },
+      });
+      return mapNcfSequence(updated);
     });
-    return mapNcfSequence(updated);
   }
 }

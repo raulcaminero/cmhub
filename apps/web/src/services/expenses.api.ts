@@ -15,6 +15,7 @@ export interface Expense {
   isrRetained: number;
   paymentMethod: string;
   journalEntryId: string | null;
+  isVoided: boolean;
   createdAt: string;
 }
 
@@ -30,6 +31,7 @@ export interface CreateExpenseDto {
   itbisRetained?: number;
   isrRetained?: number;
   paymentMethod: string;
+  bankAccountId?: string;
 }
 
 export const expensesApi = api.injectEndpoints({
@@ -46,7 +48,22 @@ export const expensesApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
     }),
+    payExpense: builder.mutation<Expense, { companyId: string; id: string; body: { bankAccountId: string; paymentDate: string } }>({
+      query: ({ companyId, id, body }) => ({
+        url: `/companies/${companyId}/accounting/expenses/${id}/pay`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
+    }),
+    voidExpense: builder.mutation<Expense, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/expenses/${id}/void`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
+    }),
   }),
 });
 
-export const { useGetExpensesQuery, useCreateExpenseMutation } = expensesApi;
+export const { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation } = expensesApi;

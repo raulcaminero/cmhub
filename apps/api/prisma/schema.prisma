@@ -68,6 +68,7 @@ model Company {
   address        String?
   phone          String?
   email          String?
+  lockDate       DateTime?         @db.Date
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   userRoles      UserCompanyRole[]
@@ -137,10 +138,12 @@ model Invoice {
   ncf            String
   ncfType        NcfType
   date           DateTime      @db.Date
+  paymentDate    DateTime?     @db.Date
   amount         Decimal       @db.Decimal(18, 2)
   itbis          Decimal       @default(0) @db.Decimal(18, 2)
   paymentMethod  String
   journalEntryId String?       @unique
+  isVoided       Boolean       @default(false)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -162,6 +165,11 @@ model Expense {
   isrRetained    Decimal       @default(0) @db.Decimal(18, 2)
   paymentMethod  String
   journalEntryId String?       @unique
+  isVoided       Boolean       @default(false)
+  isForeignPayment Boolean     @default(false)
+  foreignCountry   String?
+  foreignTaxId     String?
+  foreignPaymentType String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)

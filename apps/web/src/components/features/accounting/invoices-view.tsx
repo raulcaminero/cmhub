@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetInvoicesQuery, useCreateInvoiceMutation, Invoice } from '@/services/invoices.api';
+import { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation, Invoice } from '@/services/invoices.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
+import { useGetAccountsQuery } from '@/services/accounting.api';
+import { AccountType } from '@cmhub/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,18 +49,62 @@ export function InvoicesView() {
     { skip: !companyId },
   );
 
+  const { data: accounts } = useGetAccountsQuery(
+    { companyId: companyId!, type: AccountType.ASSET },
+    { skip: !companyId },
+  );
+
   const [createInvoice, { isLoading: isCreating }] = useCreateInvoiceMutation();
+  const [collectInvoice, { isLoading: isCollecting }] = useCollectInvoiceMutation();
+  const [voidInvoice, { isLoading: isVoiding }] = useVoidInvoiceMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+
+  const [collectModalOpen, setCollectModalOpen] = useState(false);
+  const [invoiceToCollect, setInvoiceToCollect] = useState<Invoice | null>(null);
+  const [collectBankId, setCollectBankId] = useState('');
+  const [collectDate, setCollectDate] = useState(new Date().toISOString().split('T')[0]);
+  const [collectError, setCollectError] = useState('');
+
+  async function handleCollectSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId || !invoiceToCollect) return;
+    setCollectError('');
+
+    if (!collectBankId) {
+      setCollectError('Por favor selecciona una cuenta de banco/caja.');
+      return;
+    }
+
+    try {
+      await collectInvoice({
+        companyId,
+        id: invoiceToCollect.id,
+        body: {
+          bankAccountId: collectBankId,
+          paymentDate: collectDate,
+        },
+      }).unwrap();
+
+      setCollectModalOpen(false);
+      setInvoiceToCollect(null);
+      setCollectBankId('');
+    } catch (err: any) {
+      setCollectError(err.data?.message || 'Error al registrar el cobro.');
+    }
+  }
 
   const [clientRnc, setClientRnc] = useState('');
   const [clientName, setClientName] = useState('');
   const [ncfType, setNcfType] = useState<NcfType>(NcfType.B01);
   const [amount, setAmount] = useState(0);
   const [itbis, setItbis] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('01');
+  const [paymentMethod, setPaymentMethod] = useState('02');
+  const [bankAccountId, setBankAccountId] = useState('');
+
+  const bankAccounts = accounts?.filter((a) => a.code.startsWith('1101') || a.name.toLowerCase().includes('banco') || a.name.toLowerCase().includes('caja')) || [];
 
   function handleRncChange(val: string) {
     setClientRnc(val);
@@ -106,6 +152,7 @@ export function InvoicesView() {
           amount: Number(amount),
           itbis: Number(itbis),
           paymentMethod,
+          bankAccountId: paymentMethod !== '04' && bankAccountId ? bankAccountId : undefined,
         },
       }).unwrap();
       
@@ -114,6 +161,7 @@ export function InvoicesView() {
       setClientName('');
       setAmount(0);
       setItbis(0);
+      setBankAccountId('');
       
       // Auto open print view on create
       setSelectedInvoice(created);
@@ -157,7 +205,7 @@ export function InvoicesView() {
                     <TableCell className="text-sm">
                       {new Date(inv.date).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="font-mono text-sm font-semibold text-primary">{inv.ncf}</TableCell>
+                    <TableCell className={`font-mono text-sm font-semibold ${inv.isVoided ? 'line-through text-muted-foreground' : 'text-primary'}`}>{inv.ncf}</TableCell>
                     <TableCell>
                       <div className="font-medium text-sm">{inv.clientName}</div>
                       <div className="text-xs text-muted-foreground font-mono">{inv.clientRnc}</div>
@@ -169,21 +217,66 @@ export function InvoicesView() {
                       RD$ {Number(inv.itbis).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {PAYMENT_METHODS.find((p) => p.code === inv.paymentMethod)?.label.split(' - ')[1] || inv.paymentMethod}
+                      {inv.isVoided ? (
+                        <span className="text-red-500 font-semibold">ANULADA</span>
+                      ) : inv.paymentMethod === '04' ? (
+                        inv.paymentDate ? (
+                          <span className="text-emerald-600 font-medium">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
+                        ) : (
+                          <span className="text-amber-600 font-medium">Crédito Pendiente</span>
+                        )
+                      ) : (
+                        PAYMENT_METHODS.find((p) => p.code === inv.paymentMethod)?.label.split(' - ')[1] || inv.paymentMethod
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedInvoice(inv);
-                          setIsPrintOpen(true);
-                        }}
-                        className="gap-1 h-7 text-xs"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        Imprimir
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedInvoice(inv);
+                            setIsPrintOpen(true);
+                          }}
+                          className="gap-1 h-7 text-xs"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                          Imprimir
+                        </Button>
+                        {inv.paymentMethod === '04' && !inv.paymentDate && !inv.isVoided && (
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              setInvoiceToCollect(inv);
+                              setCollectModalOpen(true);
+                            }}
+                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            Cobrar
+                          </Button>
+                        )}
+                        {!inv.isVoided && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              if (confirm(`¿Estás seguro de que deseas ANULAR la factura NCF ${inv.ncf}? Esto reversará su impacto contable.`)) {
+                                try {
+                                  await voidInvoice({ companyId, id: inv.id }).unwrap();
+                                } catch (err: any) {
+                                  alert(err.data?.message || 'Error al anular la factura.');
+                                }
+                              }
+                            }}
+                            className="h-7 text-xs bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            Anular
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -266,6 +359,24 @@ export function InvoicesView() {
                   </select>
                 </div>
               </div>
+              {paymentMethod !== '04' && bankAccounts.length > 0 && (
+                <div className="space-y-1">
+                  <Label htmlFor="inv-bank">Cuenta de Banco / Caja</Label>
+                  <select
+                    id="inv-bank"
+                    value={bankAccountId}
+                    onChange={(e) => setBankAccountId(e.target.value)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Por defecto (Caja General 1101)</option>
+                    {bankAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.code} - {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="border p-4 rounded-md space-y-3 bg-muted/20">
                 <span className="text-xs font-semibold block border-b pb-1">Desglose de Facturación (RD$)</span>
@@ -325,6 +436,78 @@ export function InvoicesView() {
                     </>
                   ) : (
                     'Emitir Factura'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Registrar Cobro */}
+      {collectModalOpen && invoiceToCollect && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
+            <h3 className="text-lg font-semibold mb-2">Registrar Cobro de Factura</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Registra el cobro de la factura a crédito <strong>NCF {invoiceToCollect.ncf}</strong> por un monto total de <strong>RD$ {Number(invoiceToCollect.amount).toFixed(2)}</strong>.
+            </p>
+            <form onSubmit={handleCollectSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="collect-date">Fecha de Cobro</Label>
+                <Input
+                  id="collect-date"
+                  type="date"
+                  value={collectDate}
+                  onChange={(e) => setCollectDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="collect-bank">Cuenta de Banco / Caja de Entrada</Label>
+                <select
+                  id="collect-bank"
+                  value={collectBankId}
+                  onChange={(e) => setCollectBankId(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  required
+                >
+                  <option value="">Seleccionar cuenta...</option>
+                  {bankAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.code} - {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {collectError && (
+                <p className="text-xs text-destructive font-medium">{collectError}</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setCollectModalOpen(false);
+                    setInvoiceToCollect(null);
+                    setCollectError('');
+                  }}
+                  disabled={isCollecting}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" size="sm" disabled={isCollecting}>
+                  {isCollecting ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    'Confirmar Cobro'
                   )}
                 </Button>
               </div>

@@ -50,7 +50,34 @@ export const accountingApi = api.injectEndpoints({
       }),
       invalidatesTags: ['JournalEntry'],
     }),
+    postJournalEntry: builder.mutation<JournalEntry, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/journal-entries/${id}/post`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['JournalEntry'],
+    }),
+    voidJournalEntry: builder.mutation<JournalEntry, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/journal-entries/${id}/void`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['JournalEntry'],
+    }),
+    getPeriodLock: builder.query<{ lockDate: string | null }, { companyId: string }>({
+      query: ({ companyId }) => `/companies/${companyId}/accounting/period-lock`,
+      providesTags: ['Company'],
+    }),
+    updatePeriodLock: builder.mutation<{ lockDate: string | null }, { companyId: string; body: { lockDate: string | null } }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/period-lock`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Company', 'JournalEntry', 'Account', 'Expense', 'NcfSequence'],
+    }),
   }),
+  overrideExisting: true,
 });
 
 export const {
@@ -58,4 +85,8 @@ export const {
   useCreateAccountMutation,
   useGetJournalEntriesQuery,
   useCreateJournalEntryMutation,
+  usePostJournalEntryMutation,
+  useVoidJournalEntryMutation,
+  useGetPeriodLockQuery,
+  useUpdatePeriodLockMutation,
 } = accountingApi;

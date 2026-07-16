@@ -3,7 +3,10 @@ import { IExpenseRepository } from '@domain/repositories/expense.repository.inte
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { IJournalEntryRepository } from '@domain/repositories/journal-entry.repository.interface';
 import { CreateExpenseDto } from '../../dtos/expense/create-expense.dto';
+import { PayExpenseDto } from '../../dtos/expense/pay-expense.dto';
 import { JournalEntryStatus } from '@domain/enums';
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
+import { checkPeriodLock } from '../accounting/period-lock.helper';
 
 import { ContactService } from '../contact/contact.service';
 import { ContactType } from '@domain/entities/contact.entity';
@@ -19,13 +22,80 @@ export class ExpenseService {
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
     @Inject(JOURNAL_ENTRY_REPOSITORY) private readonly journalEntryRepository: IJournalEntryRepository,
     private readonly contactService: ContactService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getExpenses(companyId: string) {
     return this.expenseRepository.findByCompany(companyId);
   }
 
+  async deleteExpense(companyId: string, id: string) {
+    const existing = await this.expenseRepository.findById(id, companyId);
+    if (!existing) {
+      throw new BadRequestException('Gasto no encontrado.');
+    }
+    await checkPeriodLock(this.prisma, companyId, existing.date);
+    return this.expenseRepository.delete(id, companyId);
+  }
+
+  async payExpense(companyId: string, id: string, dto: PayExpenseDto) {
+    await checkPeriodLock(this.prisma, companyId, dto.paymentDate);
+    const expense = await this.expenseRepository.findById(id, companyId);
+    if (!expense) throw new BadRequestException('Gasto no encontrado.');
+    if (expense.paymentMethod !== '04') {
+      throw new BadRequestException('Solo se pueden pagar gastos con método de pago a crédito.');
+    }
+    if (expense.paymentDate) {
+      throw new BadRequestException('Este gasto ya ha sido pagado.');
+    }
+
+    const accounts = await this.accountRepository.findByCompany(companyId);
+    
+    // Debit Account: Accounts Payable (2101)
+    let debitAcc = accounts.find((a) => a.code === '2101');
+    if (!debitAcc) debitAcc = accounts.find((a) => a.code.startsWith('2')); // fallback to liability
+    if (!debitAcc) throw new BadRequestException('No se encontró cuenta de Cuentas por Pagar (2101).');
+
+    // Credit Account: Selected Cash/Bank Account (bankAccountId)
+    const creditAcc = accounts.find((a) => a.id === dto.bankAccountId);
+    if (!creditAcc) throw new BadRequestException('La cuenta bancaria seleccionada no es válida.');
+
+    const payableAmount = Number(expense.amount) - Number(expense.itbisRetained ?? 0) - Number(expense.isrRetained ?? 0);
+
+    // Create balanced journal entry representing the payment
+    const journalLines = [
+      {
+        accountId: debitAcc.id,
+        debit: payableAmount,
+        credit: 0,
+        description: `Pago a proveedor - NCF ${expense.ncf}`,
+      },
+      {
+        accountId: creditAcc.id,
+        debit: 0,
+        credit: payableAmount,
+        description: `Saldar cuenta por pagar - NCF ${expense.ncf}`,
+      },
+    ];
+
+    const journalEntry = await this.journalEntryRepository.create({
+      companyId,
+      date: new Date(dto.paymentDate),
+      description: `Pago de Gasto: ${expense.providerName} - NCF ${expense.ncf}`,
+      reference: `PAGO-${expense.ncf}`,
+      lines: journalLines,
+    });
+
+    await this.journalEntryRepository.post(journalEntry.id, companyId);
+
+    // Update expense paymentDate
+    return this.expenseRepository.update(id, companyId, {
+      paymentDate: new Date(dto.paymentDate),
+    });
+  }
+
   async createExpense(companyId: string, dto: CreateExpenseDto) {
+    await checkPeriodLock(this.prisma, companyId, dto.date);
     // 0. Auto-save provider as contact
     await this.contactService.findOrCreateContact(
       companyId,
@@ -51,12 +121,19 @@ export class ExpenseService {
     // Find Liability or Asset clearing accounts
     // Cash / Bank (1101) or Accounts Payable (2101)
     const isCreditPurchase = dto.paymentMethod === '04'; // 04: Compra a Crédito
-    const paymentCode = isCreditPurchase ? '2101' : '1101';
-    let paymentAcc = accounts.find((a) => a.code === paymentCode);
-    if (!paymentAcc) {
-      paymentAcc = accounts.find((a) => isCreditPurchase ? a.code.startsWith('2') : a.code.startsWith('1'));
+    let paymentAcc: any;
+
+    if (!isCreditPurchase && dto.bankAccountId) {
+      paymentAcc = accounts.find((a) => a.id === dto.bankAccountId);
+      if (!paymentAcc) throw new BadRequestException('La cuenta bancaria seleccionada no es válida.');
+    } else {
+      const paymentCode = isCreditPurchase ? '2101' : '1101';
+      paymentAcc = accounts.find((a) => a.code === paymentCode);
+      if (!paymentAcc) {
+        paymentAcc = accounts.find((a) => isCreditPurchase ? a.code.startsWith('2') : a.code.startsWith('1'));
+      }
+      if (!paymentAcc) throw new BadRequestException(`No payment/liability account found for code ${paymentCode}`);
     }
-    if (!paymentAcc) throw new BadRequestException(`No payment/liability account found for code ${paymentCode}`);
 
     // ITBIS Account (2102 - ITBIS por Pagar)
     let itbisAcc = accounts.find((a) => a.code === '2102');
@@ -146,6 +223,28 @@ export class ExpenseService {
       isrRetained: dto.isrRetained ?? 0,
       paymentMethod: dto.paymentMethod,
       journalEntryId: journalEntry.id,
+      isVoided: false,
+      isForeignPayment: dto.isForeignPayment ?? false,
+      foreignCountry: dto.foreignCountry ?? null,
+      foreignTaxId: dto.foreignTaxId ?? null,
+      foreignPaymentType: dto.foreignPaymentType ?? null,
+    });
+  }
+
+  async voidExpense(companyId: string, id: string) {
+    const expense = await this.expenseRepository.findById(id, companyId);
+    if (!expense) throw new BadRequestException('Gasto no encontrado.');
+    if (expense.isVoided) throw new BadRequestException('Este gasto ya está anulado.');
+
+    await checkPeriodLock(this.prisma, companyId, expense.date);
+
+    // Void associated Journal Entry
+    if (expense.journalEntryId) {
+      await this.journalEntryRepository.void(expense.journalEntryId, companyId);
+    }
+
+    return this.expenseRepository.update(id, companyId, {
+      isVoided: true,
     });
   }
 }

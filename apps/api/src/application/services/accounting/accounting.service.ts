@@ -4,6 +4,8 @@ import { IJournalEntryRepository } from '@domain/repositories/journal-entry.repo
 import { CreateAccountDto } from '../../dtos/accounting/create-account.dto';
 import { CreateJournalEntryDto, JournalEntryLineDto } from '../../dtos/accounting/create-journal-entry.dto';
 import { GetAccountsDto } from '../../dtos/accounting/get-accounts.dto';
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
+import { checkPeriodLock } from './period-lock.helper';
 
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
 export const JOURNAL_ENTRY_REPOSITORY = 'JOURNAL_ENTRY_REPOSITORY';
@@ -13,6 +15,7 @@ export class AccountingService {
   constructor(
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
     @Inject(JOURNAL_ENTRY_REPOSITORY) private readonly journalEntryRepository: IJournalEntryRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getAccounts(companyId: string, filters: GetAccountsDto) {
@@ -38,6 +41,7 @@ export class AccountingService {
   }
 
   async createJournalEntry(companyId: string, dto: CreateJournalEntryDto) {
+    await checkPeriodLock(this.prisma, companyId, dto.date);
     this.validateDoubleEntry(dto.lines);
 
     return this.journalEntryRepository.create({
@@ -63,5 +67,36 @@ export class AccountingService {
         `Journal entry is not balanced: debit=${totalDebit}, credit=${totalCredit}`,
       );
     }
+  }
+
+  async postJournalEntry(companyId: string, id: string) {
+    const entry = await this.journalEntryRepository.findById(id, companyId);
+    if (!entry) throw new BadRequestException('Asiento no encontrado');
+    await checkPeriodLock(this.prisma, companyId, entry.date);
+    return this.journalEntryRepository.post(id, companyId);
+  }
+
+  async voidJournalEntry(companyId: string, id: string) {
+    const entry = await this.journalEntryRepository.findById(id, companyId);
+    if (!entry) throw new BadRequestException('Asiento no encontrado');
+    await checkPeriodLock(this.prisma, companyId, entry.date);
+    return this.journalEntryRepository.void(id, companyId);
+  }
+
+  async getPeriodLock(companyId: string) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    return { lockDate: company?.lockDate ?? null };
+  }
+
+  async updatePeriodLock(companyId: string, lockDate: string | null) {
+    const dateVal = lockDate ? new Date(lockDate) : null;
+    const company = await this.prisma.company.update({
+      where: { id: companyId },
+      data: { lockDate: dateVal },
+    });
+    return { lockDate: company.lockDate };
   }
 }

@@ -8,10 +8,12 @@ export class InvoiceEntity {
   ncf: string;
   ncfType: NcfType;
   date: Date;
+  paymentDate?: Date | null;
   amount: number;
   itbis: number;
   paymentMethod: string;
   journalEntryId: string | null;
+  isVoided: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

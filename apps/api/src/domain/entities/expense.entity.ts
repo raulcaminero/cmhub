@@ -13,6 +13,11 @@ export class ExpenseEntity {
   isrRetained: number;
   paymentMethod: string;
   journalEntryId: string | null;
+  isVoided: boolean;
+  isForeignPayment: boolean;
+  foreignCountry: string | null;
+  foreignTaxId: string | null;
+  foreignPaymentType: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

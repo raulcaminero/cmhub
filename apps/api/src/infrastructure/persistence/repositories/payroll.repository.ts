@@ -212,7 +212,15 @@ export class PayrollRepository implements IPayrollRepository {
           where: { id: deleted.journalEntryId },
         });
       } catch (e) {
-        // ignore if already deleted
+        console.warn(`Could not hard-delete journal entry ${deleted.journalEntryId}, attempting to void instead:`, e);
+        try {
+          await this.prisma.journalEntry.update({
+            where: { id: deleted.journalEntryId },
+            data: { status: 'VOIDED' },
+          });
+        } catch (voidError) {
+          console.error(`Failed to void journal entry ${deleted.journalEntryId}:`, voidError);
+        }
       }
     }
 

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { NcfType } from '@domain/enums';
 
@@ -29,4 +29,9 @@ export class CreateInvoiceDto {
   @IsString()
   @IsNotEmpty()
   paymentMethod: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  bankAccountId?: string;
 }

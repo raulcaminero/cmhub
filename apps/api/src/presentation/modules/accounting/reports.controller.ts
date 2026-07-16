@@ -46,4 +46,30 @@ export class ReportsController {
   getFinancials(@Param('companyId') companyId: string) {
     return this.reportService.getFinancials(companyId);
   }
+
+  @Get('608')
+  @ApiOperation({ summary: 'Export 608 report (voided NCFs) for DGII' })
+  async export608(
+    @Param('companyId') companyId: string,
+    @Query('period') period: string,
+    @Res() res: Response,
+  ) {
+    const text = await this.reportService.generate608Text(companyId, period);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=DGII_608_${period}.txt`);
+    return res.send(text);
+  }
+
+  @Get('609')
+  @ApiOperation({ summary: 'Export 609 report (payments to foreign entities) for DGII' })
+  async export609(
+    @Param('companyId') companyId: string,
+    @Query('period') period: string,
+    @Res() res: Response,
+  ) {
+    const text = await this.reportService.generate609Text(companyId, period);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=DGII_609_${period}.txt`);
+    return res.send(text);
+  }
 }

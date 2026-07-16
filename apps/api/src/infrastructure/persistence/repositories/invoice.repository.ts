@@ -13,10 +13,12 @@ const mapInvoice = (invoice: PrismaInvoice): InvoiceEntity => ({
   ncf: invoice.ncf,
   ncfType: invoice.ncfType as NcfType,
   date: invoice.date,
+  paymentDate: invoice.paymentDate,
   amount: Number(invoice.amount),
   itbis: Number(invoice.itbis),
   paymentMethod: invoice.paymentMethod,
   journalEntryId: invoice.journalEntryId,
+  isVoided: invoice.isVoided,
   createdAt: invoice.createdAt,
   updatedAt: invoice.updatedAt,
 });
@@ -47,6 +49,26 @@ export class InvoiceRepository implements IInvoiceRepository {
         ncf: data.ncf,
         ncfType: data.ncfType,
         date: data.date,
+        paymentDate: data.paymentDate,
+        amount: data.amount,
+        itbis: data.itbis,
+        paymentMethod: data.paymentMethod,
+        journalEntryId: data.journalEntryId,
+      },
+    });
+    return mapInvoice(invoice);
+  }
+
+  async update(id: string, companyId: string, data: Partial<InvoiceEntity>): Promise<InvoiceEntity> {
+    const invoice = await this.prisma.invoice.update({
+      where: { id },
+      data: {
+        clientRnc: data.clientRnc,
+        clientName: data.clientName,
+        ncf: data.ncf,
+        ncfType: data.ncfType,
+        date: data.date,
+        paymentDate: data.paymentDate,
         amount: data.amount,
         itbis: data.itbis,
         paymentMethod: data.paymentMethod,
