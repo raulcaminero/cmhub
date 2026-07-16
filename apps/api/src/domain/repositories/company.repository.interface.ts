@@ -7,4 +7,5 @@ export interface ICompanyRepository {
   create(data: Omit<CompanyEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<CompanyEntity>;
   addUserToCompany(companyId: string, userId: string, role: string): Promise<void>;
   userHasAccess(companyId: string, userId: string): Promise<boolean>;
+  update(id: string, data: Partial<Omit<CompanyEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<CompanyEntity>;
 }
