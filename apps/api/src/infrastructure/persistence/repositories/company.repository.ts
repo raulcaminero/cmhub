@@ -55,4 +55,9 @@ export class CompanyRepository implements ICompanyRepository {
     });
     return role !== null;
   }
+
+  async update(id: string, data: Partial<Omit<CompanyEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<CompanyEntity> {
+    const company = await this.prisma.company.update({ where: { id }, data });
+    return mapCompany(company);
+  }
 }

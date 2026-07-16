@@ -3,18 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AccountsView } from '@/components/features/accounting/accounts-view';
 import { JournalEntriesView } from '@/components/features/accounting/journal-entries-view';
 import { InvoicesView } from '@/components/features/accounting/invoices-view';
 import { PayrollView } from '@/components/features/accounting/payroll-view';
 import { ReconciliationView } from '@/components/features/accounting/reconciliation-view';
 import { Button } from '@/components/ui/button';
-import { BookOpen, FileText, Receipt, Users, Landmark } from 'lucide-react';
+import { FileText, Receipt, Users, Landmark } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetAccountsQuery, useGetJournalEntriesQuery } from '@/services/accounting.api';
 
 export default function AccountingPage() {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'entries' | 'invoices' | 'payroll' | 'reconciliation'>('accounts');
+  const [activeTab, setActiveTab] = useState<'entries' | 'invoices' | 'payroll' | 'reconciliation'>('entries');
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
 
@@ -111,14 +110,6 @@ export default function AccountingPage() {
       <div className="flex items-center justify-between border-b pb-4 gap-4 flex-wrap">
         <div className="flex gap-2">
           <Button
-            variant={activeTab === 'accounts' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('accounts')}
-            className="gap-2"
-          >
-            <BookOpen className="w-4 h-4" />
-            Plan de Cuentas
-          </Button>
-          <Button
             variant={activeTab === 'entries' ? 'default' : 'outline'}
             onClick={() => setActiveTab('entries')}
             className="gap-2"
@@ -152,15 +143,13 @@ export default function AccountingPage() {
           </Button>
         </div>
         <div className="flex gap-2">
-          <Link href="/dashboard/accounting/expenses" className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
+          <Link href="/cmhub/accounting/expenses" className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
             Registrar Gastos
           </Link>
         </div>
       </div>
 
-      {activeTab === 'accounts' ? (
-        <AccountsView />
-      ) : activeTab === 'entries' ? (
+      {activeTab === 'entries' ? (
         <JournalEntriesView />
       ) : activeTab === 'invoices' ? (
         <InvoicesView />

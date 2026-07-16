@@ -18,4 +18,8 @@ export class UserRepository implements IUserRepository {
   async create(data: Omit<UserEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserEntity> {
     return this.prisma.user.create({ data });
   }
+
+  async update(id: string, data: Partial<Omit<UserEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<UserEntity> {
+    return this.prisma.user.update({ where: { id }, data });
+  }
 }

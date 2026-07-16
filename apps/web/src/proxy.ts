@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname === '/') {
-    return NextResponse.redirect(new URL(token ? '/dashboard' : '/login', request.url));
+    return NextResponse.redirect(new URL(token ? '/cmhub' : '/login', request.url));
   }
 
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
@@ -18,7 +18,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (token && isPublic) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/cmhub', request.url));
   }
 
   return NextResponse.next();
