@@ -6,6 +6,8 @@ import {
   useGetJournalEntriesQuery,
   useCreateJournalEntryMutation,
   useGetAccountsQuery,
+  usePostJournalEntryMutation,
+  useVoidJournalEntryMutation,
 } from '@/services/accounting.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +44,8 @@ export function JournalEntriesView() {
   );
 
   const [createEntry, { isLoading: isCreating }] = useCreateJournalEntryMutation();
+  const [postEntry] = usePostJournalEntryMutation();
+  const [voidEntry] = useVoidJournalEntryMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -52,6 +56,25 @@ export function JournalEntriesView() {
     { accountId: '', debit: 0, credit: 0, description: '' },
   ]);
   const [errorMessage, setErrorMessage] = useState('');
+
+  async function handlePost(id: string) {
+    if (!companyId) return;
+    try {
+      await postEntry({ companyId, id }).unwrap();
+    } catch (err: any) {
+      alert(err.data?.message || 'Error al aprobar el asiento.');
+    }
+  }
+
+  async function handleVoid(id: string) {
+    if (!companyId) return;
+    if (!confirm('¿Estás seguro de que deseas anular este asiento contable? Esta acción no se puede deshacer.')) return;
+    try {
+      await voidEntry({ companyId, id }).unwrap();
+    } catch (err: any) {
+      alert(err.data?.message || 'Error al anular el asiento.');
+    }
+  }
 
   if (!companyId) {
     return (
@@ -154,17 +177,46 @@ export function JournalEntriesView() {
           ) : (
             <div className="space-y-6">
               {entries.map((entry) => (
-                <div key={entry.id} className="border rounded-lg p-4 space-y-3 bg-card shadow-sm">
+                <div key={entry.id} className="border rounded-lg p-4 space-y-3 bg-card shadow-sm animate-in fade-in duration-200">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">
                         {entry.id.substring(0, 8).toUpperCase()}
                       </span>
-                      <span className="text-sm font-semibold ml-2">{entry.description}</span>
+                      <span className="text-sm font-semibold">{entry.description}</span>
+                      
+                      {entry.status === 'DRAFT' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border font-medium">Borrador</span>
+                      )}
+                      {entry.status === 'POSTED' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border font-medium">Publicado</span>
+                      )}
+                      {entry.status === 'VOIDED' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border font-medium">Anulado</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>Ref: {entry.reference || 'N/A'}</span>
                       <span>Fecha: {new Date(entry.date).toLocaleDateString()}</span>
+                      
+                      {entry.status === 'DRAFT' && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handlePost(entry.id)}
+                          className="h-7 text-xs px-2 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                        >
+                          Aprobar
+                        </Button>
+                      )}
+                      {entry.status === 'POSTED' && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleVoid(entry.id)}
+                          className="h-7 text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                        >
+                          Anular
+                        </Button>
+                      )}
                     </div>
                   </div>
                   

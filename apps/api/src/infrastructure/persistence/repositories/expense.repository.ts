@@ -19,6 +19,11 @@ const mapExpense = (expense: PrismaExpense): ExpenseEntity => ({
   isrRetained: Number(expense.isrRetained),
   paymentMethod: expense.paymentMethod,
   journalEntryId: expense.journalEntryId,
+  isVoided: expense.isVoided,
+  isForeignPayment: expense.isForeignPayment,
+  foreignCountry: expense.foreignCountry,
+  foreignTaxId: expense.foreignTaxId,
+  foreignPaymentType: expense.foreignPaymentType,
   createdAt: expense.createdAt,
   updatedAt: expense.updatedAt,
 });
@@ -57,6 +62,34 @@ export class ExpenseRepository implements IExpenseRepository {
         paymentMethod: data.paymentMethod,
         journalEntryId: data.journalEntryId,
       },
+    });
+    return mapExpense(expense);
+  }
+
+  async update(id: string, companyId: string, data: Partial<ExpenseEntity>): Promise<ExpenseEntity> {
+    const expense = await this.prisma.expense.update({
+      where: { id },
+      data: {
+        providerRnc: data.providerRnc,
+        providerName: data.providerName,
+        ncf: data.ncf,
+        expenseType: data.expenseType,
+        date: data.date,
+        paymentDate: data.paymentDate,
+        amount: data.amount,
+        itbis: data.itbis,
+        itbisRetained: data.itbisRetained,
+        isrRetained: data.isrRetained,
+        paymentMethod: data.paymentMethod,
+        journalEntryId: data.journalEntryId,
+      },
+    });
+    return mapExpense(expense);
+  }
+
+  async delete(id: string, companyId: string): Promise<ExpenseEntity> {
+    const expense = await this.prisma.expense.delete({
+      where: { id },
     });
     return mapExpense(expense);
   }

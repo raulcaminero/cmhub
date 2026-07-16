@@ -9,10 +9,12 @@ export interface Invoice {
   ncf: string;
   ncfType: NcfType;
   date: string;
+  paymentDate: string | null;
   amount: number;
   itbis: number;
   paymentMethod: string;
   journalEntryId: string | null;
+  isVoided: boolean;
   createdAt: string;
 }
 
@@ -23,6 +25,7 @@ export interface CreateInvoiceDto {
   amount: number;
   itbis: number;
   paymentMethod: string;
+  bankAccountId?: string;
 }
 
 export const invoicesApi = api.injectEndpoints({
@@ -39,7 +42,22 @@ export const invoicesApi = api.injectEndpoints({
       }),
       invalidatesTags: ['JournalEntry', 'Account', 'NcfSequence', 'Contact'],
     }),
+    collectInvoice: builder.mutation<Invoice, { companyId: string; id: string; body: { bankAccountId: string; paymentDate: string } }>({
+      query: ({ companyId, id, body }) => ({
+        url: `/companies/${companyId}/accounting/invoices/${id}/collect`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['JournalEntry', 'Account', 'Contact'],
+    }),
+    voidInvoice: builder.mutation<Invoice, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/invoices/${id}/void`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['JournalEntry', 'Account', 'Contact'],
+    }),
   }),
 });
 
-export const { useGetInvoicesQuery, useCreateInvoiceMutation } = invoicesApi;
+export const { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation } = invoicesApi;

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsDateString, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsDateString, IsEnum, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateExpenseDto {
@@ -54,4 +54,29 @@ export class CreateExpenseDto {
   @IsString()
   @IsNotEmpty()
   paymentMethod: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  bankAccountId?: string;
+
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  isForeignPayment?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  foreignCountry?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  foreignTaxId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  foreignPaymentType?: string;
 }

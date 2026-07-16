@@ -5,6 +5,8 @@ import { IAccountRepository } from '@domain/repositories/account.repository.inte
 import { IJournalEntryRepository } from '@domain/repositories/journal-entry.repository.interface';
 import { CreatePayrollDto } from '../../dtos/payroll/create-payroll.dto';
 import { JournalEntryStatus } from '@domain/enums';
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
+import { checkPeriodLock } from '../accounting/period-lock.helper';
 
 export const EMPLOYEE_REPOSITORY = 'EMPLOYEE_REPOSITORY';
 export const PAYROLL_REPOSITORY = 'PAYROLL_REPOSITORY';
@@ -26,6 +28,7 @@ export class PayrollService {
     @Inject(PAYROLL_REPOSITORY) private readonly payrollRepository: IPayrollRepository,
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
     @Inject(JOURNAL_ENTRY_REPOSITORY) private readonly journalEntryRepository: IJournalEntryRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   // Calculation Helper
@@ -86,6 +89,7 @@ export class PayrollService {
   }
 
   async createPayroll(companyId: string, dto: CreatePayrollDto) {
+    await checkPeriodLock(this.prisma, companyId, new Date());
     // Check if payroll already exists for this period
     const existing = await this.payrollRepository.findByPeriod(companyId, dto.period);
     if (existing) {
@@ -226,6 +230,7 @@ export class PayrollService {
     if (!existing) {
       throw new BadRequestException('Nómina no encontrada.');
     }
+    await checkPeriodLock(this.prisma, companyId, existing.createdAt);
     return this.payrollRepository.delete(id, companyId);
   }
 }

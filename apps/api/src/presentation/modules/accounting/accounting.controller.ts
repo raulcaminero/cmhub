@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AccountingService } from '@application/services/accounting/accounting.service';
 import { CreateAccountDto } from '@application/dtos/accounting/create-account.dto';
@@ -33,5 +33,32 @@ export class AccountingController {
   @ApiOperation({ summary: 'Create a journal entry (double-entry)' })
   createJournalEntry(@Param('companyId') companyId: string, @Body() dto: CreateJournalEntryDto) {
     return this.accountingService.createJournalEntry(companyId, dto);
+  }
+
+  @Patch('journal-entries/:id/post')
+  @ApiOperation({ summary: 'Post/approve a journal entry' })
+  postJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string) {
+    return this.accountingService.postJournalEntry(companyId, id);
+  }
+
+  @Patch('journal-entries/:id/void')
+  @ApiOperation({ summary: 'Void a journal entry' })
+  voidJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string) {
+    return this.accountingService.voidJournalEntry(companyId, id);
+  }
+
+  @Get('period-lock')
+  @ApiOperation({ summary: 'Get accounting period lock date' })
+  getPeriodLock(@Param('companyId') companyId: string) {
+    return this.accountingService.getPeriodLock(companyId);
+  }
+
+  @Post('period-lock')
+  @ApiOperation({ summary: 'Update accounting period lock date' })
+  updatePeriodLock(
+    @Param('companyId') companyId: string,
+    @Body() body: { lockDate: string | null },
+  ) {
+    return this.accountingService.updatePeriodLock(companyId, body.lockDate);
   }
 }

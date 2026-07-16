@@ -1,5 +1,5 @@
 import type { JournalEntry as PrismaJournalEntry, JournalEntryLine as PrismaJournalEntryLine } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   IJournalEntryRepository,
@@ -59,6 +59,16 @@ export class JournalEntryRepository implements IJournalEntryRepository {
   }
 
   async create(data: CreateJournalEntryData): Promise<JournalEntryEntity> {
+    // Validate double entry balance
+    const totalDebit = data.lines.reduce((sum, l) => sum + Number(l.debit), 0);
+    const totalCredit = data.lines.reduce((sum, l) => sum + Number(l.credit), 0);
+    const diff = Math.abs(totalDebit - totalCredit);
+    if (diff > 0.001) {
+      throw new BadRequestException(
+        `El asiento contable no está cuadrado: débito=${totalDebit.toFixed(2)}, crédito=${totalCredit.toFixed(2)}`,
+      );
+    }
+
     const entry = await this.prisma.journalEntry.create({
       data: {
         companyId: data.companyId,

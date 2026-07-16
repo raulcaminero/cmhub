@@ -38,15 +38,35 @@ export class NcfSequenceService {
       throw new BadRequestException(`No active NCF sequence found for type ${type}. Please register it first.`);
     }
 
+    if (!seq.isActive) {
+      throw new BadRequestException(`La secuencia de NCF tipo ${type} está inactiva.`);
+    }
+
+    if (seq.expiresAt && new Date(seq.expiresAt) < new Date()) {
+      throw new BadRequestException(
+        `La secuencia de NCF tipo ${type} ha vencido (Fecha de vencimiento: ${new Date(seq.expiresAt).toLocaleDateString()}).`
+      );
+    }
+
+    if (seq.current >= seq.max) {
+      throw new BadRequestException(
+        `La secuencia de NCF tipo ${type} se ha agotado (Límite máximo alcanzado: ${seq.max}).`
+      );
+    }
+
     const updatedSeq = await this.ncfSequenceRepository.increment(seq.id, companyId);
+
+    if (updatedSeq.current > seq.max) {
+      throw new BadRequestException(
+        `La secuencia de NCF tipo ${type} se ha agotado (Límite máximo alcanzado: ${seq.max}).`
+      );
+    }
     
     // Format NCF
     const isElectronic = type.startsWith('E');
-    const series = isElectronic ? 'E' : 'B';
-    const typeStr = type.substring(1); // e.g. '01' from 'B01' or '31' from 'E31'
     const seqLength = isElectronic ? 10 : 8;
     const paddedNum = String(updatedSeq.current).padStart(seqLength, '0');
 
-    return `${series}${typeStr}${paddedNum}`;
+    return `${seq.prefix}${paddedNum}`;
   }
 }

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetExpensesQuery, useCreateExpenseMutation } from '@/services/expenses.api';
+import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, Expense } from '@/services/expenses.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
+import { useGetAccountsQuery } from '@/services/accounting.api';
+import { AccountType } from '@cmhub/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +58,14 @@ export default function AccountingExpensesPage() {
     { skip: !companyId || !mounted },
   );
 
+  const { data: accounts } = useGetAccountsQuery(
+    { companyId: companyId!, type: AccountType.ASSET },
+    { skip: !companyId || !mounted },
+  );
+
   const [createExpense, { isLoading: isCreating }] = useCreateExpenseMutation();
+  const [payExpense, { isLoading: isPaying }] = usePayExpenseMutation();
+  const [voidExpense, { isLoading: isVoiding }] = useVoidExpenseMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [providerRnc, setProviderRnc] = useState('');
@@ -69,7 +78,44 @@ export default function AccountingExpensesPage() {
   const [itbisRetained, setItbisRetained] = useState(0);
   const [isrRetained, setIsrRetained] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('02');
+  const [bankAccountId, setBankAccountId] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [expenseToPay, setExpenseToPay] = useState<Expense | null>(null);
+  const [payBankId, setPayBankId] = useState('');
+  const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [payError, setPayError] = useState('');
+
+  async function handlePaySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId || !expenseToPay) return;
+    setPayError('');
+
+    if (!payBankId) {
+      setPayError('Por favor selecciona una cuenta de banco/caja.');
+      return;
+    }
+
+    try {
+      await payExpense({
+        companyId,
+        id: expenseToPay.id,
+        body: {
+          bankAccountId: payBankId,
+          paymentDate: payDate,
+        },
+      }).unwrap();
+
+      setPayModalOpen(false);
+      setExpenseToPay(null);
+      setPayBankId('');
+    } catch (err: any) {
+      setPayError(err.data?.message || 'Error al registrar el pago.');
+    }
+  }
+
+  const bankAccounts = accounts?.filter((a) => a.code.startsWith('1101') || a.name.toLowerCase().includes('banco') || a.name.toLowerCase().includes('caja')) || [];
 
   useEffect(() => {
     setMounted(true);
@@ -138,6 +184,7 @@ export default function AccountingExpensesPage() {
           itbisRetained: Number(itbisRetained),
           isrRetained: Number(isrRetained),
           paymentMethod,
+          bankAccountId: paymentMethod !== '04' && bankAccountId ? bankAccountId : undefined,
         },
       }).unwrap();
       
@@ -149,6 +196,7 @@ export default function AccountingExpensesPage() {
       setItbis(0);
       setItbisRetained(0);
       setIsrRetained(0);
+      setBankAccountId('');
     } catch (err: any) {
       setErrorMessage(err.data?.message || 'Error al registrar el gasto.');
     }
@@ -187,6 +235,7 @@ export default function AccountingExpensesPage() {
                   <TableHead className="text-right">Monto Total</TableHead>
                   <TableHead className="text-right">ITBIS</TableHead>
                   <TableHead>Método</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -203,7 +252,7 @@ export default function AccountingExpensesPage() {
                         <div className="font-medium text-sm">{exp.providerName}</div>
                         <div className="text-xs text-muted-foreground font-mono">{exp.providerRnc}</div>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{exp.ncf}</TableCell>
+                      <TableCell className={`font-mono text-sm ${exp.isVoided ? 'line-through text-muted-foreground' : ''}`}>{exp.ncf}</TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate" title={typeLabel}>
                         {typeLabel}
                       </TableCell>
@@ -214,7 +263,54 @@ export default function AccountingExpensesPage() {
                         RD$ {Number(exp.itbis).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {payLabel.split(' - ')[1] || payLabel}
+                        {exp.isVoided ? (
+                          <span className="text-red-500 font-semibold">ANULADO</span>
+                        ) : exp.paymentMethod === '04' ? (
+                          exp.paymentDate ? (
+                            <span className="text-emerald-600 font-medium">Pagado ({new Date(exp.paymentDate).toLocaleDateString()})</span>
+                          ) : (
+                            <span className="text-amber-600 font-medium">Pendiente Cuentas por Pagar</span>
+                          )
+                        ) : (
+                          payLabel.split(' - ')[1] || payLabel
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {exp.paymentMethod === '04' && !exp.paymentDate && !exp.isVoided && (
+                            <Button
+                              type="button"
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setExpenseToPay(exp);
+                                setPayModalOpen(true);
+                              }}
+                              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                              Pagar
+                            </Button>
+                          )}
+                          {!exp.isVoided && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm(`¿Estás seguro de que deseas ANULAR el gasto NCF ${exp.ncf}? Esto reversará su impacto contable.`)) {
+                                  try {
+                                    await voidExpense({ companyId, id: exp.id }).unwrap();
+                                  } catch (err: any) {
+                                    alert(err.data?.message || 'Error al anular el gasto.');
+                                  }
+                                }
+                              }}
+                              className="h-7 text-xs bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Anular
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -303,6 +399,24 @@ export default function AccountingExpensesPage() {
                     ))}
                   </select>
                 </div>
+                {paymentMethod !== '04' && bankAccounts.length > 0 && (
+                  <div className="space-y-1">
+                    <Label htmlFor="gasto-bank">Cuenta de Banco / Caja</Label>
+                    <select
+                      id="gasto-bank"
+                      value={bankAccountId}
+                      onChange={(e) => setBankAccountId(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="">Por defecto (Caja General 1101)</option>
+                      {bankAccounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.code} - {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -405,6 +519,78 @@ export default function AccountingExpensesPage() {
                     </>
                   ) : (
                     'Guardar Gasto'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Registrar Pago */}
+      {payModalOpen && expenseToPay && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
+            <h3 className="text-lg font-semibold mb-2">Registrar Pago de Gasto</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Registra el pago del gasto a crédito de <strong>{expenseToPay.providerName}</strong> (NCF <strong>{expenseToPay.ncf}</strong>) por un monto de <strong>RD$ {(Number(expenseToPay.amount) - Number(expenseToPay.itbisRetained) - Number(expenseToPay.isrRetained)).toFixed(2)}</strong> (neto de retenciones).
+            </p>
+            <form onSubmit={handlePaySubmit} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="pay-date">Fecha de Pago</Label>
+                <Input
+                  id="pay-date"
+                  type="date"
+                  value={payDate}
+                  onChange={(e) => setPayDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="pay-bank">Cuenta de Banco / Caja de Salida</Label>
+                <select
+                  id="pay-bank"
+                  value={payBankId}
+                  onChange={(e) => setPayBankId(e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  required
+                >
+                  <option value="">Seleccionar cuenta...</option>
+                  {bankAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.code} - {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {payError && (
+                <p className="text-xs text-destructive font-medium">{payError}</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setPayModalOpen(false);
+                    setExpenseToPay(null);
+                    setPayError('');
+                  }}
+                  disabled={isPaying}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" size="sm" disabled={isPaying}>
+                  {isPaying ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    'Confirmar Pago'
                   )}
                 </Button>
               </div>

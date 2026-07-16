@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutation } from '@/services/companies.api';
+import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
 import { Building2, BookOpen, Layers, Check, Loader2, Plus } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
@@ -17,12 +18,49 @@ export default function SettingsPage() {
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyList = useAppSelector((state) => state.company.list);
 
+  const [mounted, setMounted] = useState(false);
+
   const { data: companies, isLoading: loadingCompanies } = useGetCompaniesQuery();
   const [updateCompany, { isLoading: isUpdatingCompany }] = useUpdateCompanyMutation();
   const [createCompany, { isLoading: isCreatingCompany }] = useCreateCompanyMutation();
 
+  // Period Lock configuration state
+  const { data: periodLock, isLoading: loadingLock } = useGetPeriodLockQuery(
+    { companyId: activeCompany?.id! },
+    { skip: !activeCompany || !mounted }
+  );
+  const [updatePeriodLock, { isLoading: isUpdatingLock }] = useUpdatePeriodLockMutation();
+  const [lockDate, setLockDate] = useState('');
+  const [lockSuccess, setLockSuccess] = useState('');
+  const [lockError, setLockError] = useState('');
+
+  useEffect(() => {
+    if (periodLock?.lockDate) {
+      setLockDate(periodLock.lockDate.split('T')[0]);
+    } else {
+      setLockDate('');
+    }
+  }, [periodLock]);
+
+  async function handleUpdateLock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!activeCompany) return;
+    setLockSuccess('');
+    setLockError('');
+
+    try {
+      await updatePeriodLock({
+        companyId: activeCompany.id,
+        body: { lockDate: lockDate || null },
+      }).unwrap();
+      setLockSuccess(lockDate ? 'Período contable bloqueado exitosamente.' : 'Período contable desbloqueado exitosamente.');
+      setTimeout(() => setLockSuccess(''), 3000);
+    } catch (err: any) {
+      setLockError(err.data?.message || 'Error al actualizar el bloqueo de período.');
+    }
+  }
+
   const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts'>('company');
-  const [mounted, setMounted] = useState(false);
 
   // Company settings edit form
   const [compName, setCompName] = useState('');
@@ -183,7 +221,8 @@ export default function SettingsPage() {
       </div>
 
       {activeTab === 'company' && (
-        <Card>
+        <div className="space-y-6">
+          <Card>
           <CardHeader>
             <CardTitle>Datos de la Empresa Activa</CardTitle>
             <CardDescription>Configura los datos comerciales y de facturación fiscal.</CardDescription>
@@ -283,6 +322,84 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+
+        {activeCompany && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Cierre de Período Contable</CardTitle>
+              <CardDescription>
+                Bloquea el registro, edición o anulación de transacciones (asientos, facturas, gastos, nóminas) antes de la fecha indicada para proteger tus declaraciones fiscales presentadas.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingLock ? (
+                <p className="text-sm text-muted-foreground animate-pulse">Cargando cierre de período...</p>
+              ) : (
+                <form onSubmit={handleUpdateLock} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="lock-date">Bloquear transacciones en o antes de:</Label>
+                      <Input
+                        id="lock-date"
+                        type="date"
+                        value={lockDate}
+                        onChange={(e) => setLockDate(e.target.value)}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Cualquier transacción posterior a esta fecha podrá registrarse normalmente. Las fechas anteriores o iguales serán denegadas.
+                      </p>
+                    </div>
+                  </div>
+
+                  {lockSuccess && (
+                    <p className="text-xs text-green-600 font-medium">{lockSuccess}</p>
+                  )}
+                  {lockError && (
+                    <p className="text-xs text-destructive font-medium">{lockError}</p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button type="submit" disabled={isUpdatingLock}>
+                      {isUpdatingLock ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        'Guardar Bloqueo'
+                      )}
+                    </Button>
+                    {lockDate && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de que deseas eliminar el bloqueo y reabrir todos los períodos?')) {
+                            setLockDate('');
+                            try {
+                              await updatePeriodLock({
+                                companyId: activeCompany.id,
+                                body: { lockDate: null },
+                              }).unwrap();
+                              setLockSuccess('Período contable desbloqueado exitosamente.');
+                              setTimeout(() => setLockSuccess(''), 3000);
+                            } catch (err: any) {
+                              setLockError(err.data?.message || 'Error al eliminar el bloqueo.');
+                            }
+                          }
+                        }}
+                        disabled={isUpdatingLock}
+                      >
+                        Quitar Bloqueo / Reabrir
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
       )}
 
       {activeTab === 'my-companies' && (

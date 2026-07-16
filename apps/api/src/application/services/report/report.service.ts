@@ -38,6 +38,7 @@ export class ReportService {
       where: {
         companyId,
         date: { gte: startDate, lte: endDate },
+        isVoided: false,
       },
     });
 
@@ -51,6 +52,9 @@ export class ReportService {
       
       const subtotal = Number(exp.amount) - Number(exp.itbis);
       
+      const expTypeNum = Number(exp.expenseType);
+      const isServicio = (expTypeNum >= 1 && expTypeNum <= 7) || expTypeNum === 11;
+      
       // fields matching DGII specifications
       return [
         exp.providerRnc,
@@ -60,8 +64,8 @@ export class ReportService {
         '', // NCF Modificado
         formattedDate,
         formattedPaymentDate,
-        Number(exp.expenseType) <= 5 ? subtotal.toFixed(2) : '0.00', // Servicios
-        Number(exp.expenseType) > 5 ? subtotal.toFixed(2) : '0.00', // Bienes
+        isServicio ? subtotal.toFixed(2) : '0.00', // Servicios
+        !isServicio ? subtotal.toFixed(2) : '0.00', // Bienes
         Number(exp.amount).toFixed(2),
         Number(exp.itbis).toFixed(2),
         Number(exp.itbisRetained).toFixed(2),
@@ -88,37 +92,28 @@ export class ReportService {
 
     const { startDate, endDate } = this.parsePeriod(period);
 
-    // Find sales journal entries in the period
-    const entries = await this.prisma.journalEntry.findMany({
+    // Find invoices in the period
+    const invoices = await this.prisma.invoice.findMany({
       where: {
         companyId,
         date: { gte: startDate, lte: endDate },
-        reference: { startsWith: 'B' }, // Has NCF (or startsWith 'E')
       },
-      include: { lines: true },
     });
 
-    const header = `607|${company.rnc}|${period}|${entries.length}`;
+    const header = `607|${company.rnc}|${period}|${invoices.length}`;
     
-    const rows = entries.map((entry) => {
-      const formattedDate = new Date(entry.date).toISOString().split('T')[0].replace(/-/g, '');
+    const rows = invoices.map((inv) => {
+      const formattedDate = new Date(inv.date).toISOString().split('T')[0].replace(/-/g, '');
+      const typeId = inv.clientRnc.length === 9 ? '1' : inv.clientRnc.length === 11 ? '2' : '3';
       
-      // Calculate total credit to revenue (usually starts with 4)
-      const revenueLines = entry.lines.filter((l) => Number(l.credit) > 0);
-      const totalAmount = revenueLines.reduce((sum, l) => sum + Number(l.credit), 0);
-      
-      // Look for a possible ITBIS line (ITBIS por Pagar starts with 2102)
-      // Usually ITBIS was credited along with sales:
-      // Debit Client (100) -> Credit Sales (84.75), Credit ITBIS (15.25)
-      // Let's check lines
-      const itbisLine = entry.lines.find((l) => l.accountId && Number(l.credit) > 0 && l.description?.toLowerCase().includes('itbis'));
-      const itbisAmount = itbisLine ? Number(itbisLine.credit) : 0;
+      const itbisAmount = inv.isVoided ? 0 : Number(inv.itbis);
+      const totalAmount = inv.isVoided ? 0 : Number(inv.amount);
       const baseAmount = totalAmount - itbisAmount;
 
       return [
-        '999999999', // RNC Comprador Genérico si no se especifica
-        '1', // Tipo Identificación (RNC)
-        entry.reference || '',
+        inv.clientRnc,
+        typeId,
+        inv.ncf,
         '', // NCF Modificado
         '01', // Tipo Ingreso (01: Ingresos Financieros/Operacionales)
         formattedDate,
@@ -132,7 +127,7 @@ export class ReportService {
         '0.00', // ISC
         '0.00', // Otros Impuestos
         '0.00', // Propina Legal
-        '01', // Forma de pago (01: Efectivo)
+        inv.paymentMethod, // Forma de pago real
       ].join('|');
     });
 
@@ -147,32 +142,28 @@ export class ReportService {
       where: {
         companyId,
         date: { gte: startDate, lte: endDate },
+        isVoided: false,
       },
     });
 
     const purchasesAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
     const purchasesItbis = expenses.reduce((sum, e) => sum + Number(e.itbis), 0);
 
-    // Sum sales and ITBIS from journal entries
-    const entries = await this.prisma.journalEntry.findMany({
+    // Sum sales and ITBIS from invoices
+    const invoices = await this.prisma.invoice.findMany({
       where: {
         companyId,
         date: { gte: startDate, lte: endDate },
-        reference: { startsWith: 'B' },
+        isVoided: false,
       },
-      include: { lines: true },
     });
 
     let salesAmount = 0;
     let salesItbis = 0;
 
-    entries.forEach((entry) => {
-      const revenueLines = entry.lines.filter((l) => Number(l.credit) > 0);
-      const total = revenueLines.reduce((sum, l) => sum + Number(l.credit), 0);
-      
-      const itbisLine = entry.lines.find((l) => Number(l.credit) > 0 && l.description?.toLowerCase().includes('itbis'));
-      const itbis = itbisLine ? Number(itbisLine.credit) : 0;
-      
+    invoices.forEach((inv) => {
+      const itbis = Number(inv.itbis);
+      const total = Number(inv.amount);
       salesAmount += (total - itbis);
       salesItbis += itbis;
     });
@@ -250,5 +241,64 @@ export class ReportService {
       balanceSheet,
       incomeStatement,
     };
+  }
+
+  async generate608Text(companyId: string, period: string): Promise<string> {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new BadRequestException('Empresa no encontrada');
+
+    const { startDate, endDate } = this.parsePeriod(period);
+
+    const voidedInvoices = await this.prisma.invoice.findMany({
+      where: {
+        companyId,
+        date: { gte: startDate, lte: endDate },
+        isVoided: true,
+      },
+    });
+
+    const header = `608|${company.rnc}|${period}|${voidedInvoices.length}`;
+    const rows = voidedInvoices.map((inv) => {
+      const formattedDate = new Date(inv.updatedAt).toISOString().split('T')[0].replace(/-/g, '');
+      return [
+        inv.ncf,
+        formattedDate,
+        '05', // Default: Corrección de la Información
+      ].join('|');
+    });
+
+    return [header, ...rows].join('\r\n');
+  }
+
+  async generate609Text(companyId: string, period: string): Promise<string> {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new BadRequestException('Empresa no encontrada');
+
+    const { startDate, endDate } = this.parsePeriod(period);
+
+    const foreignExpenses = await this.prisma.expense.findMany({
+      where: {
+        companyId,
+        date: { gte: startDate, lte: endDate },
+        isForeignPayment: true,
+      },
+    });
+
+    const header = `609|${company.rnc}|${period}|${foreignExpenses.length}`;
+    const rows = foreignExpenses.map((exp) => {
+      return [
+        exp.foreignTaxId || exp.providerRnc,
+        exp.providerName,
+        exp.providerRnc.length <= 9 ? '1' : '2',
+        exp.foreignCountry || 'US',
+        '3', // Vínculo: Independiente
+        exp.foreignPaymentType || '01',
+        Number(exp.amount).toFixed(2),
+        Number(exp.isrRetained).toFixed(2),
+        (Number(exp.amount) - Number(exp.isrRetained)).toFixed(2),
+      ].join('|');
+    });
+
+    return [header, ...rows].join('\r\n');
   }
 }
