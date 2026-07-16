@@ -8,6 +8,7 @@ import {
 import { ICompanyRepository } from '@domain/repositories/company.repository.interface';
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { CreateCompanyDto } from '../../dtos/company/create-company.dto';
+import { UpdateCompanyDto } from '../../dtos/company/update-company.dto';
 import { TaxRegime, UserRole, AccountType } from '@domain/enums';
 import { ACCOUNT_REPOSITORY } from '../accounting/accounting.service';
 
@@ -311,5 +312,29 @@ export class CompanyService {
     const company = await this.companyRepository.findById(companyId);
     if (!company) throw new NotFoundException('Company not found');
     return company;
+  }
+
+  async update(companyId: string, dto: UpdateCompanyDto, userId: string) {
+    const hasAccess = await this.companyRepository.userHasAccess(companyId, userId);
+    if (!hasAccess) throw new ForbiddenException('Access denied to this company');
+
+    const company = await this.companyRepository.findById(companyId);
+    if (!company) throw new NotFoundException('Company not found');
+
+    const updateData: any = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.tradeName !== undefined) updateData.tradeName = dto.tradeName;
+    if (dto.taxRegime !== undefined) updateData.taxRegime = dto.taxRegime;
+    if (dto.address !== undefined) updateData.address = dto.address;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.email !== undefined) updateData.email = dto.email;
+
+    if (dto.rnc !== undefined && dto.rnc !== company.rnc) {
+      const existing = await this.companyRepository.findByRnc(dto.rnc);
+      if (existing) throw new ConflictException('A company with this RNC already exists');
+      updateData.rnc = dto.rnc;
+    }
+
+    return this.companyRepository.update(companyId, updateData);
   }
 }

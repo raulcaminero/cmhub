@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { IUserRepository } from '@domain/repositories/user.repository.interface';
 import { LoginDto } from '../../dtos/auth/login.dto';
 import { RegisterDto } from '../../dtos/auth/register.dto';
+import { UpdateProfileDto } from '../../dtos/auth/update-profile.dto';
 
 export const USER_REPOSITORY = 'USER_REPOSITORY';
 
@@ -68,5 +69,56 @@ export class AuthService {
       expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
     });
     return { accessToken, refreshToken };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    
+    const { passwordHash, ...result } = user;
+    return result;
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const updateData: any = {};
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+
+    if (dto.email !== undefined && dto.email !== user.email) {
+      const existing = await this.userRepository.findByEmail(dto.email);
+      if (existing) throw new ConflictException('Email already in use');
+      updateData.email = dto.email;
+    }
+
+    if (dto.password !== undefined) {
+      updateData.passwordHash = await bcrypt.hash(dto.password, 12);
+    }
+
+    const updatedUser = await this.userRepository.update(userId, updateData);
+    const { passwordHash, ...result } = updatedUser;
+    return result;
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET') ?? 'dev-refresh-jwt-secret';
+      const payload = this.jwtService.verify(refreshToken, { secret: refreshSecret });
+      
+      if (!payload || !payload.sub) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      const user = await this.userRepository.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return this.generateTokens(user.id, user.email);
+    } catch (err) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
   }
 }
