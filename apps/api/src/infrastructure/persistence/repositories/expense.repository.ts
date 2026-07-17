@@ -1,5 +1,5 @@
 import type { Expense as PrismaExpense } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IExpenseRepository } from '@domain/repositories/expense.repository.interface';
 import { ExpenseEntity } from '@domain/entities/expense.entity';
@@ -45,8 +45,9 @@ export class ExpenseRepository implements IExpenseRepository {
     return expenses.map(mapExpense);
   }
 
-  async create(data: Omit<ExpenseEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExpenseEntity> {
-    const expense = await this.prisma.expense.create({
+  async create(data: Omit<ExpenseEntity, 'id' | 'createdAt' | 'updatedAt'>, tx?: any): Promise<ExpenseEntity> {
+    const client = tx || this.prisma;
+    const expense = await client.expense.create({
       data: {
         companyId: data.companyId,
         providerRnc: data.providerRnc,
@@ -66,8 +67,13 @@ export class ExpenseRepository implements IExpenseRepository {
     return mapExpense(expense);
   }
 
-  async update(id: string, companyId: string, data: Partial<ExpenseEntity>): Promise<ExpenseEntity> {
-    const expense = await this.prisma.expense.update({
+  async update(id: string, companyId: string, data: Partial<ExpenseEntity>, tx?: any): Promise<ExpenseEntity> {
+    const client = tx || this.prisma;
+    const existing = await client.expense.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Gasto no encontrado o acceso denegado.');
+    }
+    const expense = await client.expense.update({
       where: { id },
       data: {
         providerRnc: data.providerRnc,
@@ -87,10 +93,33 @@ export class ExpenseRepository implements IExpenseRepository {
     return mapExpense(expense);
   }
 
-  async delete(id: string, companyId: string): Promise<ExpenseEntity> {
-    const expense = await this.prisma.expense.delete({
+  async delete(id: string, companyId: string, tx?: any): Promise<ExpenseEntity> {
+    const client = tx || this.prisma;
+    const existing = await client.expense.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Gasto no encontrado o acceso denegado.');
+    }
+    const expense = await client.expense.delete({
       where: { id },
     });
+
+    if (expense.journalEntryId) {
+      try {
+        await client.journalEntry.delete({
+          where: { id: expense.journalEntryId },
+        });
+      } catch (e) {
+        try {
+          await client.journalEntry.update({
+            where: { id: expense.journalEntryId },
+            data: { status: 'VOIDED' },
+          });
+        } catch (voidError) {
+          throw new BadRequestException('No se pudo eliminar ni anular el asiento contable asociado al gasto.');
+        }
+      }
+    }
+
     return mapExpense(expense);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IBankTransactionRepository } from '@domain/repositories/bank-transaction.repository.interface';
 import { BankTransactionEntity } from '@domain/entities/bank-transaction.entity';
@@ -91,8 +91,14 @@ export class BankTransactionRepository implements IBankTransactionRepository {
     companyId: string,
     reconciled: boolean,
     journalEntryLineId: string | null,
+    tx?: any,
   ): Promise<BankTransactionEntity> {
-    const tx = await this.prisma.bankTransaction.update({
+    const client = tx || this.prisma;
+    const existing = await client.bankTransaction.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Transacción no encontrada o acceso denegado.');
+    }
+    const bankTx = await client.bankTransaction.update({
       where: { id },
       data: {
         reconciled,
@@ -101,37 +107,42 @@ export class BankTransactionRepository implements IBankTransactionRepository {
     });
 
     return {
-      id: tx.id,
-      companyId: tx.companyId,
-      accountId: tx.accountId,
-      date: tx.date,
-      description: tx.description,
-      amount: Number(tx.amount),
-      reference: tx.reference,
-      reconciled: tx.reconciled,
-      journalEntryLineId: tx.journalEntryLineId,
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
+      id: bankTx.id,
+      companyId: bankTx.companyId,
+      accountId: bankTx.accountId,
+      date: bankTx.date,
+      description: bankTx.description,
+      amount: Number(bankTx.amount),
+      reference: bankTx.reference,
+      reconciled: bankTx.reconciled,
+      journalEntryLineId: bankTx.journalEntryLineId,
+      createdAt: bankTx.createdAt,
+      updatedAt: bankTx.updatedAt,
     };
   }
 
-  async delete(id: string, companyId: string): Promise<BankTransactionEntity> {
-    const tx = await this.prisma.bankTransaction.delete({
+  async delete(id: string, companyId: string, tx?: any): Promise<BankTransactionEntity> {
+    const client = tx || this.prisma;
+    const existing = await client.bankTransaction.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Transacción no encontrada o acceso denegado.');
+    }
+    const bankTx = await client.bankTransaction.delete({
       where: { id },
     });
 
     return {
-      id: tx.id,
-      companyId: tx.companyId,
-      accountId: tx.accountId,
-      date: tx.date,
-      description: tx.description,
-      amount: Number(tx.amount),
-      reference: tx.reference,
-      reconciled: tx.reconciled,
-      journalEntryLineId: tx.journalEntryLineId,
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
+      id: bankTx.id,
+      companyId: bankTx.companyId,
+      accountId: bankTx.accountId,
+      date: bankTx.date,
+      description: bankTx.description,
+      amount: Number(bankTx.amount),
+      reference: bankTx.reference,
+      reconciled: bankTx.reconciled,
+      journalEntryLineId: bankTx.journalEntryLineId,
+      createdAt: bankTx.createdAt,
+      updatedAt: bankTx.updatedAt,
     };
   }
 

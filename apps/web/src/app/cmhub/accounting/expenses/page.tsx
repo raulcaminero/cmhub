@@ -81,6 +81,12 @@ export default function AccountingExpensesPage() {
   const [bankAccountId, setBankAccountId] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Foreign payment states
+  const [isForeignPayment, setIsForeignPayment] = useState(false);
+  const [foreignCountry, setForeignCountry] = useState('US');
+  const [foreignTaxId, setForeignTaxId] = useState('');
+  const [foreignPaymentType, setForeignPaymentType] = useState('01');
+
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [expenseToPay, setExpenseToPay] = useState<Expense | null>(null);
   const [payBankId, setPayBankId] = useState('');
@@ -156,8 +162,8 @@ export default function AccountingExpensesPage() {
     if (!companyId) return;
     setErrorMessage('');
 
-    const cleanRnc = providerRnc.replace(/\D/g, '');
-    if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
+    const cleanRnc = isForeignPayment ? providerRnc.trim() : providerRnc.replace(/\D/g, '');
+    if (!isForeignPayment && cleanRnc.length !== 9 && cleanRnc.length !== 11) {
       setErrorMessage('El RNC del proveedor debe tener 9 o 11 dígitos.');
       return;
     }
@@ -185,6 +191,10 @@ export default function AccountingExpensesPage() {
           isrRetained: Number(isrRetained),
           paymentMethod,
           bankAccountId: paymentMethod !== '04' && bankAccountId ? bankAccountId : undefined,
+          isForeignPayment,
+          foreignCountry: isForeignPayment ? foreignCountry : undefined,
+          foreignTaxId: isForeignPayment ? foreignTaxId : undefined,
+          foreignPaymentType: isForeignPayment ? foreignPaymentType : undefined,
         },
       }).unwrap();
       
@@ -197,6 +207,10 @@ export default function AccountingExpensesPage() {
       setItbisRetained(0);
       setIsrRetained(0);
       setBankAccountId('');
+      setIsForeignPayment(false);
+      setForeignCountry('US');
+      setForeignTaxId('');
+      setForeignPaymentType('01');
     } catch (err: any) {
       setErrorMessage(err.data?.message || 'Error al registrar el gasto.');
     }
@@ -436,6 +450,63 @@ export default function AccountingExpensesPage() {
                   </select>
                 </div>
               </div>
+
+              <div className="flex items-center space-x-2 my-2 py-1">
+                <input
+                  type="checkbox"
+                  id="is-foreign-payment"
+                  checked={isForeignPayment}
+                  onChange={(e) => setIsForeignPayment(e.target.checked)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                />
+                <Label htmlFor="is-foreign-payment" className="text-sm font-semibold cursor-pointer">
+                  ¿Es un pago al exterior / no residente? (Reporte 609)
+                </Label>
+              </div>
+
+              {isForeignPayment && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border p-3 rounded bg-blue-50/20 dark:bg-blue-950/10">
+                  <div className="space-y-1">
+                    <Label htmlFor="foreign-country">Código de País</Label>
+                    <Input
+                      id="foreign-country"
+                      placeholder="Ej. US, ES, CA"
+                      value={foreignCountry}
+                      onChange={(e) => setForeignCountry(e.target.value.toUpperCase())}
+                      maxLength={2}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="foreign-taxid">Tax ID / ID Tributario Extranjero</Label>
+                    <Input
+                      id="foreign-taxid"
+                      placeholder="Ej. 12-3456789"
+                      value={foreignTaxId}
+                      onChange={(e) => setForeignTaxId(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="foreign-payment-type">Tipo de Renta al Exterior</Label>
+                    <select
+                      id="foreign-payment-type"
+                      value={foreignPaymentType}
+                      onChange={(e) => setForeignPaymentType(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="01">01 - Honorarios / Servicios Independientes</option>
+                      <option value="02">02 - Intereses</option>
+                      <option value="03">03 - Regalías</option>
+                      <option value="04">04 - Dividendos / Utilidades</option>
+                      <option value="05">05 - Arrendamientos</option>
+                      <option value="06">06 - Enajenación de Bienes</option>
+                      <option value="07">07 - Seguros y Reaseguros</option>
+                      <option value="08">08 - Otras Rentas</option>
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div className="border p-4 rounded-md space-y-4 bg-muted/30">
                 <span className="text-xs font-semibold block border-b pb-1">Desglose de Montos (RD$)</span>

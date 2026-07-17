@@ -11,6 +11,6 @@ export interface IAccountRepository {
   findById(id: string, companyId: string): Promise<AccountEntity | null>;
   findByCompany(companyId: string, filters?: AccountFilters): Promise<AccountEntity[]>;
   findByCode(code: string, companyId: string): Promise<AccountEntity | null>;
-  create(data: Omit<AccountEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<AccountEntity>;
-  update(id: string, companyId: string, data: Partial<AccountEntity>): Promise<AccountEntity>;
+  create(data: Omit<AccountEntity, 'id' | 'createdAt' | 'updatedAt'>, tx?: any): Promise<AccountEntity>;
+  update(id: string, companyId: string, data: Partial<AccountEntity>, tx?: any): Promise<AccountEntity>;
 }

@@ -79,11 +79,14 @@ export default function DashboardPage() {
     );
   }
 
-  // Calculate totals
-  const totalInvoicesSum = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
-  const totalInvoicesItbis = invoices?.reduce((sum, inv) => sum + Number(inv.itbis), 0) || 0;
-  const totalExpensesSum = expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
-  const totalExpensesItbis = expenses?.reduce((sum, exp) => sum + Number(exp.itbis), 0) || 0;
+  // Calculate totals (excluding voided invoices and expenses)
+  const activeInvoices = invoices?.filter(inv => !inv.isVoided) || [];
+  const activeExpenses = expenses?.filter(exp => !exp.isVoided) || [];
+
+  const totalInvoicesSum = activeInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
+  const totalInvoicesItbis = activeInvoices.reduce((sum, inv) => sum + Number(inv.itbis), 0);
+  const totalExpensesSum = activeExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const totalExpensesItbis = activeExpenses.reduce((sum, exp) => sum + Number(exp.itbis), 0);
 
   const netCashFlow = totalInvoicesSum - totalExpensesSum;
   const itbisBalance = totalInvoicesItbis - totalExpensesItbis;
@@ -100,7 +103,7 @@ export default function DashboardPage() {
     };
   }).reverse();
 
-  invoices?.forEach((inv) => {
+  activeInvoices.forEach((inv) => {
     const dateStr = inv.date.substring(0, 7); // "YYYY-MM"
     const month = last6Months.find(m => m.monthKey === dateStr);
     if (month) {
@@ -108,7 +111,7 @@ export default function DashboardPage() {
     }
   });
 
-  expenses?.forEach((exp) => {
+  activeExpenses.forEach((exp) => {
     const dateStr = exp.date.substring(0, 7); // "YYYY-MM"
     const month = last6Months.find(m => m.monthKey === dateStr);
     if (month) {

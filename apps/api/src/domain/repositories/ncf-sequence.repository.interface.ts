@@ -7,5 +7,5 @@ export interface INcfSequenceRepository {
   findByType(companyId: string, type: NcfType): Promise<NcfSequenceEntity | null>;
   create(data: Omit<NcfSequenceEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<NcfSequenceEntity>;
   update(id: string, companyId: string, data: Partial<NcfSequenceEntity>): Promise<NcfSequenceEntity>;
-  increment(id: string, companyId: string): Promise<NcfSequenceEntity>;
+  increment(id: string, companyId: string, tx?: any): Promise<NcfSequenceEntity>;
 }

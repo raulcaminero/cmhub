@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IPayrollRepository } from '@domain/repositories/payroll.repository.interface';
 import { PayrollEntity, PayrollItemEntity } from '@domain/entities/payroll.entity';
@@ -126,8 +126,10 @@ export class PayrollRepository implements IPayrollRepository {
   async create(
     payroll: Omit<PayrollEntity, 'id' | 'createdAt' | 'updatedAt' | 'items'>,
     items: Omit<PayrollItemEntity, 'id' | 'payrollId' | 'createdAt' | 'updatedAt'>[],
+    tx?: any,
   ): Promise<PayrollEntity> {
-    const created = await this.prisma.payroll.create({
+    const client = tx || this.prisma;
+    const created = await client.payroll.create({
       data: {
         companyId: payroll.companyId,
         period: payroll.period,
@@ -175,7 +177,7 @@ export class PayrollRepository implements IPayrollRepository {
       journalEntryId: created.journalEntryId,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
-      items: created.items.map((it) => ({
+      items: created.items.map((it: any) => ({
         id: it.id,
         payrollId: it.payrollId,
         employeeId: it.employeeId,
@@ -193,8 +195,13 @@ export class PayrollRepository implements IPayrollRepository {
     };
   }
 
-  async delete(id: string, companyId: string): Promise<PayrollEntity> {
-    const deleted = await this.prisma.payroll.delete({
+  async delete(id: string, companyId: string, tx?: any): Promise<PayrollEntity> {
+    const client = tx || this.prisma;
+    const existing = await client.payroll.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Nómina no encontrada o acceso denegado.');
+    }
+    const deleted = await client.payroll.delete({
       where: { id },
       include: {
         items: {
@@ -208,18 +215,19 @@ export class PayrollRepository implements IPayrollRepository {
     // Also delete associated Journal Entry if exists
     if (deleted.journalEntryId) {
       try {
-        await this.prisma.journalEntry.delete({
+        await client.journalEntry.delete({
           where: { id: deleted.journalEntryId },
         });
       } catch (e) {
         console.warn(`Could not hard-delete journal entry ${deleted.journalEntryId}, attempting to void instead:`, e);
         try {
-          await this.prisma.journalEntry.update({
+          await client.journalEntry.update({
             where: { id: deleted.journalEntryId },
             data: { status: 'VOIDED' },
           });
         } catch (voidError) {
           console.error(`Failed to void journal entry ${deleted.journalEntryId}:`, voidError);
+          throw new BadRequestException('No se pudo eliminar ni anular el asiento contable asociado a la nómina.');
         }
       }
     }

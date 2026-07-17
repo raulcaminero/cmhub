@@ -29,28 +29,33 @@ export class ReportService {
   }
 
   async generate606Text(companyId: string, period: string): Promise<string> {
-    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
-    if (!company) throw new BadRequestException('Empresa no encontrada');
-
     const { startDate, endDate } = this.parsePeriod(period);
 
-    const expenses = await this.prisma.expense.findMany({
-      where: {
-        companyId,
-        date: { gte: startDate, lte: endDate },
-        isVoided: false,
-      },
-    });
+    const [company, expenses] = await Promise.all([
+      this.prisma.company.findUnique({ where: { id: companyId } }),
+      this.prisma.expense.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+        },
+      }),
+    ]);
+
+    if (!company) throw new BadRequestException('Empresa no encontrada');
 
     const header = `606|${company.rnc}|${period}|${expenses.length}`;
     const rows = expenses.map((exp) => {
       const typeId = exp.providerRnc.length === 9 ? '1' : exp.providerRnc.length === 11 ? '2' : '3';
       const formattedDate = new Date(exp.date).toISOString().split('T')[0].replace(/-/g, '');
-      const formattedPaymentDate = exp.paymentDate 
+      const formattedPaymentDate = exp.paymentDate && !exp.isVoided
         ? new Date(exp.paymentDate).toISOString().split('T')[0].replace(/-/g, '') 
         : '';
       
-      const subtotal = Number(exp.amount) - Number(exp.itbis);
+      const subtotal = exp.isVoided ? 0 : (Number(exp.amount) - Number(exp.itbis));
+      const total = exp.isVoided ? 0 : Number(exp.amount);
+      const itbis = exp.isVoided ? 0 : Number(exp.itbis);
+      const itbisRetained = exp.isVoided ? 0 : Number(exp.itbisRetained);
+      const isrRetained = exp.isVoided ? 0 : Number(exp.isrRetained);
       
       const expTypeNum = Number(exp.expenseType);
       const isServicio = (expTypeNum >= 1 && expTypeNum <= 7) || expTypeNum === 11;
@@ -64,22 +69,22 @@ export class ReportService {
         '', // NCF Modificado
         formattedDate,
         formattedPaymentDate,
-        isServicio ? subtotal.toFixed(2) : '0.00', // Servicios
-        !isServicio ? subtotal.toFixed(2) : '0.00', // Bienes
-        Number(exp.amount).toFixed(2),
-        Number(exp.itbis).toFixed(2),
-        Number(exp.itbisRetained).toFixed(2),
+        (isServicio && !exp.isVoided) ? subtotal.toFixed(2) : '0.00', // Servicios
+        (!isServicio && !exp.isVoided) ? subtotal.toFixed(2) : '0.00', // Bienes
+        total.toFixed(2),
+        itbis.toFixed(2),
+        itbisRetained.toFixed(2),
         '0.00', // Proporcionalidad
         '0.00', // ITBIS Costo
-        (Number(exp.itbis) - Number(exp.itbisRetained)).toFixed(2), // ITBIS por Adelantar
+        (itbis - itbisRetained).toFixed(2), // ITBIS por Adelantar
         '0.00', // ITBIS Percibido
-        Number(exp.isrRetained) > 0 ? '10' : '', // Tipo Retención ISR (10: Otras Rentas default)
-        Number(exp.isrRetained).toFixed(2),
+        (isrRetained > 0) ? '10' : '', // Tipo Retención ISR (10: Otras Rentas default)
+        isrRetained.toFixed(2),
         '0.00', // ISR Percibido
         '0.00', // ISC
         '0.00', // Tasas
         '0.00', // Propina
-        exp.paymentMethod,
+        exp.isVoided ? '' : exp.paymentMethod,
       ].join('|');
     });
 
@@ -87,18 +92,19 @@ export class ReportService {
   }
 
   async generate607Text(companyId: string, period: string): Promise<string> {
-    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
-    if (!company) throw new BadRequestException('Empresa no encontrada');
-
     const { startDate, endDate } = this.parsePeriod(period);
 
-    // Find invoices in the period
-    const invoices = await this.prisma.invoice.findMany({
-      where: {
-        companyId,
-        date: { gte: startDate, lte: endDate },
-      },
-    });
+    const [company, invoices] = await Promise.all([
+      this.prisma.company.findUnique({ where: { id: companyId } }),
+      this.prisma.invoice.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+        },
+      }),
+    ]);
+
+    if (!company) throw new BadRequestException('Empresa no encontrada');
 
     const header = `607|${company.rnc}|${period}|${invoices.length}`;
     
@@ -109,6 +115,8 @@ export class ReportService {
       const itbisAmount = inv.isVoided ? 0 : Number(inv.itbis);
       const totalAmount = inv.isVoided ? 0 : Number(inv.amount);
       const baseAmount = totalAmount - itbisAmount;
+      const itbisRetainedAmount = inv.isVoided ? 0 : Number(inv.itbisRetained || 0);
+      const isrRetainedAmount = inv.isVoided ? 0 : Number(inv.isrRetained || 0);
 
       return [
         inv.clientRnc,
@@ -120,14 +128,14 @@ export class ReportService {
         '', // Fecha Retención
         baseAmount.toFixed(2),
         itbisAmount.toFixed(2),
-        '0.00', // ITBIS Retenido
-        '0.00', // ISR Retenido
+        itbisRetainedAmount.toFixed(2),
+        isrRetainedAmount.toFixed(2),
         '0.00', // ITBIS Percibido
         '0.00', // ISR Percibido
         '0.00', // ISC
         '0.00', // Otros Impuestos
         '0.00', // Propina Legal
-        inv.paymentMethod, // Forma de pago real
+        inv.isVoided ? '' : inv.paymentMethod,
       ].join('|');
     });
 
@@ -137,35 +145,37 @@ export class ReportService {
   async getIt1Summary(companyId: string, period: string) {
     const { startDate, endDate } = this.parsePeriod(period);
 
-    // Sum purchases and ITBIS
-    const expenses = await this.prisma.expense.findMany({
-      where: {
-        companyId,
-        date: { gte: startDate, lte: endDate },
-        isVoided: false,
-      },
-    });
+    // Fetch purchases and sales in parallel
+    const [expenses, invoices] = await Promise.all([
+      this.prisma.expense.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+          isVoided: false,
+        },
+      }),
+      this.prisma.invoice.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+          isVoided: false,
+        },
+      }),
+    ]);
 
-    const purchasesAmount = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const purchasesAmount = expenses.reduce((sum, e) => sum + (Number(e.amount) - Number(e.itbis)), 0);
     const purchasesItbis = expenses.reduce((sum, e) => sum + Number(e.itbis), 0);
-
-    // Sum sales and ITBIS from invoices
-    const invoices = await this.prisma.invoice.findMany({
-      where: {
-        companyId,
-        date: { gte: startDate, lte: endDate },
-        isVoided: false,
-      },
-    });
 
     let salesAmount = 0;
     let salesItbis = 0;
+    let salesItbisRetained = 0;
 
     invoices.forEach((inv) => {
       const itbis = Number(inv.itbis);
       const total = Number(inv.amount);
       salesAmount += (total - itbis);
       salesItbis += itbis;
+      salesItbisRetained += Number(inv.itbisRetained || 0);
     });
 
     return {
@@ -174,36 +184,50 @@ export class ReportService {
       salesItbis,
       purchasesAmount,
       purchasesItbis,
-      itbisToPay: Math.max(0, salesItbis - purchasesItbis),
+      itbisToPay: Math.max(0, salesItbis - purchasesItbis - salesItbisRetained),
     };
   }
 
   async getFinancials(companyId: string) {
     const accounts = await this.accountRepository.findByCompany(companyId);
     
-    // Get all journal entry lines and group their net impact by account
-    const lines = await this.prisma.journalEntryLine.findMany({
+    // Group and aggregate journal entry line balances directly in the database
+    const groupedBalances = await this.prisma.journalEntryLine.groupBy({
+      by: ['accountId'],
       where: {
         journalEntry: {
           companyId,
           status: 'POSTED',
         },
       },
+      _sum: {
+        debit: true,
+        credit: true,
+      },
     });
 
     const balanceMap: Record<string, number> = {};
-    lines.forEach((line) => {
-      if (!balanceMap[line.accountId]) balanceMap[line.accountId] = 0;
-      balanceMap[line.accountId] += (Number(line.debit) - Number(line.credit));
+    groupedBalances.forEach((group) => {
+      const debit = Number(group._sum.debit || 0);
+      const credit = Number(group._sum.credit || 0);
+      balanceMap[group.accountId] = debit - credit;
+    });
+
+    // Map children for O(1) traversal during balance computation
+    const childrenMap = new Map<string, typeof accounts>();
+    accounts.forEach((acc) => {
+      if (acc.parentId) {
+        if (!childrenMap.has(acc.parentId)) {
+          childrenMap.set(acc.parentId, []);
+        }
+        childrenMap.get(acc.parentId)!.push(acc);
+      }
     });
 
     // Create a tree and compute node balances recursively
     const computeBalance = (accId: string, accType: string): number => {
-      const acc = accounts.find((a) => a.id === accId);
-      if (!acc) return 0;
-
       let netDebitCredit = balanceMap[accId] || 0;
-      const children = accounts.filter((a) => a.parentId === accId);
+      const children = childrenMap.get(accId) || [];
       
       children.forEach((child) => {
         netDebitCredit += computeBalance(child.id, accType);
@@ -300,5 +324,88 @@ export class ReportService {
     });
 
     return [header, ...rows].join('\r\n');
+  }
+
+  async getTaxFilings(companyId: string) {
+    return this.prisma.taxFiling.findMany({
+      where: { companyId },
+      orderBy: { period: 'desc' },
+    });
+  }
+
+  async createTaxFiling(companyId: string, dto: { period: string; taxType: string }) {
+    const { startDate, endDate } = this.parsePeriod(dto.period);
+
+    const [expenses, invoices] = await Promise.all([
+      this.prisma.expense.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+          isVoided: false,
+        },
+      }),
+      this.prisma.invoice.findMany({
+        where: {
+          companyId,
+          date: { gte: startDate, lte: endDate },
+          isVoided: false,
+        },
+      }),
+    ]);
+    const purchasesAmount = expenses.reduce((sum, e) => sum + (Number(e.amount) - Number(e.itbis)), 0);
+    const purchasesItbis = expenses.reduce((sum, e) => sum + Number(e.itbis), 0);
+    let salesAmount = 0;
+    let salesItbis = 0;
+    let salesItbisRetained = 0;
+    invoices.forEach((inv) => {
+      const itbis = Number(inv.itbis);
+      const total = Number(inv.amount);
+      salesAmount += (total - itbis);
+      salesItbis += itbis;
+      salesItbisRetained += Number(inv.itbisRetained || 0);
+    });
+
+    const itbisToPay = Math.max(0, salesItbis - purchasesItbis - salesItbisRetained);
+
+    return this.prisma.$transaction(async (tx) => {
+      const taxFiling = await tx.taxFiling.upsert({
+        where: {
+          companyId_period_taxType: {
+            companyId,
+            period: dto.period,
+            taxType: dto.taxType,
+          },
+        },
+        update: {
+          salesAmount,
+          salesItbis,
+          purchasesAmount,
+          purchasesItbis,
+          itbisToPay,
+          status: 'FILED',
+          filedAt: new Date(),
+        },
+        create: {
+          companyId,
+          period: dto.period,
+          taxType: dto.taxType,
+          salesAmount,
+          salesItbis,
+          purchasesAmount,
+          purchasesItbis,
+          itbisToPay,
+          status: 'FILED',
+          filedAt: new Date(),
+        },
+      });
+
+      // Auto-lock: Lock the company up to the end of the declared period
+      await tx.company.update({
+        where: { id: companyId },
+        data: { lockDate: endDate },
+      });
+
+      return taxFiling;
+    });
   }
 }

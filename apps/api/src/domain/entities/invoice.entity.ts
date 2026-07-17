@@ -14,6 +14,9 @@ export class InvoiceEntity {
   paymentMethod: string;
   journalEntryId: string | null;
   isVoided: boolean;
+  itbisRetained: number;
+  isrRetained: number;
+  costOfGoodsSold: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

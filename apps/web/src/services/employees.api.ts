@@ -21,7 +21,7 @@ export const employeesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getEmployees: builder.query<Employee[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/employees`,
-      providesTags: ['Company'],
+      providesTags: ['Employee'],
     }),
     createEmployee: builder.mutation<Employee, { companyId: string; body: CreateEmployeeDto }>({
       query: ({ companyId, body }) => ({
@@ -29,14 +29,14 @@ export const employeesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Company'],
+      invalidatesTags: ['Employee'],
     }),
     deleteEmployee: builder.mutation<Employee, { companyId: string; id: string }>({
       query: ({ companyId, id }) => ({
         url: `/companies/${companyId}/accounting/employees/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Company'],
+      invalidatesTags: ['Employee'],
     }),
   }),
 });

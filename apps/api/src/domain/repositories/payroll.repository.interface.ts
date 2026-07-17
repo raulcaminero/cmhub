@@ -6,7 +6,8 @@ export interface IPayrollRepository {
   findByCompany(companyId: string): Promise<PayrollEntity[]>;
   create(
     payroll: Omit<PayrollEntity, 'id' | 'createdAt' | 'updatedAt' | 'items'>,
-    items: Omit<PayrollItemEntity, 'id' | 'payrollId' | 'createdAt' | 'updatedAt'>[]
+    items: Omit<PayrollItemEntity, 'id' | 'payrollId' | 'createdAt' | 'updatedAt'>[],
+    tx?: any
   ): Promise<PayrollEntity>;
-  delete(id: string, companyId: string): Promise<PayrollEntity>;
+  delete(id: string, companyId: string, tx?: any): Promise<PayrollEntity>;
 }

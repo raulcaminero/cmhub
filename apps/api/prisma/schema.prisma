@@ -81,6 +81,7 @@ model Company {
   employees      Employee[]
   payrolls       Payroll[]
   bankTransactions BankTransaction[]
+  taxFilings     TaxFiling[]
 }
 
 model UserCompanyRole {
@@ -128,6 +129,9 @@ model JournalEntry {
   expense     Expense?
   invoice     Invoice?
   payrolls    Payroll[]
+
+  @@index([companyId, status])
+  @@index([companyId, date])
 }
 
 model Invoice {
@@ -144,10 +148,16 @@ model Invoice {
   paymentMethod  String
   journalEntryId String?       @unique
   isVoided       Boolean       @default(false)
+  itbisRetained  Decimal       @default(0) @db.Decimal(18, 2)
+  isrRetained    Decimal       @default(0) @db.Decimal(18, 2)
+  costOfGoodsSold Decimal?     @db.Decimal(18, 2)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, date])
+  @@index([companyId, isVoided, date])
 }
 
 model Expense {
@@ -174,6 +184,10 @@ model Expense {
   updatedAt      DateTime      @updatedAt
   company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, date])
+  @@index([companyId, isVoided, date])
+  @@index([companyId, isForeignPayment])
 }
 
 model JournalEntryLine {
@@ -186,6 +200,9 @@ model JournalEntryLine {
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   account        Account      @relation(fields: [accountId], references: [id])
   bankTransactions BankTransaction[]
+
+  @@index([journalEntryId])
+  @@index([accountId])
 }
 
 model NcfSequence {
@@ -293,4 +310,24 @@ model BankTransaction {
   company             Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   account             Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
   journalEntryLine    JournalEntryLine? @relation(fields: [journalEntryLineId], references: [id])
+
+  @@index([companyId, accountId, reconciled])
+  @@index([companyId, accountId, date])
+}
+
+model TaxFiling {
+  id              String    @id @default(cuid())
+  companyId       String
+  period          String    // Formato: AAAAMM (ej: 202607)
+  taxType         String    // ej: 'IT1'
+  salesAmount     Decimal   @db.Decimal(18, 2)
+  salesItbis      Decimal   @db.Decimal(18, 2)
+  purchasesAmount Decimal   @db.Decimal(18, 2)
+  purchasesItbis  Decimal   @db.Decimal(18, 2)
+  itbisToPay      Decimal   @db.Decimal(18, 2)
+  status          String    @default("FILED")
+  filedAt         DateTime  @default(now())
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, period, taxType])
 }

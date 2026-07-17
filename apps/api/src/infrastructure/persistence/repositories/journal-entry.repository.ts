@@ -58,7 +58,7 @@ export class JournalEntryRepository implements IJournalEntryRepository {
     return entries.map(mapJournalEntry);
   }
 
-  async create(data: CreateJournalEntryData): Promise<JournalEntryEntity> {
+  async create(data: CreateJournalEntryData, tx?: any): Promise<JournalEntryEntity> {
     // Validate double entry balance
     const totalDebit = data.lines.reduce((sum, l) => sum + Number(l.debit), 0);
     const totalCredit = data.lines.reduce((sum, l) => sum + Number(l.credit), 0);
@@ -69,7 +69,8 @@ export class JournalEntryRepository implements IJournalEntryRepository {
       );
     }
 
-    const entry = await this.prisma.journalEntry.create({
+    const client = tx || this.prisma;
+    const entry = await client.journalEntry.create({
       data: {
         companyId: data.companyId,
         date: data.date,
@@ -82,8 +83,9 @@ export class JournalEntryRepository implements IJournalEntryRepository {
     return mapJournalEntry(entry);
   }
 
-  async post(id: string, companyId: string): Promise<JournalEntryEntity> {
-    const entry = await this.prisma.journalEntry.update({
+  async post(id: string, companyId: string, tx?: any): Promise<JournalEntryEntity> {
+    const client = tx || this.prisma;
+    const entry = await client.journalEntry.update({
       where: { id, companyId },
       data: { status: JournalEntryStatus.POSTED },
       include: { lines: true },
@@ -91,8 +93,9 @@ export class JournalEntryRepository implements IJournalEntryRepository {
     return mapJournalEntry(entry);
   }
 
-  async void(id: string, companyId: string): Promise<JournalEntryEntity> {
-    const entry = await this.prisma.journalEntry.update({
+  async void(id: string, companyId: string, tx?: any): Promise<JournalEntryEntity> {
+    const client = tx || this.prisma;
+    const entry = await client.journalEntry.update({
       where: { id, companyId },
       data: { status: JournalEntryStatus.VOIDED },
       include: { lines: true },

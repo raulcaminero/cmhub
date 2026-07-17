@@ -1,5 +1,5 @@
 import type { Contact as PrismaContact } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IContactRepository } from '@domain/repositories/contact.repository.interface';
 import { ContactEntity, ContactType } from '@domain/entities/contact.entity';
@@ -61,6 +61,10 @@ export class ContactRepository implements IContactRepository {
     companyId: string,
     data: Partial<Omit<ContactEntity, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>>,
   ): Promise<ContactEntity> {
+    const existing = await this.prisma.contact.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Contacto no encontrado o acceso denegado.');
+    }
     const contact = await this.prisma.contact.update({
       where: { id },
       data,
@@ -69,6 +73,10 @@ export class ContactRepository implements IContactRepository {
   }
 
   async delete(id: string, companyId: string): Promise<ContactEntity> {
+    const existing = await this.prisma.contact.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Contacto no encontrado o acceso denegado.');
+    }
     const contact = await this.prisma.contact.delete({
       where: { id },
     });

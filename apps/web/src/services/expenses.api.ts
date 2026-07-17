@@ -16,6 +16,10 @@ export interface Expense {
   paymentMethod: string;
   journalEntryId: string | null;
   isVoided: boolean;
+  isForeignPayment: boolean;
+  foreignCountry: string | null;
+  foreignTaxId: string | null;
+  foreignPaymentType: string | null;
   createdAt: string;
 }
 
@@ -32,6 +36,10 @@ export interface CreateExpenseDto {
   isrRetained?: number;
   paymentMethod: string;
   bankAccountId?: string;
+  isForeignPayment?: boolean;
+  foreignCountry?: string;
+  foreignTaxId?: string;
+  foreignPaymentType?: string;
 }
 
 export const expensesApi = api.injectEndpoints({

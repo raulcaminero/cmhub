@@ -21,6 +21,20 @@ const SFS_RATE_EMP = 0.0304; // 3.04%
 const SFS_RATE_PAT = 0.0709; // 7.09%
 const ARL_RATE_PAT = 0.011;  // 1.1%
 
+interface IsrBracket {
+  limit: number;
+  rate: number;
+  base: number;
+  excess: number;
+}
+
+const ISR_BRACKETS: IsrBracket[] = [
+  { limit: 416220, rate: 0.00, base: 0, excess: 0 },
+  { limit: 624329, rate: 0.15, base: 0, excess: 416220 },
+  { limit: 867123, rate: 0.20, base: 31216, excess: 624329 },
+  { limit: Infinity, rate: 0.25, base: 79776, excess: 867123 },
+];
+
 @Injectable()
 export class PayrollService {
   constructor(
@@ -43,17 +57,9 @@ export class PayrollService {
     // 2. ISR Calculation (IR-3 Scale based on taxable salary: salary - AFP - SFS)
     const taxableSalary = salary - afpEmployee - sfsEmployee;
     const annualTaxable = taxableSalary * 12;
-    let annualIsr = 0;
-
-    if (annualTaxable <= 416220) {
-      annualIsr = 0;
-    } else if (annualTaxable <= 624329) {
-      annualIsr = (annualTaxable - 416220) * 0.15;
-    } else if (annualTaxable <= 867123) {
-      annualIsr = 31216 + (annualTaxable - 624329) * 0.20;
-    } else {
-      annualIsr = 79776 + (annualTaxable - 867123) * 0.25;
-    }
+    
+    const bracket = ISR_BRACKETS.find((b) => annualTaxable <= b.limit) || ISR_BRACKETS[ISR_BRACKETS.length - 1];
+    const annualIsr = bracket.base + (annualTaxable - bracket.excess) * bracket.rate;
 
     const isrDeduction = Number((annualIsr / 12).toFixed(2));
     const netSalary = Number((salary - afpEmployee - sfsEmployee - isrDeduction).toFixed(2));
@@ -89,15 +95,17 @@ export class PayrollService {
   }
 
   async createPayroll(companyId: string, dto: CreatePayrollDto) {
-    await checkPeriodLock(this.prisma, companyId, new Date());
-    // Check if payroll already exists for this period
-    const existing = await this.payrollRepository.findByPeriod(companyId, dto.period);
+    const [, existing, employees, accounts] = await Promise.all([
+      checkPeriodLock(this.prisma, companyId, new Date()),
+      this.payrollRepository.findByPeriod(companyId, dto.period),
+      this.employeeRepository.findByCompany(companyId),
+      this.accountRepository.findByCompany(companyId),
+    ]);
+
     if (existing) {
       throw new BadRequestException(`Ya existe una nómina registrada para el período ${dto.period}.`);
     }
 
-    // Get all employees of the company
-    const employees = await this.employeeRepository.findByCompany(companyId);
     if (employees.length === 0) {
       throw new BadRequestException('No hay empleados registrados en esta empresa para generar la nómina.');
     }
@@ -133,9 +141,6 @@ export class PayrollService {
         netSalary: taxes.netSalary,
       };
     });
-
-    // Resolve double-entry accounts
-    const accounts = await this.accountRepository.findByCompany(companyId);
     
     // Debit: Gastos de Personal (6101)
     let salaryExpenseAcc = accounts.find((a) => a.code === '6101');
@@ -164,65 +169,68 @@ export class PayrollService {
 
     // Create journal entry representing the payroll run
     const entryDate = new Date();
-    const entry = await this.journalEntryRepository.create({
-      companyId,
-      date: entryDate,
-      description: `Registro de Nómina y Seguridad Social - Período ${dto.period}`,
-      reference: `NOM-${dto.period}`,
-      lines: [
-        {
-          accountId: salaryExpenseAcc.id,
-          debit: totalGross,
-          credit: 0,
-          description: 'Salario Bruto del Período',
-        },
-        {
-          accountId: salaryExpenseAcc.id,
-          debit: totalEmployerTssExpense,
-          credit: 0,
-          description: 'TSS Patronal del Período',
-        },
-        {
-          accountId: retentionAcc.id,
-          debit: 0,
-          credit: totalTssLiability,
-          description: 'Seguridad Social (TSS) por Pagar',
-        },
-        {
-          accountId: retentionAcc.id,
-          debit: 0,
-          credit: totalIsr,
-          description: 'Retenciones ISR Empleados (IR-3)',
-        },
-        {
-          accountId: cashAcc.id,
-          debit: 0,
-          credit: totalNet,
-          description: 'Pago de Salarios Netos',
-        },
-      ],
-    });
-
-    // Approve/Post the journal entry to balance accounts
-    await this.journalEntryRepository.post(entry.id, companyId);
-
-    // Save Payroll consolidated record with items
-    return this.payrollRepository.create(
-      {
+    return this.prisma.$transaction(async (tx) => {
+      const entry = await this.journalEntryRepository.create({
         companyId,
-        period: dto.period,
-        grossSalary: totalGross,
-        sfsEmployee: totalSfsEmp,
-        sfsEmployer: totalSfsPat,
-        afpEmployee: totalAfpEmp,
-        afpEmployer: totalAfpPat,
-        arlEmployer: totalArlPat,
-        isrDeduction: totalIsr,
-        netSalary: totalNet,
-        journalEntryId: entry.id,
-      },
-      items,
-    );
+        date: entryDate,
+        description: `Registro de Nómina y Seguridad Social - Período ${dto.period}`,
+        reference: `NOM-${dto.period}`,
+        lines: [
+          {
+            accountId: salaryExpenseAcc.id,
+            debit: totalGross,
+            credit: 0,
+            description: 'Salario Bruto del Período',
+          },
+          {
+            accountId: salaryExpenseAcc.id,
+            debit: totalEmployerTssExpense,
+            credit: 0,
+            description: 'TSS Patronal del Período',
+          },
+          {
+            accountId: retentionAcc.id,
+            debit: 0,
+            credit: totalTssLiability,
+            description: 'Seguridad Social (TSS) por Pagar',
+          },
+          {
+            accountId: retentionAcc.id,
+            debit: 0,
+            credit: totalIsr,
+            description: 'Retenciones ISR Empleados (IR-3)',
+          },
+          {
+            accountId: cashAcc.id,
+            debit: 0,
+            credit: totalNet,
+            description: 'Pago de Salarios Netos',
+          },
+        ],
+      }, tx);
+
+      // Approve/Post the journal entry to balance accounts
+      await this.journalEntryRepository.post(entry.id, companyId, tx);
+
+      // Save Payroll consolidated record with items
+      return this.payrollRepository.create(
+        {
+          companyId,
+          period: dto.period,
+          grossSalary: totalGross,
+          sfsEmployee: totalSfsEmp,
+          sfsEmployer: totalSfsPat,
+          afpEmployee: totalAfpEmp,
+          afpEmployer: totalAfpPat,
+          arlEmployer: totalArlPat,
+          isrDeduction: totalIsr,
+          netSalary: totalNet,
+          journalEntryId: entry.id,
+        },
+        items,
+        tx,
+      );
+    });
   }
 
   async deletePayroll(companyId: string, id: string) {
@@ -230,7 +238,14 @@ export class PayrollService {
     if (!existing) {
       throw new BadRequestException('Nómina no encontrada.');
     }
-    await checkPeriodLock(this.prisma, companyId, existing.createdAt);
-    return this.payrollRepository.delete(id, companyId);
+    
+    // Parse period (e.g., "2026-07") to Date for period lock validation
+    const [year, month] = existing.period.split('-').map(Number);
+    const periodDate = new Date(year, month - 1, 1);
+
+    await checkPeriodLock(this.prisma, companyId, periodDate);
+    return this.prisma.$transaction(async (tx) => {
+      return this.payrollRepository.delete(id, companyId, tx);
+    });
   }
 }
