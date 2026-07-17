@@ -34,14 +34,22 @@ export class ExpenseService {
     if (!existing) {
       throw new BadRequestException('Gasto no encontrado.');
     }
-    await checkPeriodLock(this.prisma, companyId, existing.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, existing.date);
     return this.prisma.$transaction(async (tx) => {
       return this.expenseRepository.delete(id, companyId, tx);
     });
   }
 
   async payExpense(companyId: string, id: string, dto: PayExpenseDto) {
-    await checkPeriodLock(this.prisma, companyId, dto.paymentDate);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, dto.paymentDate);
     const expense = await this.expenseRepository.findById(id, companyId);
     if (!expense) throw new BadRequestException('Gasto no encontrado.');
     if (expense.paymentMethod !== PaymentMethod.CREDIT) {
@@ -100,7 +108,10 @@ export class ExpenseService {
 
   async createExpense(companyId: string, dto: CreateExpenseDto) {
     const [, , accounts] = await Promise.all([
-      checkPeriodLock(this.prisma, companyId, dto.date),
+      this.prisma.company.findUnique({
+        where: { id: companyId },
+        select: { lockDate: true },
+      }).then(company => checkPeriodLock(company?.lockDate, dto.date)),
       this.contactService.findOrCreateContact(
         companyId,
         dto.providerRnc,
@@ -268,7 +279,11 @@ export class ExpenseService {
     if (!expense) throw new BadRequestException('Gasto no encontrado.');
     if (expense.isVoided) throw new BadRequestException('Este gasto ya está anulado.');
 
-    await checkPeriodLock(this.prisma, companyId, expense.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, expense.date);
 
     return this.prisma.$transaction(async (tx) => {
       // Void associated Journal Entry

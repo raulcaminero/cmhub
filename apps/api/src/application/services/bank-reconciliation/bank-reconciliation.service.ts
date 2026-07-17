@@ -28,6 +28,9 @@ export class BankReconciliationService {
     if (lines.length <= 1) {
       throw new BadRequestException('El archivo CSV está vacío.');
     }
+    if (lines.length > 5000) {
+      throw new BadRequestException('El archivo CSV excede el límite máximo permitido de 5,000 líneas.');
+    }
 
     // Header inspection
     const header = lines[0].toLowerCase();

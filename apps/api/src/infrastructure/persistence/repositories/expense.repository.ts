@@ -78,16 +78,13 @@ export class ExpenseRepository implements IExpenseRepository {
       data: {
         providerRnc: data.providerRnc,
         providerName: data.providerName,
-        ncf: data.ncf,
-        expenseType: data.expenseType,
         date: data.date,
         paymentDate: data.paymentDate,
         amount: data.amount,
         itbis: data.itbis,
+        paymentMethod: data.paymentMethod,
         itbisRetained: data.itbisRetained,
         isrRetained: data.isrRetained,
-        paymentMethod: data.paymentMethod,
-        journalEntryId: data.journalEntryId,
       },
     });
     return mapExpense(expense);

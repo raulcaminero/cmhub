@@ -7,6 +7,7 @@ import { useGetContactsQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType } from '@cmhub/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { validarDocFiscal } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,6 +116,8 @@ export function InvoicesView() {
     const found = contacts?.find((c) => c.rnc === clean);
     if (found) {
       setClientName(found.name);
+    } else {
+      setClientName('');
     }
   }
   const [errorMessage, setErrorMessage] = useState('');
@@ -140,8 +143,8 @@ export function InvoicesView() {
     setErrorMessage('');
 
     const cleanRnc = clientRnc.replace(/\D/g, '');
-    if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
-      setErrorMessage('El RNC/Cédula del cliente debe tener 9 o 11 dígitos.');
+    if (!validarDocFiscal(cleanRnc)) {
+      setErrorMessage('El RNC/Cédula del cliente ingresado no es válido (debe tener 9 u 11 dígitos y cumplir con el dígito verificador).');
       return;
     }
 

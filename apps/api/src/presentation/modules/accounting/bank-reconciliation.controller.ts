@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { BankReconciliationService } from '@application/services/bank-reconciliation/bank-reconciliation.service';
+import { ImportCsvDto, AutoMatchDto, ReconcileManuallyDto } from '@application/dtos/reconciliation/reconciliation.dto';
 
 @ApiTags('reconciliation')
 @ApiBearerAuth()
@@ -21,43 +22,34 @@ export class BankReconciliationController {
   @ApiOperation({ summary: 'Import bank statement CSV' })
   importCsv(
     @Param('companyId') companyId: string,
-    @Body() body: { accountId: string; csvContent: string }
+    @Body() dto: ImportCsvDto
   ) {
-    if (!body.accountId || !body.csvContent) {
-      throw new BadRequestException('Se requieren accountId y csvContent.');
-    }
-    return this.reconciliationService.importCsvStatement(companyId, body.accountId, body.csvContent);
+    return this.reconciliationService.importCsvStatement(companyId, dto.accountId, dto.csvContent);
   }
 
   @Post('auto-match')
   @ApiOperation({ summary: 'Run automatic bank reconciliation matching' })
   autoMatch(
     @Param('companyId') companyId: string,
-    @Body() body: { accountId: string }
+    @Body() dto: AutoMatchDto
   ) {
-    if (!body.accountId) {
-      throw new BadRequestException('Se requiere accountId.');
-    }
-    return this.reconciliationService.autoMatch(companyId, body.accountId);
+    return this.reconciliationService.autoMatch(companyId, dto.accountId);
   }
 
   @Post('match')
   @ApiOperation({ summary: 'Manually reconcile a bank transaction with a ledger line' })
   reconcileManually(
     @Param('companyId') companyId: string,
-    @Body() body: { bankTransactionId: string; journalEntryLineId: string }
+    @Body() dto: ReconcileManuallyDto
   ) {
-    if (!body.bankTransactionId || !body.journalEntryLineId) {
-      throw new BadRequestException('Se requieren bankTransactionId y journalEntryLineId.');
-    }
     return this.reconciliationService.reconcileManually(
       companyId,
-      body.bankTransactionId,
-      body.journalEntryLineId
+      dto.bankTransactionId,
+      dto.journalEntryLineId
     );
   }
 
-  @Post('unmatch/:id')
+  @Delete('unmatch/:id')
   @ApiOperation({ summary: 'Unreconcile a bank transaction' })
   unreconcile(
     @Param('companyId') companyId: string,

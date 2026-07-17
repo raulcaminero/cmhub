@@ -167,7 +167,7 @@ export default function DashboardPage() {
             <ArrowUpRight className="w-4 h-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">Total acumulado facturado</p>
           </CardContent>
         </Card>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             <ArrowDownRight className="w-4 h-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">Total registrado de egresos</p>
           </CardContent>
         </Card>
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+            <div className="text-2xl font-bold text-[#0a1128]">
               RD$ {netCashFlow.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">Beneficio neto calculado</p>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
             <Receipt className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${itbisBalance >= 0 ? 'text-amber-600' : 'text-green-600'}`}>
+            <div className="text-2xl font-bold text-[#0a1128]">
               RD$ {itbisBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                         {/* Income Bar */}
                         <div 
                           style={{ height: `${Math.max(incHeight, 4)}px` }} 
-                          className="w-4 bg-green-500 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
+                          className="w-4 bg-primary/80 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
                             RD$ {m.income.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
@@ -254,7 +254,7 @@ export default function DashboardPage() {
                         {/* Expense Bar */}
                         <div 
                           style={{ height: `${Math.max(expHeight, 4)}px` }} 
-                          className="w-4 bg-red-500 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
+                          className="w-4 bg-slate-400 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
                             RD$ {m.expense.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
@@ -271,11 +271,11 @@ export default function DashboardPage() {
             {/* Legend */}
             <div className="flex items-center gap-6 mt-4 justify-center text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <div className="w-3 h-3 bg-primary/80 rounded-sm"></div>
                 <span className="text-muted-foreground">Ventas / Ingresos</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <div className="w-3 h-3 bg-slate-400 rounded-sm"></div>
                 <span className="text-muted-foreground">Gastos / Egresos</span>
               </div>
             </div>

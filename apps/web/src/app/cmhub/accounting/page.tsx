@@ -10,7 +10,9 @@ import { ReconciliationView } from '@/components/features/accounting/reconciliat
 import { Button } from '@/components/ui/button';
 import { FileText, Receipt, Users, Landmark } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetAccountsQuery, useGetJournalEntriesQuery } from '@/services/accounting.api';
+import { useGetAccountsQuery } from '@/services/accounting.api';
+import { useGetFinancialsQuery } from '@/services/reports.api';
+import { useGetInvoicesQuery } from '@/services/invoices.api';
 
 export default function AccountingPage() {
   const [activeTab, setActiveTab] = useState<'entries' | 'invoices' | 'payroll' | 'reconciliation'>('entries');
@@ -22,7 +24,12 @@ export default function AccountingPage() {
     { skip: !companyId || !mounted },
   );
 
-  const { data: entries } = useGetJournalEntriesQuery(
+  const { data: financials } = useGetFinancialsQuery(
+    { companyId: companyId! },
+    { skip: !companyId || !mounted },
+  );
+
+  const { data: invoices } = useGetInvoicesQuery(
     { companyId: companyId! },
     { skip: !companyId || !mounted },
   );
@@ -50,32 +57,27 @@ export default function AccountingPage() {
   let totalPatrimonio = 0;
   let totalIngresos = 0;
 
-  if (accounts && entries) {
-    const accountTypeMap: Record<string, string> = {};
-    accounts.forEach((acc) => {
-      accountTypeMap[acc.id] = acc.type;
+  if (financials) {
+    financials.balanceSheet.forEach((acc) => {
+      if (acc.type === 'ASSET') {
+        totalActivos += acc.balance;
+      } else if (acc.type === 'LIABILITY') {
+        totalPasivos += acc.balance;
+      } else if (acc.type === 'EQUITY') {
+        totalPatrimonio += acc.balance;
+      }
     });
+  }
 
-    entries.forEach((entry) => {
-      entry.lines.forEach((line) => {
-        const type = accountTypeMap[line.accountId];
-        const debit = Number(line.debit) || 0;
-        const credit = Number(line.credit) || 0;
-
-        if (type === 'ASSET') {
-          totalActivos += (debit - credit);
-        } else if (type === 'LIABILITY') {
-          totalPasivos += (credit - debit);
-        } else if (type === 'EQUITY') {
-          totalPatrimonio += (credit - debit);
-        } else if (type === 'REVENUE') {
-          const entryDate = new Date(entry.date);
-          const now = new Date();
-          if (entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear()) {
-            totalIngresos += (credit - debit);
-          }
+  if (invoices) {
+    const now = new Date();
+    invoices.forEach((inv) => {
+      if (!inv.isVoided) {
+        const invDate = new Date(inv.date);
+        if (invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear()) {
+          totalIngresos += Number(inv.amount);
         }
-      });
+      }
     });
   }
 

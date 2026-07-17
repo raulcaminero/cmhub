@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportService } from '@application/services/report/report.service';
+import { CreateTaxFilingDto } from '@application/dtos/report/create-tax-filing.dto';
 
 @ApiTags('reports')
 @ApiBearerAuth()
@@ -83,7 +84,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Submit tax filing for a period (will lock period)' })
   createTaxFiling(
     @Param('companyId') companyId: string,
-    @Body() dto: { period: string; taxType: string },
+    @Body() dto: CreateTaxFilingDto,
   ) {
     return this.reportService.createTaxFiling(companyId, dto);
   }
