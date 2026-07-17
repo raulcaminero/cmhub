@@ -33,7 +33,10 @@ export class InvoiceService {
 
   async createInvoice(companyId: string, dto: CreateInvoiceDto) {
     const [, , accounts] = await Promise.all([
-      checkPeriodLock(this.prisma, companyId, new Date()),
+      this.prisma.company.findUnique({
+        where: { id: companyId },
+        select: { lockDate: true },
+      }).then(company => checkPeriodLock(company?.lockDate, new Date())),
       this.contactService.findOrCreateContact(
         companyId,
         dto.clientRnc,
@@ -207,7 +210,11 @@ export class InvoiceService {
   }
 
   async collectInvoice(companyId: string, id: string, dto: CollectInvoiceDto) {
-    await checkPeriodLock(this.prisma, companyId, dto.paymentDate);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, dto.paymentDate);
     const invoice = await this.invoiceRepository.findById(id, companyId);
     if (!invoice) throw new BadRequestException('Factura no encontrada.');
     if (invoice.paymentMethod !== PaymentMethod.CREDIT) {
@@ -269,7 +276,11 @@ export class InvoiceService {
     if (!invoice) throw new BadRequestException('Factura no encontrada.');
     if (invoice.isVoided) throw new BadRequestException('Esta factura ya está anulada.');
 
-    await checkPeriodLock(this.prisma, companyId, invoice.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, invoice.date);
 
     return this.prisma.$transaction(async (tx) => {
       // Void associated Journal Entry

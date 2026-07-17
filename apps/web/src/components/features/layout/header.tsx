@@ -29,12 +29,15 @@ export function Header() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize form fields when profile data loads
+  // Initialize form fields when profile data loads or modal is opened
   useEffect(() => {
-    if (profile) {
+    if (profile && modalOpen) {
       setFirstName(profile.firstName);
       setLastName(profile.lastName);
       setEmail(profile.email);
+      setPassword('');
+      setSuccessMessage('');
+      setErrorMessage('');
     }
   }, [profile, modalOpen]);
 

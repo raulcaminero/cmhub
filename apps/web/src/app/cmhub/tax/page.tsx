@@ -143,22 +143,21 @@ export default function TaxPage() {
   };
 
   // Tax Calendar Deadlines calculation based on selected period
-  const getDeadlineDate = (day: number) => {
+  const getNextMonthDeadline = (day: number): Date => {
     const year = parseInt(selectedYear);
     const month = parseInt(selectedMonth); // 1-12
-    // Deadline is the next month
     const targetMonth = month === 12 ? 0 : month;
     const targetYear = month === 12 ? year + 1 : year;
-    const date = new Date(targetYear, targetMonth, day);
+    return new Date(targetYear, targetMonth, day);
+  };
+
+  const getDeadlineDate = (day: number) => {
+    const date = getNextMonthDeadline(day);
     return date.toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const getDaysRemaining = (day: number) => {
-    const year = parseInt(selectedYear);
-    const month = parseInt(selectedMonth);
-    const targetMonth = month === 12 ? 0 : month;
-    const targetYear = month === 12 ? year + 1 : year;
-    const deadline = new Date(targetYear, targetMonth, day);
+    const deadline = getNextMonthDeadline(day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diffTime = deadline.getTime() - today.getTime();

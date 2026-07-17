@@ -75,7 +75,7 @@ export const reconciliationApi = api.injectEndpoints({
     unmatchReconciliation: builder.mutation<BankTransaction, { companyId: string; id: string }>({
       query: ({ companyId, id }) => ({
         url: `/companies/${companyId}/accounting/reconciliation/unmatch/${id}`,
-        method: 'POST',
+        method: 'DELETE',
       }),
       invalidatesTags: ['JournalEntry', 'Account'],
     }),

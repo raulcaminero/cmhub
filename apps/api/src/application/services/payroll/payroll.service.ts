@@ -96,7 +96,10 @@ export class PayrollService {
 
   async createPayroll(companyId: string, dto: CreatePayrollDto) {
     const [, existing, employees, accounts] = await Promise.all([
-      checkPeriodLock(this.prisma, companyId, new Date()),
+      this.prisma.company.findUnique({
+        where: { id: companyId },
+        select: { lockDate: true },
+      }).then(company => checkPeriodLock(company?.lockDate, new Date())),
       this.payrollRepository.findByPeriod(companyId, dto.period),
       this.employeeRepository.findByCompany(companyId),
       this.accountRepository.findByCompany(companyId),
@@ -243,7 +246,11 @@ export class PayrollService {
     const [year, month] = existing.period.split('-').map(Number);
     const periodDate = new Date(year, month - 1, 1);
 
-    await checkPeriodLock(this.prisma, companyId, periodDate);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, periodDate);
     return this.prisma.$transaction(async (tx) => {
       return this.payrollRepository.delete(id, companyId, tx);
     });

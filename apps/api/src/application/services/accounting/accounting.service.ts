@@ -41,7 +41,11 @@ export class AccountingService {
   }
 
   async createJournalEntry(companyId: string, dto: CreateJournalEntryDto) {
-    await checkPeriodLock(this.prisma, companyId, dto.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, dto.date);
     this.validateDoubleEntry(dto.lines);
 
     return this.journalEntryRepository.create({
@@ -72,14 +76,22 @@ export class AccountingService {
   async postJournalEntry(companyId: string, id: string) {
     const entry = await this.journalEntryRepository.findById(id, companyId);
     if (!entry) throw new BadRequestException('Asiento no encontrado');
-    await checkPeriodLock(this.prisma, companyId, entry.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, entry.date);
     return this.journalEntryRepository.post(id, companyId);
   }
 
   async voidJournalEntry(companyId: string, id: string) {
     const entry = await this.journalEntryRepository.findById(id, companyId);
     if (!entry) throw new BadRequestException('Asiento no encontrado');
-    await checkPeriodLock(this.prisma, companyId, entry.date);
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    checkPeriodLock(company?.lockDate, entry.date);
     return this.journalEntryRepository.void(id, companyId);
   }
 
