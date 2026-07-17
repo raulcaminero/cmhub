@@ -1,4 +1,4 @@
-export function setCookie(name: string, value: string, days = 7) {
+export function setCookie(name: string, value: string, days = 7): void {
   if (typeof document === 'undefined') return;
   let expires = '';
   if (days) {
@@ -6,7 +6,8 @@ export function setCookie(name: string, value: string, days = 7) {
     date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
     expires = '; expires=' + date.toUTCString();
   }
-  document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax';
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax' + secure;
 }
 
 export function getCookie(name: string): string | null {
@@ -21,7 +22,8 @@ export function getCookie(name: string): string | null {
   return null;
 }
 
-export function eraseCookie(name: string) {
+export function eraseCookie(name: string): void {
   if (typeof document === 'undefined') return;
-  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax' + secure;
 }

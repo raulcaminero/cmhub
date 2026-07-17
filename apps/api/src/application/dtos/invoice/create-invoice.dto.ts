@@ -34,4 +34,19 @@ export class CreateInvoiceDto {
   @IsString()
   @IsOptional()
   bankAccountId?: string;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  costOfGoodsSold?: number;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  itbisRetained?: number;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  isrRetained?: number;
 }

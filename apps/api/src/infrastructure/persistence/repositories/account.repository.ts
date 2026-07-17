@@ -1,5 +1,5 @@
 import type { Account as PrismaAccount } from '@prisma/client';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IAccountRepository, AccountFilters } from '@domain/repositories/account.repository.interface';
 import { AccountEntity } from '@domain/entities/account.entity';
@@ -39,13 +39,19 @@ export class AccountRepository implements IAccountRepository {
     return account ? mapAccount(account) : null;
   }
 
-  async create(data: Omit<AccountEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<AccountEntity> {
-    const account = await this.prisma.account.create({ data });
+  async create(data: Omit<AccountEntity, 'id' | 'createdAt' | 'updatedAt'>, tx?: any): Promise<AccountEntity> {
+    const client = tx || this.prisma;
+    const account = await client.account.create({ data });
     return mapAccount(account);
   }
 
-  async update(id: string, companyId: string, data: Partial<AccountEntity>): Promise<AccountEntity> {
-    const account = await this.prisma.account.update({ where: { id }, data });
+  async update(id: string, companyId: string, data: Partial<AccountEntity>, tx?: any): Promise<AccountEntity> {
+    const client = tx || this.prisma;
+    const existing = await client.account.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Cuenta no encontrada o acceso denegado.');
+    }
+    const account = await client.account.update({ where: { id }, data });
     return mapAccount(account);
   }
 }

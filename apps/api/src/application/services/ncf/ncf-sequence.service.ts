@@ -32,7 +32,7 @@ export class NcfSequenceService {
     });
   }
 
-  async generateNextNcf(companyId: string, type: NcfType): Promise<string> {
+  async generateNextNcf(companyId: string, type: NcfType, tx?: any): Promise<string> {
     const seq = await this.ncfSequenceRepository.findByType(companyId, type);
     if (!seq) {
       throw new BadRequestException(`No active NCF sequence found for type ${type}. Please register it first.`);
@@ -54,7 +54,7 @@ export class NcfSequenceService {
       );
     }
 
-    const updatedSeq = await this.ncfSequenceRepository.increment(seq.id, companyId);
+    const updatedSeq = await this.ncfSequenceRepository.increment(seq.id, companyId, tx);
 
     if (updatedSeq.current > seq.max) {
       throw new BadRequestException(

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportService } from '@application/services/report/report.service';
@@ -71,5 +71,20 @@ export class ReportsController {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=DGII_609_${period}.txt`);
     return res.send(text);
+  }
+
+  @Get('tax-filings')
+  @ApiOperation({ summary: 'Get historical tax filings list' })
+  getTaxFilings(@Param('companyId') companyId: string) {
+    return this.reportService.getTaxFilings(companyId);
+  }
+
+  @Post('tax-filings')
+  @ApiOperation({ summary: 'Submit tax filing for a period (will lock period)' })
+  createTaxFiling(
+    @Param('companyId') companyId: string,
+    @Body() dto: { period: string; taxType: string },
+  ) {
+    return this.reportService.createTaxFiling(companyId, dto);
   }
 }

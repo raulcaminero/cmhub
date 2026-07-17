@@ -47,11 +47,11 @@ export const payrollApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getPayrolls: builder.query<Payroll[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/payroll`,
-      providesTags: ['JournalEntry', 'Account'], // invalidate payroll list when journal entries change
+      providesTags: ['Payroll'],
     }),
     getPayroll: builder.query<Payroll, { companyId: string; id: string }>({
       query: ({ companyId, id }) => `/companies/${companyId}/accounting/payroll/${id}`,
-      providesTags: ['JournalEntry', 'Account'],
+      providesTags: ['Payroll'],
     }),
     createPayroll: builder.mutation<Payroll, { companyId: string; body: { period: string } }>({
       query: ({ companyId, body }) => ({
@@ -59,14 +59,14 @@ export const payrollApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['JournalEntry', 'Account'],
+      invalidatesTags: ['JournalEntry', 'Account', 'Payroll'],
     }),
     deletePayroll: builder.mutation<Payroll, { companyId: string; id: string }>({
       query: ({ companyId, id }) => ({
         url: `/companies/${companyId}/accounting/payroll/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['JournalEntry', 'Account'],
+      invalidatesTags: ['JournalEntry', 'Account', 'Payroll'],
     }),
     calculateTaxes: builder.mutation<CalculatedTaxes, { companyId: string; salary: number }>({
       query: ({ companyId, salary }) => ({

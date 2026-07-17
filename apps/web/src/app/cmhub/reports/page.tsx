@@ -88,6 +88,7 @@ export default function ReportsPage() {
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       alert('Error descargando el archivo impositivo.');
     }

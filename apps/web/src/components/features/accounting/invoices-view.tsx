@@ -103,6 +103,9 @@ export function InvoicesView() {
   const [itbis, setItbis] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('02');
   const [bankAccountId, setBankAccountId] = useState('');
+  const [costOfGoodsSold, setCostOfGoodsSold] = useState(0);
+  const [itbisRetained, setItbisRetained] = useState(0);
+  const [isrRetained, setIsrRetained] = useState(0);
 
   const bankAccounts = accounts?.filter((a) => a.code.startsWith('1101') || a.name.toLowerCase().includes('banco') || a.name.toLowerCase().includes('caja')) || [];
 
@@ -153,6 +156,9 @@ export function InvoicesView() {
           itbis: Number(itbis),
           paymentMethod,
           bankAccountId: paymentMethod !== '04' && bankAccountId ? bankAccountId : undefined,
+          costOfGoodsSold: Number(costOfGoodsSold) > 0 ? Number(costOfGoodsSold) : undefined,
+          itbisRetained: Number(itbisRetained) > 0 ? Number(itbisRetained) : undefined,
+          isrRetained: Number(isrRetained) > 0 ? Number(isrRetained) : undefined,
         },
       }).unwrap();
       
@@ -162,6 +168,9 @@ export function InvoicesView() {
       setAmount(0);
       setItbis(0);
       setBankAccountId('');
+      setCostOfGoodsSold(0);
+      setItbisRetained(0);
+      setIsrRetained(0);
       
       // Auto open print view on create
       setSelectedInvoice(created);
@@ -405,6 +414,49 @@ export function InvoicesView() {
                       value={itbis || ''}
                       onChange={(e) => setItbis(Number(e.target.value))}
                       required
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 mt-3">
+                  <Label htmlFor="inv-cogs" className="text-xs font-semibold">Costo de Ventas (Opcional - Mercancía)</Label>
+                  <Input
+                    id="inv-cogs"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={costOfGoodsSold || ''}
+                    onChange={(e) => setCostOfGoodsSold(Number(e.target.value))}
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Si vendes artículos de inventario, indica su costo para darles salida del inventario (Cuenta 1105) y debitar el costo (Cuenta 6001).
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="inv-itbis-ret" className="text-xs font-semibold">ITBIS Retenido por Cliente (Opcional)</Label>
+                    <Input
+                      id="inv-itbis-ret"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={itbisRetained || ''}
+                      onChange={(e) => setItbisRetained(Number(e.target.value))}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="inv-isr-ret" className="text-xs font-semibold">ISR Retenido por Cliente (Opcional)</Label>
+                    <Input
+                      id="inv-isr-ret"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={isrRetained || ''}
+                      onChange={(e) => setIsrRetained(Number(e.target.value))}
                       className="font-mono text-sm"
                     />
                   </div>

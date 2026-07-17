@@ -15,6 +15,9 @@ export interface Invoice {
   paymentMethod: string;
   journalEntryId: string | null;
   isVoided: boolean;
+  costOfGoodsSold?: number | null;
+  itbisRetained?: number;
+  isrRetained?: number;
   createdAt: string;
 }
 
@@ -26,13 +29,16 @@ export interface CreateInvoiceDto {
   itbis: number;
   paymentMethod: string;
   bankAccountId?: string;
+  costOfGoodsSold?: number;
+  itbisRetained?: number;
+  isrRetained?: number;
 }
 
 export const invoicesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getInvoices: builder.query<Invoice[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/invoices`,
-      providesTags: ['JournalEntry'],
+      providesTags: ['Invoice'],
     }),
     createInvoice: builder.mutation<Invoice, { companyId: string; body: CreateInvoiceDto }>({
       query: ({ companyId, body }) => ({
@@ -40,7 +46,7 @@ export const invoicesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['JournalEntry', 'Account', 'NcfSequence', 'Contact'],
+      invalidatesTags: ['JournalEntry', 'Account', 'NcfSequence', 'Contact', 'Invoice'],
     }),
     collectInvoice: builder.mutation<Invoice, { companyId: string; id: string; body: { bankAccountId: string; paymentDate: string } }>({
       query: ({ companyId, id, body }) => ({
@@ -48,14 +54,14 @@ export const invoicesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['JournalEntry', 'Account', 'Contact'],
+      invalidatesTags: ['JournalEntry', 'Account', 'Contact', 'Invoice'],
     }),
     voidInvoice: builder.mutation<Invoice, { companyId: string; id: string }>({
       query: ({ companyId, id }) => ({
         url: `/companies/${companyId}/accounting/invoices/${id}/void`,
         method: 'POST',
       }),
-      invalidatesTags: ['JournalEntry', 'Account', 'Contact'],
+      invalidatesTags: ['JournalEntry', 'Account', 'Contact', 'Invoice'],
     }),
   }),
 });

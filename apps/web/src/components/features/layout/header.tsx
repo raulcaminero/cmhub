@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { useRouter } from 'next/navigation';
-import { useGetProfileQuery, useUpdateProfileMutation } from '@/services/auth.api';
+import { useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
 import { LogOut, User, X, Loader2 } from 'lucide-react';
 
 export function Header() {
@@ -60,8 +60,8 @@ export function Header() {
     setErrorMessage('');
 
     try {
-      const body: any = { firstName, lastName, email };
-      if (password) body.password = password;
+      const body: UpdateProfileRequest = { firstName, lastName, email };
+      if (password && password.trim()) body.password = password;
 
       await updateProfile(body).unwrap();
       setSuccessMessage('Perfil actualizado correctamente');

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IEmployeeRepository } from '@domain/repositories/employee.repository.interface';
 import { EmployeeEntity } from '@domain/entities/employee.entity';
@@ -57,6 +57,10 @@ export class EmployeeRepository implements IEmployeeRepository {
     companyId: string,
     data: Partial<Omit<EmployeeEntity, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>>,
   ): Promise<EmployeeEntity> {
+    const existing = await this.prisma.employee.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Empleado no encontrado o acceso denegado.');
+    }
     const emp = await this.prisma.employee.update({
       where: { id },
       data: {
@@ -70,6 +74,10 @@ export class EmployeeRepository implements IEmployeeRepository {
   }
 
   async delete(id: string, companyId: string): Promise<EmployeeEntity> {
+    const existing = await this.prisma.employee.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Empleado no encontrado o acceso denegado.');
+    }
     const emp = await this.prisma.employee.delete({
       where: { id },
     });

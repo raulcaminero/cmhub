@@ -6,7 +6,7 @@ export interface IBankTransactionRepository {
   createMany(
     transactions: Omit<BankTransactionEntity, 'id' | 'reconciled' | 'journalEntryLineId' | 'createdAt' | 'updatedAt'>[]
   ): Promise<void>;
-  updateReconciliation(id: string, companyId: string, reconciled: boolean, journalEntryLineId: string | null): Promise<BankTransactionEntity>;
-  delete(id: string, companyId: string): Promise<BankTransactionEntity>;
+  updateReconciliation(id: string, companyId: string, reconciled: boolean, journalEntryLineId: string | null, tx?: any): Promise<BankTransactionEntity>;
+  delete(id: string, companyId: string, tx?: any): Promise<BankTransactionEntity>;
   getUnreconciledLedgerLines(companyId: string, accountId: string): Promise<any[]>;
 }

@@ -19,7 +19,7 @@ export interface JournalEntryFilters {
 export interface IJournalEntryRepository {
   findById(id: string, companyId: string): Promise<JournalEntryEntity | null>;
   findByCompany(companyId: string, filters?: JournalEntryFilters): Promise<JournalEntryEntity[]>;
-  create(data: CreateJournalEntryData): Promise<JournalEntryEntity>;
-  post(id: string, companyId: string): Promise<JournalEntryEntity>;
-  void(id: string, companyId: string): Promise<JournalEntryEntity>;
+  create(data: CreateJournalEntryData, tx?: any): Promise<JournalEntryEntity>;
+  post(id: string, companyId: string, tx?: any): Promise<JournalEntryEntity>;
+  void(id: string, companyId: string, tx?: any): Promise<JournalEntryEntity>;
 }

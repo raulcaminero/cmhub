@@ -102,6 +102,7 @@ export class BankReconciliationService {
 
     let matchesCount = 0;
     const matchedLedgerLineIds = new Set<string>();
+    const matchPairs: { bankTxId: string; ledgerLineId: string }[] = [];
 
     for (const bankTx of unreconciledBankTxs) {
       // Find candidate ledger line
@@ -126,16 +127,24 @@ export class BankReconciliationService {
       });
 
       if (match) {
-        // Link them
-        await this.bankTransactionRepository.updateReconciliation(
-          bankTx.id,
-          companyId,
-          true,
-          match.id
-        );
+        matchPairs.push({ bankTxId: bankTx.id, ledgerLineId: match.id });
         matchedLedgerLineIds.add(match.id);
         matchesCount++;
       }
+    }
+
+    if (matchPairs.length > 0) {
+      await this.prisma.$transaction(
+        matchPairs.map(({ bankTxId, ledgerLineId }) =>
+          this.prisma.bankTransaction.update({
+            where: { id: bankTxId },
+            data: {
+              reconciled: true,
+              journalEntryLineId: ledgerLineId,
+            },
+          })
+        )
+      );
     }
 
     return { matchesCount };
@@ -174,21 +183,19 @@ export class BankReconciliationService {
   }
 
   async getReconciliationReport(companyId: string, accountId: string) {
-    const account = await this.accountRepository.findById(accountId, companyId);
+    const [account, bankTxs, unreconciledBooks] = await Promise.all([
+      this.accountRepository.findById(accountId, companyId),
+      this.bankTransactionRepository.findByCompany(companyId, accountId),
+      this.bankTransactionRepository.getUnreconciledLedgerLines(companyId, accountId),
+    ]);
+
     if (!account) {
       throw new BadRequestException('Cuenta contable no encontrada.');
     }
 
-    // 1. Unreconciled bank transactions
-    const bankTxs = await this.bankTransactionRepository.findByCompany(companyId, accountId);
+    // 1. Filter bank transactions
     const unreconciledBank = bankTxs.filter((t) => !t.reconciled);
     const reconciledBank = bankTxs.filter((t) => t.reconciled);
-
-    // 2. Unreconciled book lines
-    const unreconciledBooks = await this.bankTransactionRepository.getUnreconciledLedgerLines(
-      companyId,
-      accountId
-    );
 
     // 3. Compute balances
     // Bank balance = Sum of all imported bank transactions

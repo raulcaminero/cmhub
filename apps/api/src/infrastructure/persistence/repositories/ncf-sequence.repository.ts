@@ -1,5 +1,5 @@
 import type { NcfSequence as PrismaNcfSequence } from '@prisma/client';
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { INcfSequenceRepository } from '@domain/repositories/ncf-sequence.repository.interface';
 import { NcfSequenceEntity } from '@domain/entities/ncf-sequence.entity';
@@ -48,13 +48,17 @@ export class NcfSequenceRepository implements INcfSequenceRepository {
   }
 
   async update(id: string, companyId: string, data: Partial<NcfSequenceEntity>): Promise<NcfSequenceEntity> {
+    const existing = await this.prisma.ncfSequence.findUnique({ where: { id } });
+    if (!existing || existing.companyId !== companyId) {
+      throw new NotFoundException('Secuencia NCF no encontrada o acceso denegado.');
+    }
     const seq = await this.prisma.ncfSequence.update({ where: { id }, data });
     return mapNcfSequence(seq);
   }
 
-  async increment(id: string, companyId: string): Promise<NcfSequenceEntity> {
-    return this.prisma.$transaction(async (tx) => {
-      const seqs = await tx.$queryRaw<PrismaNcfSequence[]>`
+  async increment(id: string, companyId: string, tx?: any): Promise<NcfSequenceEntity> {
+    const runInTx = async (c: any) => {
+      const seqs = await c.$queryRaw<PrismaNcfSequence[]>`
         SELECT * FROM "NcfSequence" 
         WHERE "id" = ${id} AND "companyId" = ${companyId}
         FOR UPDATE
@@ -65,11 +69,17 @@ export class NcfSequenceRepository implements INcfSequenceRepository {
       if (!seq.isActive) throw new BadRequestException(`NCF Sequence ${seq.type} is not active`);
       if (new Date(seq.expiresAt) < new Date()) throw new BadRequestException(`NCF Sequence ${seq.type} has expired`);
 
-      const updated = await tx.ncfSequence.update({
+      const updated = await c.ncfSequence.update({
         where: { id },
         data: { current: { increment: 1 } },
       });
       return mapNcfSequence(updated);
-    });
+    };
+
+    if (tx) {
+      return runInTx(tx);
+    } else {
+      return this.prisma.$transaction(async (innerTx) => runInTx(innerTx));
+    }
   }
 }
