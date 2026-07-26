@@ -3,9 +3,12 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TaxCopilotService } from '../../../application/services/rag/tax-copilot.service';
 import { RagService } from '../../../application/services/rag/rag.service';
 import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
+import { CompanyAccessGuard } from '../auth/guards/company-access.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
 
 @ApiTags('Tax Copilot')
 @ApiBearerAuth()
+@UseGuards(CompanyAccessGuard)
 @Controller('companies/:companyId/tax-copilot')
 export class TaxCopilotController {
   constructor(
@@ -25,6 +28,7 @@ export class TaxCopilotController {
   }
 
   @Post('admin/ingest')
+  @UseGuards(AdminGuard)
   @ApiOperation({ summary: 'Admin tool to ingest DGII tax laws and regulations' })
   async ingestDocument(
     @Body() body: { title: string; rawText: string }
