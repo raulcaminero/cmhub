@@ -21,6 +21,7 @@ export interface CreateNcfSequenceDto {
 }
 
 export const ncfApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getNcfSequences: builder.query<NcfSequence[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/ncf/sequences`,
@@ -42,6 +43,14 @@ export const ncfApi = api.injectEndpoints({
       }),
       invalidatesTags: ['NcfSequence'],
     }),
+    importNcfSequences: builder.mutation<{ importedCount: number; sequences: NcfSequence[] }, { companyId: string; body: CreateNcfSequenceDto[] }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/ncf/import`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['NcfSequence'],
+    }),
   }),
 });
 
@@ -49,4 +58,5 @@ export const {
   useGetNcfSequencesQuery,
   useCreateNcfSequenceMutation,
   useGenerateNcfMutation,
+  useImportNcfSequencesMutation,
 } = ncfApi;

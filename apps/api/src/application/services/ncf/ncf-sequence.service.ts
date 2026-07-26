@@ -2,6 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { INcfSequenceRepository } from '@domain/repositories/ncf-sequence.repository.interface';
 import { CreateNcfSequenceDto } from '../../dtos/ncf/create-ncf-sequence.dto';
 import { NcfType } from '@domain/enums';
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
 export const NCF_SEQUENCE_REPOSITORY = 'NCF_SEQUENCE_REPOSITORY';
 
@@ -9,6 +10,7 @@ export const NCF_SEQUENCE_REPOSITORY = 'NCF_SEQUENCE_REPOSITORY';
 export class NcfSequenceService {
   constructor(
     @Inject(NCF_SEQUENCE_REPOSITORY) private readonly ncfSequenceRepository: INcfSequenceRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getSequences(companyId: string) {
@@ -68,5 +70,31 @@ export class NcfSequenceService {
     const paddedNum = String(updatedSeq.current).padStart(seqLength, '0');
 
     return `${seq.prefix}${paddedNum}`;
+  }
+
+  async importSequences(companyId: string, dtos: CreateNcfSequenceDto[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const imported = [];
+      for (const dto of dtos) {
+        const existing = await this.ncfSequenceRepository.findByType(companyId, dto.type);
+        if (existing) {
+          continue;
+        }
+        const seq = await this.ncfSequenceRepository.create({
+          companyId,
+          type: dto.type,
+          prefix: dto.prefix,
+          current: 0,
+          max: dto.max,
+          isActive: true,
+          expiresAt: new Date(dto.expiresAt),
+        }, tx);
+        imported.push(seq);
+      }
+      return {
+        importedCount: imported.length,
+        sequences: imported,
+      };
+    });
   }
 }

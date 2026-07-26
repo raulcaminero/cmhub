@@ -27,6 +27,7 @@ import {
   BankReconciliationService,
   BANK_TRANSACTION_REPOSITORY,
 } from '@application/services/bank-reconciliation/bank-reconciliation.service';
+import { OcrService } from '@application/services/ocr/ocr.service';
 
 import { AccountRepository } from '@infrastructure/persistence/repositories/account.repository';
 import { JournalEntryRepository } from '@infrastructure/persistence/repositories/journal-entry.repository';
@@ -59,6 +60,7 @@ import { BankTransactionRepository } from '@infrastructure/persistence/repositor
     ContactService,
     PayrollService,
     BankReconciliationService,
+    OcrService,
     { provide: ACCOUNT_REPOSITORY, useClass: AccountRepository },
     { provide: JOURNAL_ENTRY_REPOSITORY, useClass: JournalEntryRepository },
     { provide: EXPENSE_REPOSITORY, useClass: ExpenseRepository },

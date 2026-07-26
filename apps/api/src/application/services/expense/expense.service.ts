@@ -106,7 +106,7 @@ export class ExpenseService {
     });
   }
 
-  async createExpense(companyId: string, dto: CreateExpenseDto) {
+  async createExpense(companyId: string, dto: CreateExpenseDto, tx?: any) {
     const [, , accounts] = await Promise.all([
       this.prisma.company.findUnique({
         where: { id: companyId },
@@ -121,7 +121,7 @@ export class ExpenseService {
       this.accountRepository.findByCompany(companyId),
     ]);
     
-    return this.prisma.$transaction(async (tx) => {
+    const execute = async (prismaTx: any) => {
       // Find debit Account depending on DGII type
       let targetAccount: any;
       const isInventoryPurchase = dto.expenseType === '09';
@@ -139,7 +139,7 @@ export class ExpenseService {
             type: AccountType.ASSET,
             parentId: null,
             isActive: true,
-          }, tx);
+          }, prismaTx);
         }
       } else {
         let expenseCode = '6105'; // fallback Gastos Diversos
@@ -180,7 +180,7 @@ export class ExpenseService {
           type: AccountType.ASSET,
           parentId: null,
           isActive: true,
-        }, tx);
+        }, prismaTx);
       }
 
       // Retenciones Account (2103 - Retenciones por Pagar)
@@ -210,46 +210,38 @@ export class ExpenseService {
         });
       }
 
-      // CREDIT: Retained ITBIS (if any)
-      if ((dto.itbisRetained ?? 0) > 0) {
-        if (!retentionsAcc) throw new BadRequestException('No Retentions account found in chart of accounts');
-        journalLines.push({
-          accountId: retentionsAcc.id,
-          debit: 0,
-          credit: dto.itbisRetained,
-          description: `ITBIS Retenido - NCF ${dto.ncf}`,
-        });
-      }
-
-      // CREDIT: Retained ISR (if any)
-      if ((dto.isrRetained ?? 0) > 0) {
-        if (!retentionsAcc) throw new BadRequestException('No Retentions account found in chart of accounts');
-        journalLines.push({
-          accountId: retentionsAcc.id,
-          debit: 0,
-          credit: dto.isrRetained,
-          description: `ISR Retenido - NCF ${dto.ncf}`,
-        });
-      }
-
-      // CREDIT: Net cash payment or accounts payable
-      const netCreditAmount = dto.amount - (dto.itbisRetained ?? 0) - (dto.isrRetained ?? 0);
+      // CREDIT: Caja/Banco or Cuentas por Pagar (total amount minus retentions)
+      const totalRetained = (dto.itbisRetained ?? 0) + (dto.isrRetained ?? 0);
       journalLines.push({
         accountId: paymentAcc.id,
         debit: 0,
-        credit: netCreditAmount,
-        description: `Pago neto - NCF ${dto.ncf}`,
+        credit: dto.amount - totalRetained,
+        description: isCreditPurchase 
+          ? `Cuenta por pagar - NCF ${dto.ncf}` 
+          : `Pago compra - NCF ${dto.ncf}`,
       });
 
+      // CREDIT: Retenciones (if any)
+      if (totalRetained > 0) {
+        if (!retentionsAcc) throw new BadRequestException('No retentions account (2103) found in chart of accounts');
+        journalLines.push({
+          accountId: retentionsAcc.id,
+          debit: 0,
+          credit: totalRetained,
+          description: `Retenciones retenidas - NCF ${dto.ncf}`,
+        });
+      }
+
+      // 3. Persist journal entry and expense
       const journalEntry = await this.journalEntryRepository.create({
         companyId,
         date: new Date(dto.date),
         description: `Gasto proveedor: ${dto.providerName} - NCF ${dto.ncf}`,
         reference: dto.ncf,
         lines: journalLines,
-      }, tx);
+      }, prismaTx);
 
-      await this.journalEntryRepository.post(journalEntry.id, companyId, tx);
+      await this.journalEntryRepository.post(journalEntry.id, companyId, prismaTx);
 
       return this.expenseRepository.create({
         companyId,
@@ -270,8 +262,14 @@ export class ExpenseService {
         foreignCountry: dto.foreignCountry ?? null,
         foreignTaxId: dto.foreignTaxId ?? null,
         foreignPaymentType: dto.foreignPaymentType ?? null,
-      }, tx);
-    });
+      }, prismaTx);
+    };
+
+    if (tx) {
+      return execute(tx);
+    } else {
+      return this.prisma.$transaction(execute);
+    }
   }
 
   async voidExpense(companyId: string, id: string) {
@@ -294,6 +292,20 @@ export class ExpenseService {
       return this.expenseRepository.update(id, companyId, {
         isVoided: true,
       }, tx);
+    });
+  }
+
+  async importExpenses(companyId: string, dtos: CreateExpenseDto[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const importedExpenses = [];
+      for (const dto of dtos) {
+        const expense = await this.createExpense(companyId, dto, tx);
+        importedExpenses.push(expense);
+      }
+      return {
+        importedCount: importedExpenses.length,
+        expenses: importedExpenses,
+      };
     });
   }
 }

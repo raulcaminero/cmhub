@@ -27,4 +27,13 @@ export class NcfController {
   generateNcf(@Param('companyId') companyId: string, @Body('type') type: NcfType) {
     return this.ncfSequenceService.generateNextNcf(companyId, type);
   }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Bulk import NCF sequences' })
+  importSequences(
+    @Param('companyId') companyId: string,
+    @Body() dtos: CreateNcfSequenceDto[],
+  ) {
+    return this.ncfSequenceService.importSequences(companyId, dtos);
+  }
 }

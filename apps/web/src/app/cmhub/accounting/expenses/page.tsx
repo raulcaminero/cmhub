@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, Expense } from '@/services/expenses.api';
+import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, Expense } from '@/services/expenses.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType } from '@cmhub/shared-types';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -66,8 +66,15 @@ export default function AccountingExpensesPage() {
   const [createExpense, { isLoading: isCreating }] = useCreateExpenseMutation();
   const [payExpense, { isLoading: isPaying }] = usePayExpenseMutation();
   const [voidExpense, { isLoading: isVoiding }] = useVoidExpenseMutation();
+  const [importExpenses, { isLoading: isImporting }] = useImportExpensesMutation();
+  const [importOcr, { isLoading: isScanning }] = useImportOcrMutation();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isExcelOpen, setIsExcelOpen] = useState(false);
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importError, setImportError] = useState('');
+
   const [providerRnc, setProviderRnc] = useState('');
   const [providerName, setProviderName] = useState('');
   const [ncf, setNcf] = useState('');
@@ -83,6 +90,104 @@ export default function AccountingExpensesPage() {
 
   // Foreign payment states
   const [isForeignPayment, setIsForeignPayment] = useState(false);
+
+  async function handleCsvImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId) return;
+    setImportError('');
+
+    const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length <= 1) {
+      setImportError('El archivo o texto está vacío.');
+      return;
+    }
+
+    const payload: any[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map((p) => p.trim().replace(/^["']|["']$/g, ''));
+      if (parts.length < 7) continue;
+
+      const dateVal = parts[0];
+      const rncVal = parts[1];
+      const nameVal = parts[2];
+      const ncfVal = parts[3];
+      const paymentVal = parts[4];
+      const typeVal = parts[5];
+      const amountVal = Number(parts[6]);
+      const itbisVal = parts[7] ? Number(parts[7]) : 0;
+      const itbisRetVal = parts[8] ? Number(parts[8]) : 0;
+      const isrRetVal = parts[9] ? Number(parts[9]) : 0;
+
+      if (!dateVal || !rncVal || !nameVal || !ncfVal || !paymentVal || !typeVal || isNaN(amountVal)) {
+        setImportError(`Fila ${i + 1} inválida. Verifica los datos.`);
+        return;
+      }
+
+      payload.push({
+        providerRnc: rncVal,
+        providerName: nameVal,
+        ncf: ncfVal,
+        expenseType: typeVal,
+        date: new Date(dateVal).toISOString().split('T')[0],
+        amount: amountVal,
+        itbis: itbisVal,
+        itbisRetained: itbisRetVal,
+        isrRetained: isrRetVal,
+        paymentMethod: paymentVal,
+      });
+    }
+
+    try {
+      await importExpenses({
+        companyId,
+        body: payload,
+      }).unwrap();
+      setIsExcelOpen(false);
+      setCsvText('');
+    } catch (err: any) {
+      setImportError(err.data?.message || 'Error al importar los gastos.');
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setCsvText(text);
+    };
+    reader.readAsText(file);
+  }
+
+  async function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    setErrorMessage('');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const result = await importOcr({
+        companyId,
+        body: formData,
+      }).unwrap();
+
+      setProviderRnc(result.providerRnc);
+      setProviderName(result.providerName);
+      setNcf(result.ncf);
+      setExpenseType(result.expenseType);
+      setAmount(result.amount);
+      setItbis(result.itbis);
+      setDate(new Date(result.date).toISOString().split('T')[0]);
+      setIsOcrOpen(false);
+      setIsOpen(true);
+    } catch (err: any) {
+      alert(err.data?.message || 'Error al escanear la factura.');
+    }
+  }
   const [foreignCountry, setForeignCountry] = useState('US');
   const [foreignTaxId, setForeignTaxId] = useState('');
   const [foreignPaymentType, setForeignPaymentType] = useState('01');
@@ -218,15 +323,25 @@ export default function AccountingExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Registro de Gastos</h1>
           <p className="text-muted-foreground">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Registrar Gasto
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10" onClick={() => setIsOcrOpen(true)}>
+            <Camera className="w-4 h-4" />
+            Escanear Factura (OCR)
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4" />
+            Importar Excel / CSV
+          </Button>
+          <Button size="sm" className="gap-2 animate-pulse hover:animate-none" onClick={() => setIsOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Registrar Gasto
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -666,6 +781,141 @@ export default function AccountingExpensesPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Importar Gastos desde Excel/CSV */}
+      {isExcelOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative my-8">
+            <h3 className="text-lg font-semibold mb-2">Importar Gastos desde Excel / CSV</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Carga un archivo CSV o pega el texto delimitado por comas para registrar tus compras masivamente.
+            </p>
+            
+            <form onSubmit={handleCsvImport} className="space-y-4">
+              <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
+                <Upload className="w-8 h-8 text-muted-foreground" />
+                <Label htmlFor="csv-expense-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                  Haz clic para subir archivo CSV
+                </Label>
+                <span className="text-[10px] text-muted-foreground">O arrastra el archivo aquí</span>
+                <Input
+                  id="csv-expense-file"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="csv-expense-text">Contenido o Vista Previa del CSV</Label>
+                  <span className="text-[10px] text-muted-foreground font-mono">Format: Fecha,RNC,Nombre,NCF,Metodo,TipoGasto,Monto,ITBIS</span>
+                </div>
+                <textarea
+                  id="csv-expense-text"
+                  rows={6}
+                  placeholder="Ejemplo:&#10;Fecha,RNC,Nombre,NCF,Metodo,TipoGasto,Monto,ITBIS&#10;2026-07-17,131792751,CLARO DOMINICANA,B0100000105,02,02,2360.00,360.00"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  required
+                />
+              </div>
+
+              {importError && (
+                <p className="text-xs text-destructive font-medium">{importError}</p>
+              )}
+
+              <div className="flex justify-between items-center pt-2">
+                <a 
+                  href="data:text/csv;charset=utf-8,Fecha,RNC,Nombre,NCF,Metodo,TipoGasto,Monto,ITBIS%0A2026-07-17,131792751,CLARO DOMINICANA,B0100000105,02,02,2360.00,360.00" 
+                  download="plantilla_gastos.csv"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  Descargar Plantilla CSV
+                </a>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsExcelOpen(false);
+                      setCsvText('');
+                      setImportError('');
+                    }}
+                    disabled={isImporting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="sm" disabled={isImporting}>
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                        Importando...
+                      </>
+                    ) : (
+                      'Importar Gastos'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Escaneo Factura (OCR) */}
+      {isOcrOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
+            <h3 className="text-lg font-semibold mb-2">Escanear Factura / Comprobante (OCR)</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Sube la imagen o el PDF de tu factura de compra. El sistema impulsado por Google Document AI leerá automáticamente los datos.
+            </p>
+            
+            <div className="border border-dashed border-primary rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
+              <Camera className="w-10 h-10 text-primary animate-pulse" />
+              {isScanning ? (
+                <div className="space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  <p className="text-sm font-medium">Analizando imagen con Inteligencia Artificial...</p>
+                  <p className="text-[10px] text-muted-foreground">Extrayendo RNC, NCF, montos y fecha.</p>
+                </div>
+              ) : (
+                <>
+                  <Label htmlFor="ocr-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                    Sube una foto o PDF de la factura
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">Formatos soportados: JPG, PNG, PDF</span>
+                  <Input
+                    id="ocr-file"
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={handleOcrUpload}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsOcrOpen(false);
+                }}
+                disabled={isScanning}
+              >
+                Cerrar
+              </Button>
+            </div>
           </div>
         </div>
       )}

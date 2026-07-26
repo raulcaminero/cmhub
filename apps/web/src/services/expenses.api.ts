@@ -43,6 +43,7 @@ export interface CreateExpenseDto {
 }
 
 export const expensesApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getExpenses: builder.query<Expense[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/expenses`,
@@ -71,7 +72,29 @@ export const expensesApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
     }),
+    importExpenses: builder.mutation<{ importedCount: number; expenses: Expense[] }, { companyId: string; body: CreateExpenseDto[] }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/expenses/import`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
+    }),
+    importOcr: builder.mutation<{ providerRnc: string; providerName: string; ncf: string; date: string; amount: number; itbis: number; expenseType: string }, { companyId: string; body: FormData }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/expenses/import-ocr`,
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation } = expensesApi;
+export const {
+  useGetExpensesQuery,
+  useCreateExpenseMutation,
+  usePayExpenseMutation,
+  useVoidExpenseMutation,
+  useImportExpensesMutation,
+  useImportOcrMutation,
+} = expensesApi;
