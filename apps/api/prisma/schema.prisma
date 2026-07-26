@@ -57,31 +57,34 @@ model User {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   companyRoles UserCompanyRole[]
+  JournalEntry JournalEntry[]
+  Invoice      Invoice[]
+  Expense      Expense[]
 }
 
 model Company {
-  id             String            @id @default(cuid())
-  name           String
-  rnc            String            @unique
-  tradeName      String?
-  taxRegime      TaxRegime         @default(ORDINARIO)
-  address        String?
-  phone          String?
-  email          String?
-  lockDate       DateTime?         @db.Date
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  userRoles      UserCompanyRole[]
-  accounts       Account[]
-  journalEntries JournalEntry[]
-  ncfSequences   NcfSequence[]
-  expenses       Expense[]
-  invoices       Invoice[]
-  contacts       Contact[]
-  employees      Employee[]
-  payrolls       Payroll[]
+  id               String            @id @default(cuid())
+  name             String
+  rnc              String            @unique
+  tradeName        String?
+  taxRegime        TaxRegime         @default(ORDINARIO)
+  address          String?
+  phone            String?
+  email            String?
+  lockDate         DateTime?         @db.Date
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userRoles        UserCompanyRole[]
+  accounts         Account[]
+  journalEntries   JournalEntry[]
+  ncfSequences     NcfSequence[]
+  expenses         Expense[]
+  invoices         Invoice[]
+  contacts         Contact[]
+  employees        Employee[]
+  payrolls         Payroll[]
   bankTransactions BankTransaction[]
-  taxFilings     TaxFiling[]
+  taxFilings       TaxFiling[]
 }
 
 model UserCompanyRole {
@@ -97,38 +100,40 @@ model UserCompanyRole {
 }
 
 model Account {
-  id         String             @id @default(cuid())
-  companyId  String
-  code       String
-  name       String
-  type       AccountType
-  parentId   String?
-  isActive   Boolean            @default(true)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  parent     Account?           @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children   Account[]          @relation("AccountHierarchy")
-  entryLines JournalEntryLine[]
+  id               String             @id @default(cuid())
+  companyId        String
+  code             String
+  name             String
+  type             AccountType
+  parentId         String?
+  isActive         Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  company          Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent           Account?           @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children         Account[]          @relation("AccountHierarchy")
+  entryLines       JournalEntryLine[]
   bankTransactions BankTransaction[]
 
   @@unique([companyId, code])
 }
 
 model JournalEntry {
-  id          String             @id @default(cuid())
-  companyId   String
-  date        DateTime           @db.Date
-  description String
-  reference   String?
-  status      JournalEntryStatus @default(DRAFT)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  lines       JournalEntryLine[]
-  expense     Expense?
-  invoice     Invoice?
-  payrolls    Payroll[]
+  id              String             @id @default(cuid())
+  companyId       String
+  date            DateTime           @db.Date
+  description     String
+  reference       String?
+  status          JournalEntryStatus @default(DRAFT)
+  createdByUserId String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdByUser   User?              @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lines           JournalEntryLine[]
+  expense         Expense?
+  invoice         Invoice?
+  payrolls        Payroll[]
 
   @@index([companyId, status])
   @@index([companyId, date])
@@ -136,26 +141,28 @@ model JournalEntry {
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
-  companyId      String
-  clientRnc      String
-  clientName     String
-  ncf            String
-  ncfType        NcfType
-  date           DateTime      @db.Date
-  paymentDate    DateTime?     @db.Date
-  amount         Decimal       @db.Decimal(18, 2)
-  itbis          Decimal       @default(0) @db.Decimal(18, 2)
-  paymentMethod  String
-  journalEntryId String?       @unique
-  isVoided       Boolean       @default(false)
-  itbisRetained  Decimal       @default(0) @db.Decimal(18, 2)
-  isrRetained    Decimal       @default(0) @db.Decimal(18, 2)
-  costOfGoodsSold Decimal?     @db.Decimal(18, 2)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  id              String        @id @default(cuid())
+  companyId       String
+  clientRnc       String
+  clientName      String
+  ncf             String
+  ncfType         NcfType
+  date            DateTime      @db.Date
+  paymentDate     DateTime?     @db.Date
+  amount          Decimal       @db.Decimal(18, 2)
+  itbis           Decimal       @default(0) @db.Decimal(18, 2)
+  paymentMethod   String
+  journalEntryId  String?       @unique
+  isVoided        Boolean       @default(false)
+  itbisRetained   Decimal       @default(0) @db.Decimal(18, 2)
+  isrRetained     Decimal       @default(0) @db.Decimal(18, 2)
+  costOfGoodsSold Decimal?      @db.Decimal(18, 2)
+  createdByUserId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdByUser   User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([companyId, date])
   @@index([companyId, isVoided, date])
@@ -163,29 +170,31 @@ model Invoice {
 }
 
 model Expense {
-  id             String        @id @default(cuid())
-  companyId      String
-  providerRnc    String
-  providerName   String
-  ncf            String
-  expenseType    String
-  date           DateTime      @db.Date
-  paymentDate    DateTime?     @db.Date
-  amount         Decimal       @db.Decimal(18, 2)
-  itbis          Decimal       @default(0) @db.Decimal(18, 2)
-  itbisRetained  Decimal       @default(0) @db.Decimal(18, 2)
-  isrRetained    Decimal       @default(0) @db.Decimal(18, 2)
-  paymentMethod  String
-  journalEntryId String?       @unique
-  isVoided       Boolean       @default(false)
-  isForeignPayment Boolean     @default(false)
-  foreignCountry   String?
-  foreignTaxId     String?
+  id                 String        @id @default(cuid())
+  companyId          String
+  providerRnc        String
+  providerName       String
+  ncf                String
+  expenseType        String
+  date               DateTime      @db.Date
+  paymentDate        DateTime?     @db.Date
+  amount             Decimal       @db.Decimal(18, 2)
+  itbis              Decimal       @default(0) @db.Decimal(18, 2)
+  itbisRetained      Decimal       @default(0) @db.Decimal(18, 2)
+  isrRetained        Decimal       @default(0) @db.Decimal(18, 2)
+  paymentMethod      String
+  journalEntryId     String?       @unique
+  isVoided           Boolean       @default(false)
+  isForeignPayment   Boolean       @default(false)
+  foreignCountry     String?
+  foreignTaxId       String?
   foreignPaymentType String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  company        Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdByUserId    String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  company            Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  journalEntry       JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdByUser      User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([companyId, date])
   @@index([companyId, isVoided, date])
@@ -194,14 +203,14 @@ model Expense {
 }
 
 model JournalEntryLine {
-  id             String       @id @default(cuid())
-  journalEntryId String
-  accountId      String
-  debit          Decimal      @default(0) @db.Decimal(18, 2)
-  credit         Decimal      @default(0) @db.Decimal(18, 2)
-  description    String?
-  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  account        Account      @relation(fields: [accountId], references: [id])
+  id               String            @id @default(cuid())
+  journalEntryId   String
+  accountId        String
+  debit            Decimal           @default(0) @db.Decimal(18, 2)
+  credit           Decimal           @default(0) @db.Decimal(18, 2)
+  description      String?
+  journalEntry     JournalEntry      @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account          Account           @relation(fields: [accountId], references: [id])
   bankTransactions BankTransaction[]
 
   @@index([journalEntryId])
@@ -301,38 +310,38 @@ model PayrollItem {
 }
 
 model BankTransaction {
-  id                  String            @id @default(cuid())
-  companyId           String
-  accountId           String
-  date                DateTime
-  description         String
-  amount              Decimal           @db.Decimal(18, 2)
-  reference           String?
-  reconciled          Boolean           @default(false)
-  journalEntryLineId  String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  company             Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  account             Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  journalEntryLine    JournalEntryLine? @relation(fields: [journalEntryLineId], references: [id])
+  id                 String            @id @default(cuid())
+  companyId          String
+  accountId          String
+  date               DateTime
+  description        String
+  amount             Decimal           @db.Decimal(18, 2)
+  reference          String?
+  reconciled         Boolean           @default(false)
+  journalEntryLineId String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  company            Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account            Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  journalEntryLine   JournalEntryLine? @relation(fields: [journalEntryLineId], references: [id])
 
   @@index([companyId, accountId, reconciled])
   @@index([companyId, accountId, date])
 }
 
 model TaxFiling {
-  id              String    @id @default(cuid())
+  id              String   @id @default(cuid())
   companyId       String
-  period          String    // Formato: AAAAMM (ej: 202607)
-  taxType         String    // ej: 'IT1'
-  salesAmount     Decimal   @db.Decimal(18, 2)
-  salesItbis      Decimal   @db.Decimal(18, 2)
-  purchasesAmount Decimal   @db.Decimal(18, 2)
-  purchasesItbis  Decimal   @db.Decimal(18, 2)
-  itbisToPay      Decimal   @db.Decimal(18, 2)
-  status          String    @default("FILED")
-  filedAt         DateTime  @default(now())
-  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  period          String // Formato: AAAAMM (ej: 202607)
+  taxType         String // ej: 'IT1'
+  salesAmount     Decimal  @db.Decimal(18, 2)
+  salesItbis      Decimal  @db.Decimal(18, 2)
+  purchasesAmount Decimal  @db.Decimal(18, 2)
+  purchasesItbis  Decimal  @db.Decimal(18, 2)
+  itbisToPay      Decimal  @db.Decimal(18, 2)
+  status          String   @default("FILED")
+  filedAt         DateTime @default(now())
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, period, taxType])
 }

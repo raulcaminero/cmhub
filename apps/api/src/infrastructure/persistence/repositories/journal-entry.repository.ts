@@ -28,6 +28,7 @@ const mapJournalEntry = (
   reference: entry.reference,
   status: entry.status as JournalEntryStatus,
   lines: entry.lines.map(mapJournalEntryLine),
+  createdByUserId: entry.createdByUserId,
   createdAt: entry.createdAt,
   updatedAt: entry.updatedAt,
 });
@@ -76,6 +77,7 @@ export class JournalEntryRepository implements IJournalEntryRepository {
         date: data.date,
         description: data.description,
         reference: data.reference,
+        createdByUserId: data.createdByUserId,
         lines: { create: data.lines },
       },
       include: { lines: true },

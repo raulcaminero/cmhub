@@ -98,7 +98,7 @@ export class InvoiceService {
     };
   }
 
-  async createInvoice(companyId: string, dto: CreateInvoiceDto) {
+  async createInvoice(companyId: string, dto: CreateInvoiceDto, createdByUserId?: string) {
     const [, , accounts] = await Promise.all([
       this.prisma.company.findUnique({
         where: { id: companyId },
@@ -251,6 +251,7 @@ export class InvoiceService {
         date: new Date(),
         description: `Factura de venta: ${dto.clientName} - NCF ${ncf}`,
         reference: ncf,
+        createdByUserId,
         lines: journalLines,
       }, tx);
 
@@ -272,6 +273,7 @@ export class InvoiceService {
         costOfGoodsSold: dto.costOfGoodsSold ?? null,
         itbisRetained: dto.itbisRetained ?? 0,
         isrRetained: dto.isrRetained ?? 0,
+        createdByUserId: createdByUserId ?? null,
       }, tx);
     });
   }

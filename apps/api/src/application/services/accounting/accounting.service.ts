@@ -40,7 +40,7 @@ export class AccountingService {
     return this.journalEntryRepository.findByCompany(companyId);
   }
 
-  async createJournalEntry(companyId: string, dto: CreateJournalEntryDto) {
+  async createJournalEntry(companyId: string, dto: CreateJournalEntryDto, createdByUserId?: string) {
     const company = await this.prisma.company.findUnique({
       where: { id: companyId },
       select: { lockDate: true },
@@ -53,6 +53,7 @@ export class AccountingService {
       date: new Date(dto.date),
       description: dto.description,
       reference: dto.reference,
+      createdByUserId,
       lines: dto.lines.map((l) => ({
         accountId: l.accountId,
         debit: l.debit,

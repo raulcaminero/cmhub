@@ -24,6 +24,7 @@ const mapExpense = (expense: PrismaExpense): ExpenseEntity => ({
   foreignCountry: expense.foreignCountry,
   foreignTaxId: expense.foreignTaxId,
   foreignPaymentType: expense.foreignPaymentType,
+  createdByUserId: expense.createdByUserId,
   createdAt: expense.createdAt,
   updatedAt: expense.updatedAt,
 });
@@ -62,6 +63,7 @@ export class ExpenseRepository implements IExpenseRepository {
         isrRetained: data.isrRetained,
         paymentMethod: data.paymentMethod,
         journalEntryId: data.journalEntryId,
+        createdByUserId: data.createdByUserId,
       },
     });
     return mapExpense(expense);

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, UseInterceptors, UploadedFile, BadR
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpenseService } from '@application/services/expense/expense.service';
+import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { CreateExpenseDto } from '@application/dtos/expense/create-expense.dto';
 import { PayExpenseDto } from '@application/dtos/expense/pay-expense.dto';
 import { OcrService } from '@application/services/ocr/ocr.service';
@@ -29,8 +30,12 @@ export class ExpensesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new expense and auto-generate journal logs' })
-  createExpense(@Param('companyId') companyId: string, @Body() dto: CreateExpenseDto) {
-    return this.expenseService.createExpense(companyId, dto);
+  createExpense(
+    @Param('companyId') companyId: string,
+    @Body() dto: CreateExpenseDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.expenseService.createExpense(companyId, dto, user.userId);
   }
 
   @Post(':id/pay')
@@ -54,8 +59,9 @@ export class ExpensesController {
   importExpenses(
     @Param('companyId') companyId: string,
     @Body() dtos: CreateExpenseDto[],
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.expenseService.importExpenses(companyId, dtos);
+    return this.expenseService.importExpenses(companyId, dtos, user.userId);
   }
 
   @Post('import-ocr')

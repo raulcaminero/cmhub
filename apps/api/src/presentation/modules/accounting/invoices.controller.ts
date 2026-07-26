@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { InvoiceService } from '@application/services/invoice/invoice.service';
+import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { CreateInvoiceDto } from '@application/dtos/invoice/create-invoice.dto';
 import { CollectInvoiceDto } from '@application/dtos/invoice/collect-invoice.dto';
 
@@ -24,8 +25,12 @@ export class InvoicesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new invoice and auto-consume NCF sequence' })
-  createInvoice(@Param('companyId') companyId: string, @Body() dto: CreateInvoiceDto) {
-    return this.invoiceService.createInvoice(companyId, dto);
+  createInvoice(
+    @Param('companyId') companyId: string,
+    @Body() dto: CreateInvoiceDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.invoiceService.createInvoice(companyId, dto, user.userId);
   }
 
   @Post(':id/collect')

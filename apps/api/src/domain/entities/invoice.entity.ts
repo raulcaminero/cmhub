@@ -17,6 +17,7 @@ export class InvoiceEntity {
   itbisRetained: number;
   isrRetained: number;
   costOfGoodsSold: number | null;
+  createdByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
