@@ -5,6 +5,7 @@ import { PrismaModule } from '@infrastructure/persistence/prisma/prisma.module';
 import { AuthModule } from '@presentation/modules/auth/auth.module';
 import { CompaniesModule } from '@presentation/modules/companies/companies.module';
 import { AccountingModule } from '@presentation/modules/accounting/accounting.module';
+import { RagModule } from '@presentation/modules/rag/rag.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AccountingModule } from '@presentation/modules/accounting/accounting.mo
     AuthModule,
     CompaniesModule,
     AccountingModule,
+    RagModule,
   ],
 })
 export class AppModule {}
