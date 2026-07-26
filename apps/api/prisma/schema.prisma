@@ -346,3 +346,22 @@ model TaxFiling {
 
   @@unique([companyId, period, taxType])
 }
+
+model TaxDocument {
+  id        String             @id @default(cuid())
+  title     String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  chunks    TaxDocumentChunk[]
+}
+
+model TaxDocumentChunk {
+  id            String                     @id @default(cuid())
+  taxDocumentId String
+  content       String
+  embedding     Unsupported("vector(768)")
+  createdAt     DateTime                   @default(now())
+  taxDocument   TaxDocument                @relation(fields: [taxDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([taxDocumentId])
+}

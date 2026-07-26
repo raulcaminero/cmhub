@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAppSelector } from '@/store/hooks';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
-import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2 } from 'lucide-react';
+import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
+import TaxCopilotView from '@/components/features/tax/tax-copilot-view';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
@@ -38,6 +39,7 @@ export default function TaxPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState<'board' | 'copilot'>('board');
 
   // Period Selector States
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -204,8 +206,35 @@ export default function TaxPage() {
         </Card>
       ) : (
         <>
-          {/* Top row: Summary & Exports */}
-          <div className="grid gap-6 md:grid-cols-3">
+          {/* Tabs Selector */}
+          <div className="flex border-b border-muted mb-4">
+            <button
+              onClick={() => setActiveTab('board')}
+              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-all ${
+                activeTab === 'board'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Tablero Fiscal
+            </button>
+            <button
+              onClick={() => setActiveTab('copilot')}
+              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                activeTab === 'copilot'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              Copiloto Inteligente
+            </button>
+          </div>
+
+          {activeTab === 'board' ? (
+            <>
+              {/* Top row: Summary & Exports */}
+              <div className="grid gap-6 md:grid-cols-3">
             {/* Obligaciones Card */}
             <Card className="md:col-span-2">
               <CardHeader className="pb-3">
@@ -512,6 +541,12 @@ export default function TaxPage() {
               )}
             </CardContent>
           </Card>
+        </>
+      ) : (
+        <div className="pt-2">
+          <TaxCopilotView companyId={companyId} />
+        </div>
+      )}
         </>
       )}
     </div>
