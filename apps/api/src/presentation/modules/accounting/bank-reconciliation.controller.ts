@@ -15,12 +15,16 @@ export class BankReconciliationController {
   ) {}
 
   @Get('transactions')
-  @ApiOperation({ summary: 'List all imported bank transactions' })
+  @ApiOperation({ summary: 'List all imported bank transactions (paginated and filtered by date)' })
   getTransactions(
     @Param('companyId') companyId: string,
-    @Query('accountId') accountId?: string
+    @Query('accountId') accountId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
-    return this.reconciliationService.getTransactions(companyId, accountId);
+    return this.reconciliationService.getTransactions(companyId, accountId, { page, limit, startDate, endDate });
   }
 
   @Post('import')

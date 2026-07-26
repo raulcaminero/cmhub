@@ -48,10 +48,24 @@ export default function AccountingExpensesPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
 
-  const { data: expenses, isLoading } = useGetExpensesQuery(
-    { companyId: companyId! },
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  
+  const getInitialStartDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  };
+  const [startDate, setStartDate] = useState(getInitialStartDate());
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const { data: expensesData, isLoading } = useGetExpensesQuery(
+    { companyId: companyId!, page, limit, startDate, endDate },
     { skip: !companyId || !mounted },
   );
+  const expenses = expensesData?.data || [];
+  const totalCount = expensesData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / limit) || 1;
 
   const { data: contacts } = useGetContactsQuery(
     { companyId: companyId! },
@@ -345,8 +359,34 @@ export default function AccountingExpensesPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
           <CardTitle>Historial de Compras y Gastos (606)</CardTitle>
+          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Desde:</span>
+              <Input
+                type="date"
+                className="h-8 text-xs w-[130px] p-2 bg-background"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Hasta:</span>
+              <Input
+                type="date"
+                className="h-8 text-xs w-[130px] p-2 bg-background"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -446,6 +486,33 @@ export default function AccountingExpensesPage() {
                 })}
               </TableBody>
             </Table>
+          )}
+
+          {/* Pagination Controls */}
+          {expenses && expenses.length > 0 && (
+            <div className="flex items-center justify-between border-t pt-4 mt-4 flex-wrap gap-2">
+              <span className="text-xs text-muted-foreground">
+                Mostrando {expenses.length} de {totalCount} gastos (Página {page} de {totalPages})
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={page === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

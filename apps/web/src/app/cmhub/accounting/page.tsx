@@ -29,10 +29,18 @@ export default function AccountingPage() {
     { skip: !companyId || !mounted },
   );
 
-  const { data: invoices } = useGetInvoicesQuery(
-    { companyId: companyId! },
+  const getStartOfCurrentMonth = () => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  };
+  const startMonth = getStartOfCurrentMonth();
+
+  const { data: invoicesData } = useGetInvoicesQuery(
+    { companyId: companyId!, startDate: startMonth, limit: 1000 },
     { skip: !companyId || !mounted },
   );
+  const invoices = invoicesData?.data || [];
 
   useEffect(() => {
     setMounted(true);

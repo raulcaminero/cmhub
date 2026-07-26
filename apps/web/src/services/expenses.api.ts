@@ -42,11 +42,21 @@ export interface CreateExpenseDto {
   foreignPaymentType?: string;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
+
 export const expensesApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getExpenses: builder.query<Expense[], { companyId: string }>({
-      query: ({ companyId }) => `/companies/${companyId}/accounting/expenses`,
+    getExpenses: builder.query<PaginatedResponse<Expense>, { companyId: string; page?: number; limit?: number; startDate?: string; endDate?: string }>({
+      query: ({ companyId, page, limit, startDate, endDate }) => ({
+        url: `/companies/${companyId}/accounting/expenses`,
+        params: { page, limit, startDate, endDate },
+      }),
       providesTags: ['Expense'],
     }),
     createExpense: builder.mutation<Expense, { companyId: string; body: CreateExpenseDto }>({

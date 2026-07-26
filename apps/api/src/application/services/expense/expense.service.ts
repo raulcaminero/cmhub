@@ -25,8 +25,78 @@ export class ExpenseService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async getExpenses(companyId: string) {
-    return this.expenseRepository.findByCompany(companyId);
+  async getExpenses(
+    companyId: string,
+    query?: { page?: number | string; limit?: number | string; startDate?: string; endDate?: string }
+  ) {
+    const page = Number(query?.page || 1);
+    const limit = Number(query?.limit || 50);
+    const skip = (page - 1) * limit;
+
+    let startDate = query?.startDate ? new Date(query.startDate) : undefined;
+    let endDate = query?.endDate ? new Date(query.endDate) : undefined;
+
+    if (!startDate) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      startDate = thirtyDaysAgo;
+    }
+    if (!endDate) {
+      endDate = new Date();
+    }
+
+    const [expenses, totalCount] = await Promise.all([
+      this.prisma.expense.findMany({
+        where: {
+          companyId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { date: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.expense.count({
+        where: {
+          companyId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: expenses.map((e) => ({
+        id: e.id,
+        companyId: e.companyId,
+        providerRnc: e.providerRnc,
+        providerName: e.providerName,
+        ncf: e.ncf,
+        expenseType: e.expenseType,
+        date: e.date,
+        paymentDate: e.paymentDate,
+        amount: Number(e.amount),
+        itbis: Number(e.itbis),
+        itbisRetained: Number(e.itbisRetained),
+        isrRetained: Number(e.isrRetained),
+        paymentMethod: e.paymentMethod,
+        journalEntryId: e.journalEntryId,
+        isVoided: e.isVoided,
+        isForeignPayment: e.isForeignPayment,
+        foreignCountry: e.foreignCountry,
+        foreignTaxId: e.foreignTaxId,
+        foreignPaymentType: e.foreignPaymentType,
+        createdAt: e.createdAt,
+        updatedAt: e.updatedAt,
+      })),
+      totalCount,
+      page,
+      limit,
+    };
   }
 
   async deleteExpense(companyId: string, id: string) {

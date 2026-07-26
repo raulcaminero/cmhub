@@ -40,10 +40,24 @@ const PAYMENT_METHODS = [
 export function InvoicesView() {
   const companyId = useAppSelector((state) => state.company.active?.id);
 
-  const { data: invoices, isLoading } = useGetInvoicesQuery(
-    { companyId: companyId! },
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  
+  const getInitialStartDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  };
+  const [startDate, setStartDate] = useState(getInitialStartDate());
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const { data: invoicesData, isLoading } = useGetInvoicesQuery(
+    { companyId: companyId!, page, limit, startDate, endDate },
     { skip: !companyId },
   );
+  const invoices = invoicesData?.data || [];
+  const totalCount = invoicesData?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / limit) || 1;
 
   const { data: contacts } = useGetContactsQuery(
     { companyId: companyId! },
@@ -186,12 +200,38 @@ export function InvoicesView() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
           <CardTitle>Facturas Emitidas (Ventas)</CardTitle>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Nueva Factura
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Desde:</span>
+              <Input
+                type="date"
+                className="h-8 text-xs w-[130px] p-2 bg-background"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Hasta:</span>
+              <Input
+                type="date"
+                className="h-8 text-xs w-[130px] p-2 bg-background"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <Button size="sm" className="gap-2 h-8" onClick={() => setIsOpen(true)}>
+              <Plus className="w-4 h-4" />
+              Nueva Factura
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -294,6 +334,33 @@ export function InvoicesView() {
                 ))}
               </TableBody>
             </Table>
+          )}
+
+          {/* Pagination Controls */}
+          {invoices && invoices.length > 0 && (
+            <div className="flex items-center justify-between border-t pt-4 mt-4 flex-wrap gap-2">
+              <span className="text-xs text-muted-foreground">
+                Mostrando {invoices.length} de {totalCount} facturas (Página {page} de {totalPages})
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={page === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

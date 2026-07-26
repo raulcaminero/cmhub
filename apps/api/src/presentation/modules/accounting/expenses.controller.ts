@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseInterceptors, UploadedFile, BadRequestException, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseInterceptors, UploadedFile, BadRequestException, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpenseService } from '@application/services/expense/expense.service';
@@ -16,9 +16,15 @@ export class ExpensesController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all company expenses' })
-  getExpenses(@Param('companyId') companyId: string) {
-    return this.expenseService.getExpenses(companyId);
+  @ApiOperation({ summary: 'List all company expenses (paginated and filtered by date)' })
+  getExpenses(
+    @Param('companyId') companyId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.expenseService.getExpenses(companyId, { page, limit, startDate, endDate });
   }
 
   @Post()

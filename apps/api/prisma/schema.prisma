@@ -132,6 +132,7 @@ model JournalEntry {
 
   @@index([companyId, status])
   @@index([companyId, date])
+  @@index([companyId, reference])
 }
 
 model Invoice {
@@ -158,6 +159,7 @@ model Invoice {
 
   @@index([companyId, date])
   @@index([companyId, isVoided, date])
+  @@index([companyId, ncf])
 }
 
 model Expense {
@@ -188,6 +190,7 @@ model Expense {
   @@index([companyId, date])
   @@index([companyId, isVoided, date])
   @@index([companyId, isForeignPayment])
+  @@index([companyId, ncf])
 }
 
 model JournalEntryLine {
@@ -241,6 +244,7 @@ model Contact {
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, rnc])
+  @@index([companyId, name])
 }
 
 model Employee {
@@ -256,6 +260,7 @@ model Employee {
   payrollItems PayrollItem[]
 
   @@unique([companyId, cedula])
+  @@index([companyId, name])
 }
 
 model Payroll {
