@@ -28,6 +28,7 @@ import {
   BANK_TRANSACTION_REPOSITORY,
 } from '@application/services/bank-reconciliation/bank-reconciliation.service';
 import { OcrService } from '@application/services/ocr/ocr.service';
+import { OcrQueueModule } from './ocr-queue.module';
 
 import { AccountRepository } from '@infrastructure/persistence/repositories/account.repository';
 import { JournalEntryRepository } from '@infrastructure/persistence/repositories/journal-entry.repository';
@@ -40,6 +41,7 @@ import { PayrollRepository } from '@infrastructure/persistence/repositories/payr
 import { BankTransactionRepository } from '@infrastructure/persistence/repositories/bank-transaction.repository';
 
 @Module({
+  imports: [OcrQueueModule],
   controllers: [
     AccountingController,
     ExpensesController,

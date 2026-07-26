@@ -91,11 +91,16 @@ export const reconciliationApi = api.injectEndpoints({
       query: ({ companyId, accountId }) => `/companies/${companyId}/accounting/reconciliation/report/${accountId}`,
       providesTags: ['JournalEntry', 'Account'],
     }),
-    importStatementOcr: builder.mutation<Array<{ date: string; description: string; amount: number }>, { companyId: string; body: FormData }>({
+    importStatementOcr: builder.mutation<{ jobId: string; status: string }, { companyId: string; body: FormData }>({
       query: ({ companyId, body }) => ({
         url: `/companies/${companyId}/accounting/reconciliation/import-ocr`,
         method: 'POST',
         body,
+      }),
+    }),
+    getStatementOcrStatus: builder.query<{ jobId: string; status: string; result: any }, { companyId: string; jobId: string }>({
+      query: ({ companyId, jobId }) => ({
+        url: `/companies/${companyId}/accounting/reconciliation/ocr-status/${jobId}`,
       }),
     }),
   }),
@@ -109,4 +114,5 @@ export const {
   useUnmatchReconciliationMutation,
   useGetReconciliationReportQuery,
   useImportStatementOcrMutation,
+  useLazyGetStatementOcrStatusQuery,
 } = reconciliationApi;

@@ -90,11 +90,16 @@ export const expensesApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Expense', 'JournalEntry', 'Account', 'Contact'],
     }),
-    importOcr: builder.mutation<{ providerRnc: string; providerName: string; ncf: string; date: string; amount: number; itbis: number; expenseType: string }, { companyId: string; body: FormData }>({
+    importOcr: builder.mutation<{ jobId: string; status: string }, { companyId: string; body: FormData }>({
       query: ({ companyId, body }) => ({
         url: `/companies/${companyId}/accounting/expenses/import-ocr`,
         method: 'POST',
         body,
+      }),
+    }),
+    getOcrStatus: builder.query<{ jobId: string; status: string; result: any }, { companyId: string; jobId: string }>({
+      query: ({ companyId, jobId }) => ({
+        url: `/companies/${companyId}/accounting/expenses/ocr-status/${jobId}`,
       }),
     }),
   }),
@@ -107,4 +112,5 @@ export const {
   useVoidExpenseMutation,
   useImportExpensesMutation,
   useImportOcrMutation,
+  useLazyGetOcrStatusQuery,
 } = expensesApi;
