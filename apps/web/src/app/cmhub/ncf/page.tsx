@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetNcfSequencesQuery, useCreateNcfSequenceMutation } from '@/services/ncf.api';
+import { useGetNcfSequencesQuery, useCreateNcfSequenceMutation, useImportNcfSequencesMutation } from '@/services/ncf.api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Info, FileSpreadsheet, Upload } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import {
   Table,
@@ -44,8 +44,13 @@ export default function NcfPage() {
   );
 
   const [createSequence, { isLoading: isCreating }] = useCreateNcfSequenceMutation();
+  const [importNcfSequences, { isLoading: isImporting }] = useImportNcfSequencesMutation();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isExcelOpen, setIsExcelOpen] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importError, setImportError] = useState('');
+
   const [type, setType] = useState<NcfType>(NcfType.B01);
   const [prefix, setPrefix] = useState('B01');
   const [max, setMax] = useState(100);
@@ -98,17 +103,92 @@ export default function NcfPage() {
     }
   }
 
+  async function handleCsvImport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId) return;
+    setImportError('');
+
+    const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length <= 1) {
+      setImportError('El archivo o texto está vacío.');
+      return;
+    }
+
+    const payload: any[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(p => p.trim().replace(/^["']|["']$/g, ''));
+      if (parts.length < 4) continue;
+
+      const typeVal = parts[0] as NcfType;
+      const prefixVal = parts[1];
+      const maxVal = Number(parts[2]);
+      const expiresAtVal = parts[3];
+
+      if (!typeVal || !prefixVal || isNaN(maxVal) || !expiresAtVal) {
+        setImportError(`Fila ${i + 1} inválida. Verifica los datos.`);
+        return;
+      }
+
+      payload.push({
+        type: typeVal,
+        prefix: prefixVal,
+        max: maxVal,
+        expiresAt: new Date(expiresAtVal).toISOString(),
+      });
+    }
+
+    try {
+      await importNcfSequences({
+        companyId,
+        body: payload,
+      }).unwrap();
+      setIsExcelOpen(false);
+      setCsvText('');
+    } catch (err: any) {
+      setImportError(err.data?.message || 'Error al importar las secuencias NCF.');
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setCsvText(text);
+    };
+    reader.readAsText(file);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">NCF (Comprobantes Fiscales)</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">NCF (Comprobantes Fiscales)</h1>
+            <div className="relative group">
+              <Info className="w-5 h-5 text-muted-foreground cursor-help hover:text-primary transition-colors" />
+              <div className="absolute left-1/2 -translate-x-1/2 lg:left-full lg:translate-x-0 top-full lg:top-1/2 lg:-translate-y-1/2 mt-2 lg:mt-0 lg:ml-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl hidden group-hover:block z-50 leading-relaxed font-normal normal-case">
+                <p className="font-semibold mb-1">¿Qué es esta página?</p>
+                Aquí administras las secuencias autorizadas por la DGII (B01, B02, etc.). 
+                <br /><br />
+                Al registrar tus rangos, el sistema generará automáticamente el NCF de tus facturas de venta, evitándote la digitación manual.
+              </div>
+            </div>
+          </div>
           <p className="text-muted-foreground">Administración de secuencias y rangos autorizados por la DGII.</p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Registrar Secuencia
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4" />
+            Importar Excel / CSV
+          </Button>
+          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Registrar Secuencia
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -257,6 +337,90 @@ export default function NcfPage() {
                     'Registrar'
                   )}
                 </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Importar NCF desde Excel/CSV */}
+      {isExcelOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
+            <h3 className="text-lg font-semibold mb-2">Importar Secuencias NCF desde Excel / CSV</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Carga un archivo CSV o pega el texto en formato delimitado por comas con las columnas autorizadas por la DGII.
+            </p>
+            
+            <form onSubmit={handleCsvImport} className="space-y-4">
+              <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
+                <Upload className="w-8 h-8 text-muted-foreground" />
+                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                  Haz clic para subir archivo CSV
+                </Label>
+                <span className="text-[10px] text-muted-foreground">O arrastra el archivo aquí</span>
+                <Input
+                  id="csv-file"
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="csv-text">Contenido o Vista Previa del CSV</Label>
+                  <span className="text-[10px] text-muted-foreground font-mono">Formato: Tipo,Prefijo,Max,Vencimiento</span>
+                </div>
+                <textarea
+                  id="csv-text"
+                  rows={6}
+                  placeholder="Ejemplo:&#10;Tipo,Prefijo,Max,Vencimiento&#10;B01,B01,100,2026-12-31&#10;B02,B02,500,2026-12-31"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  required
+                />
+              </div>
+
+              {importError && (
+                <p className="text-xs text-destructive font-medium">{importError}</p>
+              )}
+
+              <div className="flex justify-between items-center pt-2">
+                <a 
+                  href="data:text/csv;charset=utf-8,Tipo,Prefijo,Max,Vencimiento%0AB01,B01,100,2026-12-31%0AB02,B02,500,2026-12-31" 
+                  download="plantilla_ncf.csv"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  Descargar Plantilla CSV
+                </a>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsExcelOpen(false);
+                      setCsvText('');
+                      setImportError('');
+                    }}
+                    disabled={isImporting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" size="sm" disabled={isImporting}>
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                        Importando...
+                      </>
+                    ) : (
+                      'Importar Rangos'
+                    )}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
