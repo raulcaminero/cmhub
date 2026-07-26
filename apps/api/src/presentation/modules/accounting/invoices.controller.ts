@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { InvoiceService } from '@application/services/invoice/invoice.service';
 import { CreateInvoiceDto } from '@application/dtos/invoice/create-invoice.dto';
@@ -11,9 +11,15 @@ export class InvoicesController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all company invoices' })
-  getInvoices(@Param('companyId') companyId: string) {
-    return this.invoiceService.getInvoices(companyId);
+  @ApiOperation({ summary: 'List all company invoices (paginated and filtered by date)' })
+  getInvoices(
+    @Param('companyId') companyId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.invoiceService.getInvoices(companyId, { page, limit, startDate, endDate });
   }
 
   @Post()

@@ -88,8 +88,67 @@ export class BankReconciliationService {
     return { importedCount: transactionsToCreate.length };
   }
 
-  async getTransactions(companyId: string, accountId?: string) {
-    return this.bankTransactionRepository.findByCompany(companyId, accountId);
+  async getTransactions(
+    companyId: string,
+    accountId?: string,
+    query?: { page?: number | string; limit?: number | string; startDate?: string; endDate?: string }
+  ) {
+    const page = Number(query?.page || 1);
+    const limit = Number(query?.limit || 50);
+    const skip = (page - 1) * limit;
+
+    let startDate = query?.startDate ? new Date(query.startDate) : undefined;
+    let endDate = query?.endDate ? new Date(query.endDate) : undefined;
+
+    if (!startDate) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      startDate = thirtyDaysAgo;
+    }
+    if (!endDate) {
+      endDate = new Date();
+    }
+
+    const whereClause: any = {
+      companyId,
+      date: {
+        gte: startDate,
+        lte: endDate,
+      },
+    };
+
+    if (accountId) {
+      whereClause.accountId = accountId;
+    }
+
+    const [txs, totalCount] = await Promise.all([
+      this.prisma.bankTransaction.findMany({
+        where: whereClause,
+        orderBy: { date: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.bankTransaction.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      data: txs.map((t) => ({
+        id: t.id,
+        companyId: t.companyId,
+        accountId: t.accountId,
+        date: t.date,
+        description: t.description,
+        amount: Number(t.amount),
+        reference: t.reference,
+        reconciled: t.reconciled,
+        journalEntryLineId: t.journalEntryLineId,
+      })),
+      totalCount,
+      page,
+      limit,
+    };
   }
 
   async autoMatch(companyId: string, accountId: string): Promise<{ matchesCount: number }> {
@@ -198,7 +257,7 @@ export class BankReconciliationService {
 
     // 1. Filter bank transactions
     const unreconciledBank = bankTxs.filter((t) => !t.reconciled);
-    const reconciledBank = bankTxs.filter((t) => t.reconciled);
+    const reconciledBank = bankTxs.filter((t) => t.reconciled).slice(0, 100);
 
     // 3. Compute balances
     // Bank balance = Sum of all imported bank transactions

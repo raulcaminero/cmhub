@@ -307,7 +307,7 @@ export function ReconciliationView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.unreconciledBankTransactions.map((tx) => (
+                    {report.unreconciledBankTransactions.slice(0, 50).map((tx) => (
                       <TableRow
                         key={tx.id}
                         onClick={() => setSelectedBankTx(selectedBankTx?.id === tx.id ? null : tx)}
@@ -334,6 +334,11 @@ export function ReconciliationView() {
                     )}
                   </TableBody>
                 </Table>
+                {report.unreconciledBankTransactions.length > 50 && (
+                  <div className="p-2 text-center text-[10px] text-muted-foreground bg-muted/20 border-t font-medium">
+                    Mostrando los primeros 50 de {report.unreconciledBankTransactions.length} movimientos pendientes. Concilia para ver más.
+                  </div>
+                )}
               </div>
             </div>
 
@@ -355,7 +360,7 @@ export function ReconciliationView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.unreconciledBooksLines.map((line) => (
+                    {report.unreconciledBooksLines.slice(0, 50).map((line) => (
                       <TableRow
                         key={line.id}
                         onClick={() => setSelectedLedgerLine(selectedLedgerLine?.id === line.id ? null : line)}
@@ -385,6 +390,11 @@ export function ReconciliationView() {
                     )}
                   </TableBody>
                 </Table>
+                {report.unreconciledBooksLines.length > 50 && (
+                  <div className="p-2 text-center text-[10px] text-muted-foreground bg-muted/20 border-t font-medium">
+                    Mostrando los primeros 50 de {report.unreconciledBooksLines.length} movimientos pendientes. Concilia para ver más.
+                  </div>
+                )}
               </div>
             </div>
           </div>

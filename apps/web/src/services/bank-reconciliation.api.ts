@@ -39,13 +39,20 @@ export interface ReconciliationReport {
   reconciledBankTransactions: BankTransaction[];
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
+
 export const reconciliationApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getReconciliationTransactions: builder.query<BankTransaction[], { companyId: string; accountId?: string }>({
-      query: ({ companyId, accountId }) => ({
+    getReconciliationTransactions: builder.query<PaginatedResponse<BankTransaction>, { companyId: string; accountId?: string; page?: number; limit?: number; startDate?: string; endDate?: string }>({
+      query: ({ companyId, accountId, page, limit, startDate, endDate }) => ({
         url: `/companies/${companyId}/accounting/reconciliation/transactions`,
-        params: accountId ? { accountId } : {},
+        params: { accountId, page, limit, startDate, endDate },
       }),
       providesTags: ['JournalEntry', 'Account'],
     }),

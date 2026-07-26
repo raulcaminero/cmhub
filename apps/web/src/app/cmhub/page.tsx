@@ -32,15 +32,25 @@ export default function DashboardPage() {
   const companyId = activeCompany?.id;
   const [mounted, setMounted] = useState(false);
 
-  const { data: invoices, isLoading: loadingInvoices } = useGetInvoicesQuery(
-    { companyId: companyId! },
-    { skip: !companyId }
-  );
+  const getDashboardStartDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 6);
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  };
+  const dashStartDate = getDashboardStartDate();
 
-  const { data: expenses, isLoading: loadingExpenses } = useGetExpensesQuery(
-    { companyId: companyId! },
+  const { data: invoicesData, isLoading: loadingInvoices } = useGetInvoicesQuery(
+    { companyId: companyId!, startDate: dashStartDate, limit: 1000 },
     { skip: !companyId }
   );
+  const invoices = invoicesData?.data || [];
+
+  const { data: expensesData, isLoading: loadingExpenses } = useGetExpensesQuery(
+    { companyId: companyId!, startDate: dashStartDate, limit: 1000 },
+    { skip: !companyId }
+  );
+  const expenses = expensesData?.data || [];
 
   useEffect(() => {
     setMounted(true);

@@ -34,10 +34,21 @@ export interface CreateInvoiceDto {
   isrRetained?: number;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
+
 export const invoicesApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
-    getInvoices: builder.query<Invoice[], { companyId: string }>({
-      query: ({ companyId }) => `/companies/${companyId}/accounting/invoices`,
+    getInvoices: builder.query<PaginatedResponse<Invoice>, { companyId: string; page?: number; limit?: number; startDate?: string; endDate?: string }>({
+      query: ({ companyId, page, limit, startDate, endDate }) => ({
+        url: `/companies/${companyId}/accounting/invoices`,
+        params: { page, limit, startDate, endDate },
+      }),
       providesTags: ['Invoice'],
     }),
     createInvoice: builder.mutation<Invoice, { companyId: string; body: CreateInvoiceDto }>({

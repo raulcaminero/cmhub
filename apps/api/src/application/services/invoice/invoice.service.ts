@@ -27,8 +27,75 @@ export class InvoiceService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async getInvoices(companyId: string) {
-    return this.invoiceRepository.findByCompany(companyId);
+  async getInvoices(
+    companyId: string,
+    query?: { page?: number | string; limit?: number | string; startDate?: string; endDate?: string }
+  ) {
+    const page = Number(query?.page || 1);
+    const limit = Number(query?.limit || 50);
+    const skip = (page - 1) * limit;
+
+    let startDate = query?.startDate ? new Date(query.startDate) : undefined;
+    let endDate = query?.endDate ? new Date(query.endDate) : undefined;
+
+    if (!startDate) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      startDate = thirtyDaysAgo;
+    }
+    if (!endDate) {
+      endDate = new Date();
+    }
+
+    const [invoices, totalCount] = await Promise.all([
+      this.prisma.invoice.findMany({
+        where: {
+          companyId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        orderBy: { date: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.invoice.count({
+        where: {
+          companyId,
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: invoices.map((inv) => ({
+        id: inv.id,
+        companyId: inv.companyId,
+        clientRnc: inv.clientRnc,
+        clientName: inv.clientName,
+        ncf: inv.ncf,
+        ncfType: inv.ncfType,
+        date: inv.date,
+        paymentDate: inv.paymentDate,
+        amount: Number(inv.amount),
+        itbis: Number(inv.itbis),
+        itbisRetained: Number(inv.itbisRetained),
+        isrRetained: Number(inv.isrRetained),
+        paymentMethod: inv.paymentMethod,
+        journalEntryId: inv.journalEntryId,
+        isVoided: inv.isVoided,
+        costOfGoodsSold: inv.costOfGoodsSold ? Number(inv.costOfGoodsSold) : null,
+        createdAt: inv.createdAt,
+        updatedAt: inv.updatedAt,
+      })),
+      totalCount,
+      page,
+      limit,
+    };
   }
 
   async createInvoice(companyId: string, dto: CreateInvoiceDto) {
