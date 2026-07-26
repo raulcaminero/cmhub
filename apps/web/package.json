@@ -25,6 +25,7 @@
     "next": "^16.2.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "react-redux": "^9.1.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"

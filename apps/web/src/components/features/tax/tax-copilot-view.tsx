@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useAskCopilotMutation } from '@/services/tax-copilot.api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -128,42 +129,6 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
     }
   }
 
-  // Simple native formatter to support formatting like bold, lists and code blocks from Gemini markdown output
-  function renderText(text: string) {
-    const lines = text.split('\n');
-    return lines.map((line, idx) => {
-      let formattedLine = line;
-      // Bold formatting: **text** -> <strong>text</strong>
-      formattedLine = formattedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      // Code format: `code` -> <code>code</code>
-      formattedLine = formattedLine.replace(/`(.*?)`/g, '<code class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-mono text-xs">$1</code>');
-
-      // Unordered lists
-      if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
-        const itemText = line.trim().substring(2)
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/`(.*?)`/g, '<code class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-mono text-xs">$1</code>');
-        return (
-          <li key={idx} className="list-disc ml-5 mb-1 text-slate-800 leading-normal" dangerouslySetInnerHTML={{ __html: itemText }} />
-        );
-      }
-
-      // Headers (e.g. ### Header)
-      if (line.trim().startsWith('###')) {
-        const headerText = line.trim().replace(/^###\s*/, '');
-        return <h4 key={idx} className="text-sm font-bold text-slate-900 mt-3 mb-1" dangerouslySetInnerHTML={{ __html: headerText }} />;
-      }
-      if (line.trim().startsWith('##')) {
-        const headerText = line.trim().replace(/^##\s*/, '');
-        return <h3 key={idx} className="text-md font-bold text-slate-900 mt-4 mb-2" dangerouslySetInnerHTML={{ __html: headerText }} />;
-      }
-
-      return (
-        <p key={idx} className="mb-2 leading-relaxed text-slate-800" dangerouslySetInnerHTML={{ __html: formattedLine }} />
-      );
-    });
-  }
-
   return (
     <Card className="border border-indigo-100 shadow-md bg-slate-50/20 max-w-4xl mx-auto h-[600px] flex flex-col overflow-hidden">
       <CardHeader className="bg-white border-b py-3 px-4 flex flex-row justify-between items-center shrink-0">
@@ -209,7 +174,9 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
               {msg.sender === 'user' ? (
                 <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
               ) : (
-                <div className="space-y-1">{renderText(msg.text)}</div>
+                <div className="prose prose-xs max-w-none text-slate-800 leading-relaxed">
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>
+                </div>
               )}
             </div>
           </div>
