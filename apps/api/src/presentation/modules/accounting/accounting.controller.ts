@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AccountingService } from '@application/services/accounting/accounting.service';
+import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { CreateAccountDto } from '@application/dtos/accounting/create-account.dto';
 import { CreateJournalEntryDto } from '@application/dtos/accounting/create-journal-entry.dto';
 import { GetAccountsDto } from '@application/dtos/accounting/get-accounts.dto';
@@ -31,8 +32,12 @@ export class AccountingController {
 
   @Post('journal-entries')
   @ApiOperation({ summary: 'Create a journal entry (double-entry)' })
-  createJournalEntry(@Param('companyId') companyId: string, @Body() dto: CreateJournalEntryDto) {
-    return this.accountingService.createJournalEntry(companyId, dto);
+  createJournalEntry(
+    @Param('companyId') companyId: string,
+    @Body() dto: CreateJournalEntryDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.accountingService.createJournalEntry(companyId, dto, user.userId);
   }
 
   @Patch('journal-entries/:id/post')

@@ -7,6 +7,7 @@ export interface CreateJournalEntryData {
   date: Date;
   description: string;
   reference?: string;
+  createdByUserId?: string;
   lines: Array<Omit<JournalEntryLineEntity, 'id' | 'journalEntryId'>>;
 }
 

@@ -18,6 +18,7 @@ export class ExpenseEntity {
   foreignCountry: string | null;
   foreignTaxId: string | null;
   foreignPaymentType: string | null;
+  createdByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

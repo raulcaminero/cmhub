@@ -176,7 +176,7 @@ export class ExpenseService {
     });
   }
 
-  async createExpense(companyId: string, dto: CreateExpenseDto, tx?: any) {
+  async createExpense(companyId: string, dto: CreateExpenseDto, createdByUserId?: string, tx?: any) {
     const [, , accounts] = await Promise.all([
       this.prisma.company.findUnique({
         where: { id: companyId },
@@ -308,6 +308,7 @@ export class ExpenseService {
         date: new Date(dto.date),
         description: `Gasto proveedor: ${dto.providerName} - NCF ${dto.ncf}`,
         reference: dto.ncf,
+        createdByUserId,
         lines: journalLines,
       }, prismaTx);
 
@@ -332,6 +333,7 @@ export class ExpenseService {
         foreignCountry: dto.foreignCountry ?? null,
         foreignTaxId: dto.foreignTaxId ?? null,
         foreignPaymentType: dto.foreignPaymentType ?? null,
+        createdByUserId: createdByUserId ?? null,
       }, prismaTx);
     };
 
@@ -365,11 +367,11 @@ export class ExpenseService {
     });
   }
 
-  async importExpenses(companyId: string, dtos: CreateExpenseDto[]) {
+  async importExpenses(companyId: string, dtos: CreateExpenseDto[], createdByUserId?: string) {
     return this.prisma.$transaction(async (tx) => {
       const importedExpenses = [];
       for (const dto of dtos) {
-        const expense = await this.createExpense(companyId, dto, tx);
+        const expense = await this.createExpense(companyId, dto, createdByUserId, tx);
         importedExpenses.push(expense);
       }
       return {

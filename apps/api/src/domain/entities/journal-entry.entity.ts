@@ -9,6 +9,7 @@ export class JournalEntryEntity {
   reference: string | null;
   status: JournalEntryStatus;
   lines: JournalEntryLineEntity[];
+  createdByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -22,6 +22,7 @@ const mapInvoice = (invoice: PrismaInvoice): InvoiceEntity => ({
   itbisRetained: Number(invoice.itbisRetained),
   isrRetained: Number(invoice.isrRetained),
   costOfGoodsSold: invoice.costOfGoodsSold ? Number(invoice.costOfGoodsSold) : null,
+  createdByUserId: invoice.createdByUserId,
   createdAt: invoice.createdAt,
   updatedAt: invoice.updatedAt,
 });
@@ -60,6 +61,7 @@ export class InvoiceRepository implements IInvoiceRepository {
         journalEntryId: data.journalEntryId,
         itbisRetained: data.itbisRetained ?? 0,
         isrRetained: data.isrRetained ?? 0,
+        createdByUserId: data.createdByUserId,
       },
     });
     return mapInvoice(invoice);
