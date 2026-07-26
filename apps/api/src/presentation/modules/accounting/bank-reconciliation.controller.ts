@@ -4,6 +4,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { BankReconciliationService } from '@application/services/bank-reconciliation/bank-reconciliation.service';
 import { ImportCsvDto, AutoMatchDto, ReconcileManuallyDto } from '@application/dtos/reconciliation/reconciliation.dto';
 import { OcrService } from '@application/services/ocr/ocr.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @ApiTags('reconciliation')
 @ApiBearerAuth()
@@ -12,6 +16,7 @@ export class BankReconciliationController {
   constructor(
     private readonly reconciliationService: BankReconciliationService,
     private readonly ocrService: OcrService,
+    @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
   ) {}
 
   @Get('transactions')
@@ -91,7 +96,7 @@ export class BankReconciliationController {
     },
   })
   @ApiOperation({ summary: 'Scan bank statement table via OCR' })
-  importOcr(
+  async importOcr(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -102,6 +107,38 @@ export class BankReconciliationController {
       }),
     ) file: any,
   ) {
-    return this.ocrService.scanBankStatement(file.buffer, file.mimetype);
+    // Ensure temp directory exists
+    const tempDir = path.join(process.cwd(), 'scratch', 'uploads');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Save temporary file to disk
+    const tempFileName = `statement-${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
+    const filePath = path.join(tempDir, tempFileName);
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Queue job to BullMQ
+    const job = await this.ocrQueue.add('process-statement', {
+      filePath,
+      mimeType: file.mimetype,
+    });
+
+    return { jobId: job.id, status: 'queued' };
+  }
+
+  @Get('ocr-status/:jobId')
+  @ApiOperation({ summary: 'Get the status of an OCR bank statement job' })
+  async getOcrStatus(@Param('jobId') jobId: string) {
+    const job = await this.ocrQueue.getJob(jobId);
+    if (!job) {
+      throw new BadRequestException('Trabajo de OCR no encontrado.');
+    }
+    const state = await job.getState();
+    return {
+      jobId,
+      status: state,
+      result: job.returnvalue || job.failedReason || null,
+    };
   }
 }

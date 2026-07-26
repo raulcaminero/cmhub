@@ -6,6 +6,10 @@ import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user
 import { CreateExpenseDto } from '@application/dtos/expense/create-expense.dto';
 import { PayExpenseDto } from '@application/dtos/expense/pay-expense.dto';
 import { OcrService } from '@application/services/ocr/ocr.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @ApiTags('expenses')
 @ApiBearerAuth()
@@ -14,6 +18,7 @@ export class ExpensesController {
   constructor(
     private readonly expenseService: ExpenseService,
     private readonly ocrService: OcrService,
+    @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
   ) {}
 
   @Get()
@@ -79,7 +84,7 @@ export class ExpensesController {
     },
   })
   @ApiOperation({ summary: 'Scan purchase receipt via OCR' })
-  importOcr(
+  async importOcr(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -90,6 +95,38 @@ export class ExpensesController {
       }),
     ) file: any,
   ) {
-    return this.ocrService.scanReceipt(file.buffer, file.mimetype);
+    // Ensure temp directory exists
+    const tempDir = path.join(process.cwd(), 'scratch', 'uploads');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Save temporary file to disk
+    const tempFileName = `receipt-${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
+    const filePath = path.join(tempDir, tempFileName);
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Queue job to BullMQ
+    const job = await this.ocrQueue.add('process-receipt', {
+      filePath,
+      mimeType: file.mimetype,
+    });
+
+    return { jobId: job.id, status: 'queued' };
+  }
+
+  @Get('ocr-status/:jobId')
+  @ApiOperation({ summary: 'Get the status of an OCR job' })
+  async getOcrStatus(@Param('jobId') jobId: string) {
+    const job = await this.ocrQueue.getJob(jobId);
+    if (!job) {
+      throw new BadRequestException('Trabajo de OCR no encontrado.');
+    }
+    const state = await job.getState();
+    return {
+      jobId,
+      status: state,
+      result: job.returnvalue || job.failedReason || null,
+    };
   }
 }

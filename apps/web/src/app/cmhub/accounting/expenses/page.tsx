@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, Expense } from '@/services/expenses.api';
+import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, useLazyGetOcrStatusQuery, Expense } from '@/services/expenses.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType } from '@cmhub/shared-types';
@@ -82,7 +82,9 @@ export default function AccountingExpensesPage() {
   const [voidExpense, { isLoading: isVoiding }] = useVoidExpenseMutation();
   const [importExpenses, { isLoading: isImporting }] = useImportExpensesMutation();
   const [importOcr, { isLoading: isScanning }] = useImportOcrMutation();
+  const [getOcrStatus] = useLazyGetOcrStatusQuery();
 
+  const [isPollingOcr, setIsPollingOcr] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isExcelOpen, setIsExcelOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
@@ -184,22 +186,50 @@ export default function AccountingExpensesPage() {
     formData.append('file', file);
 
     try {
-      const result = await importOcr({
+      setIsPollingOcr(true);
+      const uploadRes = await importOcr({
         companyId,
         body: formData,
       }).unwrap();
 
-      setProviderRnc(result.providerRnc);
-      setProviderName(result.providerName);
-      setNcf(result.ncf);
-      setExpenseType(result.expenseType);
-      setAmount(result.amount);
-      setItbis(result.itbis);
-      setDate(new Date(result.date).toISOString().split('T')[0]);
-      setIsOcrOpen(false);
-      setIsOpen(true);
+      const jobId = uploadRes.jobId;
+
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await getOcrStatus({ companyId, jobId }).unwrap();
+          if (statusRes.status === 'completed' || statusRes.status === 'finished') {
+            clearInterval(pollInterval);
+            setIsPollingOcr(false);
+            
+            const result = statusRes.result;
+            if (result) {
+              setProviderRnc(result.providerRnc);
+              setProviderName(result.providerName);
+              setNcf(result.ncf);
+              setExpenseType(result.expenseType);
+              setAmount(result.amount);
+              setItbis(result.itbis);
+              setDate(new Date(result.date).toISOString().split('T')[0]);
+              setIsOcrOpen(false);
+              setIsOpen(true);
+            } else {
+              alert('Error al leer el contenido de la factura.');
+            }
+          } else if (statusRes.status === 'failed') {
+            clearInterval(pollInterval);
+            setIsPollingOcr(false);
+            alert(statusRes.result || 'Error durante el análisis del documento.');
+          }
+        } catch (err: any) {
+          clearInterval(pollInterval);
+          setIsPollingOcr(false);
+          alert('Error de conexión al consultar estado del escaneo.');
+        }
+      }, 1000);
+
     } catch (err: any) {
-      alert(err.data?.message || 'Error al escanear la factura.');
+      setIsPollingOcr(false);
+      alert(err.data?.message || 'Error al subir la factura para escaneo.');
     }
   }
   const [foreignCountry, setForeignCountry] = useState('US');
@@ -947,7 +977,7 @@ export default function AccountingExpensesPage() {
             
             <div className="border border-dashed border-primary rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
               <Camera className="w-10 h-10 text-primary animate-pulse" />
-              {isScanning ? (
+              {isScanning || isPollingOcr ? (
                 <div className="space-y-2">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                   <p className="text-sm font-medium">Analizando imagen con Inteligencia Artificial...</p>

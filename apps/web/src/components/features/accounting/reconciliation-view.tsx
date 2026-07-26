@@ -10,6 +10,7 @@ import {
   useMatchReconciliationMutation,
   useUnmatchReconciliationMutation,
   useImportStatementOcrMutation,
+  useLazyGetStatementOcrStatusQuery,
   BankTransaction,
   LedgerLine,
 } from '@/services/bank-reconciliation.api';
@@ -72,9 +73,12 @@ export function ReconciliationView() {
   // Mutations
   const [importStatement, { isLoading: isImporting }] = useImportStatementCsvMutation();
   const [importStatementOcr, { isLoading: isScanning }] = useImportStatementOcrMutation();
+  const [getStatementOcrStatus] = useLazyGetStatementOcrStatusQuery();
   const [autoMatch, { isLoading: isMatching }] = useAutoMatchReconciliationMutation();
   const [matchManual] = useMatchReconciliationMutation();
   const [unmatch] = useUnmatchReconciliationMutation();
+
+  const [isPollingOcr, setIsPollingOcr] = useState(false);
 
   // Import Dialog
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -94,21 +98,49 @@ export function ReconciliationView() {
     formData.append('file', file);
 
     try {
-      const result = await importStatementOcr({
+      setIsPollingOcr(true);
+      const uploadRes = await importStatementOcr({
         companyId,
         body: formData,
       }).unwrap();
 
-      const header = 'Fecha,Descripcion,Referencia,Monto\n';
-      const rows = result.map(
-        (r) => `${new Date(r.date).toISOString().split('T')[0]},${r.description},,${r.amount}`
-      ).join('\n');
+      const jobId = uploadRes.jobId;
 
-      setCsvContent(header + rows);
-      setIsOcrOpen(false);
-      setIsImportOpen(true);
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await getStatementOcrStatus({ companyId, jobId }).unwrap();
+          if (statusRes.status === 'completed' || statusRes.status === 'finished') {
+            clearInterval(pollInterval);
+            setIsPollingOcr(false);
+            
+            const result = statusRes.result;
+            if (result && Array.isArray(result)) {
+              const header = 'Fecha,Descripcion,Referencia,Monto\n';
+              const rows = result.map(
+                (r) => `${new Date(r.date).toISOString().split('T')[0]},${r.description},,${r.amount}`
+              ).join('\n');
+
+              setCsvContent(header + rows);
+              setIsOcrOpen(false);
+              setIsImportOpen(true);
+            } else {
+              alert('Error al leer el contenido del estado de cuenta.');
+            }
+          } else if (statusRes.status === 'failed') {
+            clearInterval(pollInterval);
+            setIsPollingOcr(false);
+            alert(statusRes.result || 'Error durante el análisis del estado de cuenta.');
+          }
+        } catch (err: any) {
+          clearInterval(pollInterval);
+          setIsPollingOcr(false);
+          alert('Error de conexión al consultar estado del escaneo.');
+        }
+      }, 1000);
+
     } catch (err: any) {
-      alert(err.data?.message || 'Error al escanear el estado de cuenta.');
+      setIsPollingOcr(false);
+      alert(err.data?.message || 'Error al subir el estado de cuenta.');
     }
   }
 
@@ -589,7 +621,7 @@ export function ReconciliationView() {
             
             <div className="border border-dashed border-primary rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
               <Camera className="w-10 h-10 text-primary animate-pulse" />
-              {isScanning ? (
+              {isScanning || isPollingOcr ? (
                 <div className="space-y-2">
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                   <p className="text-sm font-medium">Analizando extracto bancario con IA...</p>
@@ -620,7 +652,7 @@ export function ReconciliationView() {
                 onClick={() => {
                   setIsOcrOpen(false);
                 }}
-                disabled={isScanning}
+                disabled={isScanning || isPollingOcr}
               >
                 Cerrar
               </Button>
