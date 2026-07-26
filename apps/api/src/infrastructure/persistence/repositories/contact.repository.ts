@@ -41,8 +41,9 @@ export class ContactRepository implements IContactRepository {
     return contacts.map(mapContact);
   }
 
-  async create(data: Omit<ContactEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<ContactEntity> {
-    const contact = await this.prisma.contact.create({
+  async create(data: Omit<ContactEntity, 'id' | 'createdAt' | 'updatedAt'>, tx?: any): Promise<ContactEntity> {
+    const client = tx || this.prisma;
+    const contact = await client.contact.create({
       data: {
         companyId: data.companyId,
         rnc: data.rnc,

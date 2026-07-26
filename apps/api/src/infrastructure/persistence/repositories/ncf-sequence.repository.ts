@@ -42,8 +42,9 @@ export class NcfSequenceRepository implements INcfSequenceRepository {
     return seq ? mapNcfSequence(seq) : null;
   }
 
-  async create(data: Omit<NcfSequenceEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<NcfSequenceEntity> {
-    const seq = await this.prisma.ncfSequence.create({ data });
+  async create(data: Omit<NcfSequenceEntity, 'id' | 'createdAt' | 'updatedAt'>, tx?: any): Promise<NcfSequenceEntity> {
+    const client = tx || this.prisma;
+    const seq = await client.ncfSequence.create({ data });
     return mapNcfSequence(seq);
   }
 

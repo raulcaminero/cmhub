@@ -2,6 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { IContactRepository } from '@domain/repositories/contact.repository.interface';
 import { CreateContactDto } from '../../dtos/contact/create-contact.dto';
 import { ContactType, ContactEntity } from '@domain/entities/contact.entity';
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
 export const CONTACT_REPOSITORY = 'CONTACT_REPOSITORY';
 
@@ -9,6 +10,7 @@ export const CONTACT_REPOSITORY = 'CONTACT_REPOSITORY';
 export class ContactService {
   constructor(
     @Inject(CONTACT_REPOSITORY) private readonly contactRepository: IContactRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getContacts(companyId: string) {
@@ -89,6 +91,33 @@ export class ContactService {
       email: null,
       phone: null,
       address: null,
+    });
+  }
+
+  async importContacts(companyId: string, dtos: CreateContactDto[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const imported = [];
+      for (const dto of dtos) {
+        const cleanRnc = dto.rnc.replace(/\D/g, '');
+        const existing = await this.contactRepository.findByRnc(companyId, cleanRnc);
+        if (existing) {
+          continue;
+        }
+        const contact = await this.contactRepository.create({
+          companyId,
+          rnc: cleanRnc,
+          name: dto.name,
+          type: dto.type,
+          email: dto.email ?? null,
+          phone: dto.phone ?? null,
+          address: dto.address ?? null,
+        }, tx);
+        imported.push(contact);
+      }
+      return {
+        importedCount: imported.length,
+        contacts: imported,
+      };
     });
   }
 }
