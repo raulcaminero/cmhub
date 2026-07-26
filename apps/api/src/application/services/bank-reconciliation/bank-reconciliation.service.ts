@@ -3,6 +3,7 @@ import { IBankTransactionRepository } from '@domain/repositories/bank-transactio
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { JournalEntryStatus } from '@domain/enums';
+import { IJournalEntryRepository } from '@domain/repositories/journal-entry.repository.interface';
 
 export const BANK_TRANSACTION_REPOSITORY = 'BANK_TRANSACTION_REPOSITORY';
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
@@ -14,6 +15,8 @@ export class BankReconciliationService {
     private readonly bankTransactionRepository: IBankTransactionRepository,
     @Inject(ACCOUNT_REPOSITORY)
     private readonly accountRepository: IAccountRepository,
+    @Inject('JOURNAL_ENTRY_REPOSITORY')
+    private readonly journalEntryRepository: IJournalEntryRepository,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -297,5 +300,274 @@ export class BankReconciliationService {
       debit: Number(l.debit),
       credit: Number(l.credit),
     }));
+  }
+
+  async getAiSuggestion(
+    companyId: string,
+    transactionId: string
+  ): Promise<{ suggestedAccountId: string | null; confidence: number; explanation: string }> {
+    const transaction = await this.bankTransactionRepository.findById(transactionId, companyId);
+    if (!transaction) {
+      throw new BadRequestException('Transacción bancaria no encontrada');
+    }
+
+    // 1. Query past reconciled transactions for this company
+    const pastMatches = await this.prisma.bankTransaction.findMany({
+      where: {
+        companyId,
+        reconciled: true,
+        journalEntryLineId: { not: null },
+      },
+      select: {
+        description: true,
+        journalEntryLine: {
+          select: {
+            accountId: true,
+            account: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    // Normalize descriptions
+    const cleanDescription = (text: string) => text.toLowerCase().replace(/[0-9]/g, '').trim();
+    const targetClean = cleanDescription(transaction.description);
+
+    // Look for exact matches
+    const exactMatch = pastMatches.find((t) => cleanDescription(t.description) === targetClean);
+    if (exactMatch && exactMatch.journalEntryLine) {
+      return {
+        suggestedAccountId: exactMatch.journalEntryLine.accountId,
+        confidence: 100,
+        explanation: `Sugerencia histórica: coincide exactamente con '${exactMatch.description}' registrada en la cuenta '${exactMatch.journalEntryLine.account.name}'.`,
+      };
+    }
+
+    // Look for partial matches
+    const partialMatch = pastMatches.find((t) => {
+      const pastClean = cleanDescription(t.description);
+      return pastClean.includes(targetClean) || targetClean.includes(pastClean);
+    });
+
+    if (partialMatch && partialMatch.journalEntryLine) {
+      return {
+        suggestedAccountId: partialMatch.journalEntryLine.accountId,
+        confidence: 90,
+        explanation: `Sugerencia histórica parcial: similar a '${partialMatch.description}' registrada en la cuenta '${partialMatch.journalEntryLine.account.name}'.`,
+      };
+    }
+
+    // 2. Gemini LLM Fallback
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (apiKey) {
+      try {
+        const accounts = await this.prisma.account.findMany({
+          where: { companyId, isActive: true },
+          select: { id: true, code: true, name: true, type: true },
+        });
+
+        const prompt = `Analiza la descripción de una transacción bancaria dominicana y clasifícala seleccionando la cuenta contable más adecuada del listado provisto.
+
+Descripción de transacción: "${transaction.description}"
+Monto: ${transaction.amount} (si es negativo es un cargo/gasto/pago, si es positivo es un depósito/ingreso/cobro)
+
+Cuentas disponibles:
+${JSON.stringify(accounts.map((a) => ({ id: a.id, code: a.code, name: a.name, type: a.type })))}
+
+Responde estrictamente en formato JSON utilizando el siguiente esquema:
+{
+  "suggestedAccountId": "el id de la cuenta seleccionada",
+  "confidence": entre 0 y 100,
+  "explanation": "explicación de la elección en español de forma concisa"
+}`;
+
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                  type: 'OBJECT',
+                  properties: {
+                    suggestedAccountId: { type: 'STRING' },
+                    confidence: { type: 'INTEGER' },
+                    explanation: { type: 'STRING' },
+                  },
+                  required: ['suggestedAccountId', 'confidence', 'explanation'],
+                },
+              },
+            }),
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const parsed = JSON.parse(text);
+            const matchedAccount = accounts.find((a) => a.id === parsed.suggestedAccountId);
+            if (matchedAccount) {
+              return {
+                suggestedAccountId: parsed.suggestedAccountId,
+                confidence: parsed.confidence || 75,
+                explanation: `IA (Gemini): ${parsed.explanation} (Cuenta: ${matchedAccount.name})`,
+              };
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback to keyword matching
+      }
+    }
+
+    // 3. Keyword local heuristics fallback
+    const descLower = transaction.description.toLowerCase();
+    let keywordAccountCode: string | null = null;
+    let fallbackExpl = '';
+
+    if (descLower.includes('comision') || descLower.includes('pos') || descLower.includes('cargo') || descLower.includes('mantenimiento') || descLower.includes('adquiriente')) {
+      keywordAccountCode = '6103';
+      fallbackExpl = 'Sugerencia por palabra clave bancaria (cargo/comisión).';
+    } else if (descLower.includes('nomina') || descLower.includes('sueldo') || descLower.includes('tss') || descLower.includes('infotep')) {
+      keywordAccountCode = '6101';
+      fallbackExpl = 'Sugerencia por palabra clave laboral (nómina/sueldo).';
+    } else if (descLower.includes('dgii') || descLower.includes('itbis') || descLower.includes('impuesto') || descLower.includes('retencion')) {
+      keywordAccountCode = '2103';
+      fallbackExpl = 'Sugerencia por palabra clave tributaria (DGII/impuesto).';
+    } else if (descLower.includes('claro') || descLower.includes('altice') || descLower.includes('telef') || descLower.includes('internet')) {
+      keywordAccountCode = '6204';
+      fallbackExpl = 'Sugerencia por palabra clave de telecomunicación (Claro/Altice/Internet).';
+    } else if (descLower.includes('combustible') || descLower.includes('texaco') || descLower.includes('shell') || descLower.includes('gasolina')) {
+      keywordAccountCode = '6102';
+      fallbackExpl = 'Sugerencia por palabra clave de transporte/combustible.';
+    }
+
+    if (keywordAccountCode) {
+      const matchedAccount = await this.prisma.account.findFirst({
+        where: { companyId, code: keywordAccountCode },
+      });
+      if (matchedAccount) {
+        return {
+          suggestedAccountId: matchedAccount.id,
+          confidence: 80,
+          explanation: `${fallbackExpl} Asignado a la cuenta '${matchedAccount.name}'.`,
+        };
+      }
+    }
+
+    // Default fallback
+    const defaultAccount = await this.prisma.account.findFirst({
+      where: { companyId, type: transaction.amount > 0 ? 'REVENUE' : 'EXPENSE' },
+    });
+    return {
+      suggestedAccountId: defaultAccount?.id || null,
+      confidence: 50,
+      explanation: 'Sugerido por defecto (tipo de movimiento). Por favor verifique y seleccione la cuenta correcta.',
+    };
+  }
+
+  async reconcileWithAccount(
+    companyId: string,
+    transactionId: string,
+    targetAccountId: string,
+    createdByUserId?: string
+  ): Promise<any> {
+    const transaction = await this.bankTransactionRepository.findById(transactionId, companyId);
+    if (!transaction) {
+      throw new BadRequestException('Transacción bancaria no encontrada');
+    }
+    if (transaction.reconciled) {
+      throw new BadRequestException('La transacción ya está conciliada');
+    }
+
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { lockDate: true },
+    });
+    // Check period lock
+    const transactionDate = new Date(transaction.date);
+    const lockDate = company?.lockDate ? new Date(company.lockDate) : null;
+    if (lockDate && transactionDate <= lockDate) {
+      throw new BadRequestException('La fecha de la transacción pertenece a un período bloqueado.');
+    }
+
+    const bankAccountId = transaction.accountId;
+    const absAmount = Math.abs(transaction.amount);
+
+    return this.prisma.$transaction(async (tx) => {
+      // Create double-entry journal entry lines
+      const lines = [];
+
+      if (transaction.amount > 0) {
+        // Deposit: DEBIT bank, CREDIT target account
+        lines.push({
+          accountId: bankAccountId,
+          debit: absAmount,
+          credit: 0,
+          description: `Ingreso conciliado: ${transaction.description}`,
+        });
+        lines.push({
+          accountId: targetAccountId,
+          debit: 0,
+          credit: absAmount,
+          description: `Contrapartida conciliación: ${transaction.description}`,
+        });
+      } else {
+        // Withdrawal: DEBIT target account, CREDIT bank
+        lines.push({
+          accountId: targetAccountId,
+          debit: absAmount,
+          credit: 0,
+          description: `Gasto conciliado: ${transaction.description}`,
+        });
+        lines.push({
+          accountId: bankAccountId,
+          debit: 0,
+          credit: absAmount,
+          description: `Contrapartida conciliación: ${transaction.description}`,
+        });
+      }
+
+      // Create the journal entry
+      const journalEntry = await this.journalEntryRepository.create({
+        companyId,
+        date: transactionDate,
+        description: `Conciliación inteligente automática: ${transaction.description}`,
+        reference: 'CONCIL-AUTO',
+        createdByUserId,
+        lines,
+      }, tx);
+
+      // Post the journal entry to update ledger status
+      await this.journalEntryRepository.post(journalEntry.id, companyId, tx);
+
+      // Find the specific ledger line matching the bank account to link the reconciliation
+      const postedEntry = await tx.journalEntry.findUnique({
+        where: { id: journalEntry.id },
+        include: { lines: true },
+      });
+
+      const bankLedgerLine = postedEntry?.lines.find(
+        (l) => l.accountId === bankAccountId &&
+               (transaction.amount > 0 ? Number(l.debit) > 0 : Number(l.credit) > 0)
+      );
+
+      if (!bankLedgerLine) {
+        throw new BadRequestException('Error al enlazar el asiento contable de conciliación.');
+      }
+
+      // Reconcile bank transaction
+      return this.bankTransactionRepository.updateReconciliation(
+        transactionId,
+        companyId,
+        true,
+        bankLedgerLine.id,
+        tx
+      );
+    });
   }
 }

@@ -11,6 +11,8 @@ import {
   useUnmatchReconciliationMutation,
   useImportStatementOcrMutation,
   useLazyGetStatementOcrStatusQuery,
+  useGetAiSuggestionQuery,
+  useReconcileWithAccountMutation,
   BankTransaction,
   LedgerLine,
 } from '@/services/bank-reconciliation.api';
@@ -89,6 +91,12 @@ export function ReconciliationView() {
   // Row selection for manual match
   const [selectedBankTx, setSelectedBankTx] = useState<BankTransaction | null>(null);
   const [selectedLedgerLine, setSelectedLedgerLine] = useState<LedgerLine | null>(null);
+
+  const { data: aiSuggestion, isLoading: loadingAi } = useGetAiSuggestionQuery(
+    { companyId: companyId!, id: selectedBankTx?.id! },
+    { skip: !companyId || !selectedBankTx }
+  );
+  const [reconcileWithAccount, { isLoading: isReconcilingAi }] = useReconcileWithAccountMutation();
 
   async function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -206,6 +214,21 @@ export function ReconciliationView() {
       } catch (err) {
         alert('Error al desconciliar el movimiento.');
       }
+    }
+  }
+
+  async function handleReconcileWithAi() {
+    if (!companyId || !selectedBankTx || !aiSuggestion?.suggestedAccountId) return;
+    try {
+      await reconcileWithAccount({
+        companyId,
+        id: selectedBankTx.id,
+        targetAccountId: aiSuggestion.suggestedAccountId,
+      }).unwrap();
+      setSelectedBankTx(null);
+      setSelectedLedgerLine(null);
+    } catch (err: any) {
+      alert(err.data?.message || 'Error al aplicar conciliación inteligente.');
     }
   }
 
@@ -433,52 +456,80 @@ export function ReconciliationView() {
 
           {/* Floating Action Bar for manual match */}
           {(selectedBankTx || selectedLedgerLine) && (
-            <div className="bg-accent border border-accent-foreground/20 p-4 rounded-lg flex flex-wrap gap-4 items-center justify-between animate-in slide-in-from-bottom duration-300">
-              <div className="flex items-center gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Banco:</span>
-                  {selectedBankTx ? (
-                    <span className="font-semibold font-mono text-indigo-700 bg-indigo-100/30 px-2 py-0.5 rounded">
-                      {selectedBankTx.description} (RD$ {selectedBankTx.amount.toFixed(2)})
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground italic">Ninguno</span>
-                  )}
+            <div className="bg-accent border border-accent-foreground/20 p-4 rounded-lg flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+              <div className="flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Banco:</span>
+                    {selectedBankTx ? (
+                      <span className="font-semibold font-mono text-indigo-700 bg-indigo-100/30 px-2 py-0.5 rounded">
+                        {selectedBankTx.description} (RD$ {selectedBankTx.amount.toFixed(2)})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground italic">Ninguno</span>
+                    )}
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1">
+                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Libros:</span>
+                    {selectedLedgerLine ? (
+                      <span className="font-semibold font-mono text-purple-700 bg-purple-100/30 px-2 py-0.5 rounded">
+                        {selectedLedgerLine.entryDescription} (RD$ {(selectedLedgerLine.debit || selectedLedgerLine.credit).toFixed(2)})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground italic">Ninguno</span>
+                    )}
+                  </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                <div className="space-y-1">
-                  <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Libros:</span>
-                  {selectedLedgerLine ? (
-                    <span className="font-semibold font-mono text-purple-700 bg-purple-100/30 px-2 py-0.5 rounded">
-                      {selectedLedgerLine.entryDescription} (RD$ {(selectedLedgerLine.debit || selectedLedgerLine.credit).toFixed(2)})
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground italic">Ninguno</span>
-                  )}
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedBankTx(null);
+                      setSelectedLedgerLine(null);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="gap-2"
+                    onClick={handleManualMatch}
+                    disabled={!selectedBankTx || !selectedLedgerLine}
+                  >
+                    <Link2 className="w-4 h-4" />
+                    Conciliar Selección
+                  </Button>
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedBankTx(null);
-                    setSelectedLedgerLine(null);
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleManualMatch}
-                  disabled={!selectedBankTx || !selectedLedgerLine}
-                >
-                  <Link2 className="w-4 h-4" />
-                  Conciliar Selección
-                </Button>
-              </div>
+              {/* AI Suggestion Panel */}
+              {selectedBankTx && (
+                <div className="border-t pt-3 mt-1 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-indigo-900 bg-indigo-50/50 border border-indigo-100 p-2 rounded-lg flex-1">
+                    <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse shrink-0" />
+                    <div>
+                      <span className="font-bold block text-indigo-950">Recomendación Contable IA</span>
+                      <span className="text-muted-foreground text-xxs block leading-normal mt-0.5">
+                        {loadingAi ? 'Analizando comportamiento histórico y semántico...' : aiSuggestion?.explanation || 'Sin sugerencia disponible.'}
+                      </span>
+                    </div>
+                  </div>
+                  {!loadingAi && aiSuggestion?.suggestedAccountId && (
+                    <Button
+                      size="sm"
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 self-center"
+                      onClick={handleReconcileWithAi}
+                      disabled={isReconcilingAi}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {isReconcilingAi ? 'Aplicando...' : 'Aplicar y Conciliar'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

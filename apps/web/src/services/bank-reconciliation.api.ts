@@ -103,6 +103,17 @@ export const reconciliationApi = api.injectEndpoints({
         url: `/companies/${companyId}/accounting/reconciliation/ocr-status/${jobId}`,
       }),
     }),
+    getAiSuggestion: builder.query<{ suggestedAccountId: string | null; confidence: number; explanation: string }, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => `/companies/${companyId}/accounting/reconciliation/transactions/${id}/ai-suggestion`,
+    }),
+    reconcileWithAccount: builder.mutation<any, { companyId: string; id: string; targetAccountId: string }>({
+      query: ({ companyId, id, targetAccountId }) => ({
+        url: `/companies/${companyId}/accounting/reconciliation/transactions/${id}/reconcile-with-account`,
+        method: 'POST',
+        body: { targetAccountId },
+      }),
+      invalidatesTags: ['JournalEntry', 'Account'],
+    }),
   }),
 });
 
@@ -115,4 +126,7 @@ export const {
   useGetReconciliationReportQuery,
   useImportStatementOcrMutation,
   useLazyGetStatementOcrStatusQuery,
+  useGetAiSuggestionQuery,
+  useLazyGetAiSuggestionQuery,
+  useReconcileWithAccountMutation,
 } = reconciliationApi;

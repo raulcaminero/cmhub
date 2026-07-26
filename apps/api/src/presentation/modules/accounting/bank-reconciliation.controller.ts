@@ -4,6 +4,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { BankReconciliationService } from '@application/services/bank-reconciliation/bank-reconciliation.service';
 import { ImportCsvDto, AutoMatchDto, ReconcileManuallyDto } from '@application/dtos/reconciliation/reconciliation.dto';
 import { OcrService } from '@application/services/ocr/ocr.service';
+import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import * as fs from 'fs';
@@ -140,5 +141,30 @@ export class BankReconciliationController {
       status: state,
       result: job.returnvalue || job.failedReason || null,
     };
+  }
+
+  @Get('transactions/:id/ai-suggestion')
+  @ApiOperation({ summary: 'Get AI/Historical account suggestion for a bank transaction' })
+  getAiSuggestion(
+    @Param('companyId') companyId: string,
+    @Param('id') id: string
+  ) {
+    return this.reconciliationService.getAiSuggestion(companyId, id);
+  }
+
+  @Post('transactions/:id/reconcile-with-account')
+  @ApiOperation({ summary: 'Auto-create journal entry and reconcile transaction with suggested account' })
+  reconcileWithAccount(
+    @Param('companyId') companyId: string,
+    @Param('id') id: string,
+    @Body() body: { targetAccountId: string },
+    @CurrentUser() user: CurrentUserPayload
+  ) {
+    return this.reconciliationService.reconcileWithAccount(
+      companyId,
+      id,
+      body.targetAccountId,
+      user.userId
+    );
   }
 }
