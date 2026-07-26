@@ -40,6 +40,7 @@ export interface ReconciliationReport {
 }
 
 export const reconciliationApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getReconciliationTransactions: builder.query<BankTransaction[], { companyId: string; accountId?: string }>({
       query: ({ companyId, accountId }) => ({
@@ -83,6 +84,13 @@ export const reconciliationApi = api.injectEndpoints({
       query: ({ companyId, accountId }) => `/companies/${companyId}/accounting/reconciliation/report/${accountId}`,
       providesTags: ['JournalEntry', 'Account'],
     }),
+    importStatementOcr: builder.mutation<Array<{ date: string; description: string; amount: number }>, { companyId: string; body: FormData }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/reconciliation/import-ocr`,
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -93,4 +101,5 @@ export const {
   useMatchReconciliationMutation,
   useUnmatchReconciliationMutation,
   useGetReconciliationReportQuery,
+  useImportStatementOcrMutation,
 } = reconciliationApi;

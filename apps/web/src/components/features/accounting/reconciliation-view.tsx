@@ -9,12 +9,14 @@ import {
   useAutoMatchReconciliationMutation,
   useMatchReconciliationMutation,
   useUnmatchReconciliationMutation,
+  useImportStatementOcrMutation,
   BankTransaction,
   LedgerLine,
 } from '@/services/bank-reconciliation.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Upload,
   CheckCircle2,
@@ -25,6 +27,8 @@ import {
   X,
   Sparkles,
   Link2,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import {
   Table,
@@ -67,18 +71,46 @@ export function ReconciliationView() {
 
   // Mutations
   const [importStatement, { isLoading: isImporting }] = useImportStatementCsvMutation();
+  const [importStatementOcr, { isLoading: isScanning }] = useImportStatementOcrMutation();
   const [autoMatch, { isLoading: isMatching }] = useAutoMatchReconciliationMutation();
   const [matchManual] = useMatchReconciliationMutation();
   const [unmatch] = useUnmatchReconciliationMutation();
 
   // Import Dialog
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [csvContent, setCsvContent] = useState('');
   const [importError, setImportError] = useState('');
 
   // Row selection for manual match
   const [selectedBankTx, setSelectedBankTx] = useState<BankTransaction | null>(null);
   const [selectedLedgerLine, setSelectedLedgerLine] = useState<LedgerLine | null>(null);
+
+  async function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const result = await importStatementOcr({
+        companyId,
+        body: formData,
+      }).unwrap();
+
+      const header = 'Fecha,Descripcion,Referencia,Monto\n';
+      const rows = result.map(
+        (r) => `${new Date(r.date).toISOString().split('T')[0]},${r.description},,${r.amount}`
+      ).join('\n');
+
+      setCsvContent(header + rows);
+      setIsOcrOpen(false);
+      setIsImportOpen(true);
+    } catch (err: any) {
+      alert(err.data?.message || 'Error al escanear el estado de cuenta.');
+    }
+  }
 
   if (!mounted) return null;
   if (!companyId) return null;
@@ -174,6 +206,16 @@ export function ReconciliationView() {
         </div>
 
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-primary text-primary hover:bg-primary/10"
+            onClick={() => setIsOcrOpen(true)}
+            disabled={!selectedAccountId}
+          >
+            <Camera className="w-4 h-4" />
+            Escanear Estado (OCR)
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -522,6 +564,57 @@ export function ReconciliationView() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Escaneo Estado de Cuenta (OCR) */}
+      {isOcrOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
+            <h3 className="text-lg font-semibold mb-2">Escanear Estado de Cuenta (OCR)</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Sube la imagen o el PDF de tu extracto bancario. El motor de IA extraerá las filas de transacciones automáticamente para conciliarlas.
+            </p>
+            
+            <div className="border border-dashed border-primary rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
+              <Camera className="w-10 h-10 text-primary animate-pulse" />
+              {isScanning ? (
+                <div className="space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  <p className="text-sm font-medium">Analizando extracto bancario con IA...</p>
+                  <p className="text-[10px] text-muted-foreground">Extrayendo movimientos contables.</p>
+                </div>
+              ) : (
+                <>
+                  <Label htmlFor="statement-ocr-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                    Sube una foto o PDF del extracto
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground">Formatos soportados: JPG, PNG, PDF</span>
+                  <Input
+                    id="statement-ocr-file"
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={handleOcrUpload}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsOcrOpen(false);
+                }}
+                disabled={isScanning}
+              >
+                Cerrar
+              </Button>
+            </div>
           </div>
         </div>
       )}

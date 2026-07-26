@@ -24,6 +24,7 @@ export interface CreateContactDto {
 }
 
 export const contactsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getContacts: builder.query<Contact[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/contacts`,
@@ -52,6 +53,14 @@ export const contactsApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Contact'],
     }),
+    importContacts: builder.mutation<{ importedCount: number; contacts: Contact[] }, { companyId: string; body: CreateContactDto[] }>({
+      query: ({ companyId, body }) => ({
+        url: `/companies/${companyId}/accounting/contacts/import`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Contact'],
+    }),
   }),
 });
 
@@ -60,4 +69,5 @@ export const {
   useCreateContactMutation,
   useDeleteContactMutation,
   useUpdateContactMutation,
+  useImportContactsMutation,
 } = contactsApi;

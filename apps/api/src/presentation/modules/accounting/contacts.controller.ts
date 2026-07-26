@@ -37,4 +37,13 @@ export class ContactsController {
   deleteContact(@Param('companyId') companyId: string, @Param('id') id: string) {
     return this.contactService.deleteContact(companyId, id);
   }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Bulk import contacts via JSON array' })
+  importContacts(
+    @Param('companyId') companyId: string,
+    @Body() dtos: CreateContactDto[],
+  ) {
+    return this.contactService.importContacts(companyId, dtos);
+  }
 }
