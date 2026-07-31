@@ -6,6 +6,7 @@ import { AuthModule } from '@presentation/modules/auth/auth.module';
 import { CompaniesModule } from '@presentation/modules/companies/companies.module';
 import { AccountingModule } from '@presentation/modules/accounting/accounting.module';
 import { RagModule } from '@presentation/modules/rag/rag.module';
+import { SalesModule } from '@presentation/modules/sales/sales.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { RagModule } from '@presentation/modules/rag/rag.module';
     CompaniesModule,
     AccountingModule,
     RagModule,
+    SalesModule,
   ],
 })
 export class AppModule {}

@@ -11,11 +11,13 @@ import {
   Settings,
   Building2,
   Users,
+  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/cmhub', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/cmhub/sales', label: 'Ventas', icon: ShoppingCart },
   { href: '/cmhub/accounting', label: 'Contabilidad', icon: BookOpen },
   { href: '/cmhub/contacts', label: 'Contactos', icon: Users },
   { href: '/cmhub/tax', label: 'Impuestos', icon: Receipt },

@@ -1,6 +1,24 @@
 import { api } from './api';
 import { NcfType } from '@cmhub/shared-types';
 
+export interface InvoiceLineItem {
+  id?: string;
+  productId?: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discount?: number;
+  taxRate?: number;
+  subtotal?: number;
+  itbis?: number;
+  total?: number;
+  product?: {
+    id: string;
+    code: string;
+    name: string;
+  } | null;
+}
+
 export interface Invoice {
   id: string;
   companyId: string;
@@ -19,19 +37,22 @@ export interface Invoice {
   itbisRetained?: number;
   isrRetained?: number;
   createdAt: string;
+  lines?: InvoiceLineItem[];
 }
 
 export interface CreateInvoiceDto {
   clientRnc: string;
   clientName: string;
   ncfType: NcfType;
-  amount: number;
-  itbis: number;
+  amount?: number;
+  itbis?: number;
   paymentMethod: string;
   bankAccountId?: string;
   costOfGoodsSold?: number;
   itbisRetained?: number;
   isrRetained?: number;
+  quotationId?: string;
+  lines?: InvoiceLineItem[];
 }
 
 export interface PaginatedResponse<T> {
@@ -57,7 +78,7 @@ export const invoicesApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['JournalEntry', 'Account', 'NcfSequence', 'Contact', 'Invoice'],
+      invalidatesTags: ['JournalEntry', 'Account', 'NcfSequence', 'Contact', 'Invoice', 'Quotations'],
     }),
     collectInvoice: builder.mutation<Invoice, { companyId: string; id: string; body: { bankAccountId: string; paymentDate: string } }>({
       query: ({ companyId, id, body }) => ({

@@ -56,6 +56,13 @@ export class InvoiceService {
             lte: endDate,
           },
         },
+        include: {
+          lines: {
+            include: {
+              product: true,
+            },
+          },
+        },
         orderBy: { date: 'desc' },
         skip,
         take: limit,
@@ -91,6 +98,19 @@ export class InvoiceService {
         costOfGoodsSold: inv.costOfGoodsSold ? Number(inv.costOfGoodsSold) : null,
         createdAt: inv.createdAt,
         updatedAt: inv.updatedAt,
+        lines: inv.lines.map((l) => ({
+          id: l.id,
+          productId: l.productId,
+          description: l.description,
+          quantity: Number(l.quantity),
+          unitPrice: Number(l.unitPrice),
+          discount: Number(l.discount),
+          taxRate: Number(l.taxRate),
+          subtotal: Number(l.subtotal),
+          itbis: Number(l.itbis),
+          total: Number(l.total),
+          product: l.product,
+        })),
       })),
       totalCount,
       page,
@@ -113,12 +133,53 @@ export class InvoiceService {
       this.accountRepository.findByCompany(companyId),
     ]);
 
+    // Process lines and calculate totals if lines are provided
+    let calculatedAmount = 0;
+    let calculatedItbis = 0;
+    let calculatedCogs = 0;
+    const formattedLines: any[] = [];
+
+    if (dto.lines && dto.lines.length > 0) {
+      for (const l of dto.lines) {
+        const qty = Number(l.quantity) || 1;
+        const price = Number(l.unitPrice) || 0;
+        const disc = Number(l.discount) || 0;
+        const taxRate = l.taxRate !== undefined ? Number(l.taxRate) : 18;
+        const cost = l.cost !== undefined && l.cost !== null ? Number(l.cost) * qty : 0;
+
+        const subtotal = qty * price * (1 - disc / 100);
+        const lineItbis = subtotal * (taxRate / 100);
+        const lineTotal = subtotal + lineItbis;
+
+        calculatedAmount += lineTotal;
+        calculatedItbis += lineItbis;
+        calculatedCogs += cost;
+
+        formattedLines.push({
+          productId: l.productId || null,
+          description: l.description,
+          quantity: qty,
+          unitPrice: price,
+          discount: disc,
+          taxRate,
+          cost: l.cost ?? null,
+          subtotal: Number(subtotal.toFixed(2)),
+          itbis: Number(lineItbis.toFixed(2)),
+          total: Number(lineTotal.toFixed(2)),
+        });
+      }
+    }
+
+    const finalAmount = dto.lines && dto.lines.length > 0 ? Number(calculatedAmount.toFixed(2)) : (dto.amount || 0);
+    const finalItbis = dto.lines && dto.lines.length > 0 ? Number(calculatedItbis.toFixed(2)) : (dto.itbis || 0);
+    const finalCogs = dto.lines && dto.lines.length > 0 && calculatedCogs > 0 ? Number(calculatedCogs.toFixed(2)) : (dto.costOfGoodsSold || 0);
+
     return this.prisma.$transaction(async (tx) => {
       // 1. Generate NCF atomically inside transaction
       const ncf = await this.ncfSequenceService.generateNextNcf(companyId, dto.ncfType, tx);
 
       // Debit Account: Cash/Bank (1101) or Accounts Receivable (1102)
-      const isCreditSale = dto.paymentMethod === PaymentMethod.CREDIT; // Compra/Venta a Crédito
+      const isCreditSale = dto.paymentMethod === PaymentMethod.CREDIT;
       let debitAcc: any;
 
       if (!isCreditSale && dto.bankAccountId) {
@@ -128,7 +189,7 @@ export class InvoiceService {
         const debitCode = isCreditSale ? '1102' : '1101';
         debitAcc = accounts.find((a) => a.code === debitCode);
         if (!debitAcc) {
-          debitAcc = accounts.find((a) => a.code.startsWith('1')); // fallback to any asset
+          debitAcc = accounts.find((a) => a.code.startsWith('1'));
         }
         if (!debitAcc) throw new BadRequestException(`No cash/receivable account found for code ${debitCode}`);
       }
@@ -136,7 +197,7 @@ export class InvoiceService {
       // Credit Account (Revenue): Ventas de Mercancías (4101)
       let revenueAcc = accounts.find((a) => a.code === '4101');
       if (!revenueAcc) {
-        revenueAcc = accounts.find((a) => a.code.startsWith('4')); // fallback to any revenue
+        revenueAcc = accounts.find((a) => a.code.startsWith('4'));
       }
       if (!revenueAcc) throw new BadRequestException('No revenue account found in company chart of accounts');
 
@@ -146,10 +207,10 @@ export class InvoiceService {
 
       // 3. Build double-entry lines
       const journalLines: any[] = [];
-      const baseRevenue = dto.amount - dto.itbis;
+      const baseRevenue = finalAmount - finalItbis;
 
       // DEBIT: Cash / Receivable (Net Amount = Total - Retentions)
-      const netReceivable = dto.amount - (dto.itbisRetained ?? 0) - (dto.isrRetained ?? 0);
+      const netReceivable = finalAmount - (dto.itbisRetained ?? 0) - (dto.isrRetained ?? 0);
       journalLines.push({
         accountId: debitAcc.id,
         debit: netReceivable,
@@ -166,12 +227,12 @@ export class InvoiceService {
       });
 
       // CREDIT: ITBIS charged (if any)
-      if (dto.itbis > 0) {
+      if (finalItbis > 0) {
         if (!itbisAcc) throw new BadRequestException('No ITBIS liability account found in chart of accounts');
         journalLines.push({
           accountId: itbisAcc.id,
           debit: 0,
-          credit: dto.itbis,
+          credit: finalItbis,
           description: `ITBIS facturado - NCF ${ncf}`,
         });
       }
@@ -202,7 +263,7 @@ export class InvoiceService {
       }
 
       // COGS journal lines (if specified)
-      if (dto.costOfGoodsSold && dto.costOfGoodsSold > 0) {
+      if (finalCogs > 0) {
         let cogsAcc = accounts.find((a) => a.code === '6001');
         if (!cogsAcc) cogsAcc = accounts.find((a) => a.code.startsWith('60') || a.code.startsWith('6'));
         if (!cogsAcc) {
@@ -232,7 +293,7 @@ export class InvoiceService {
         // DEBIT Costo de Ventas
         journalLines.push({
           accountId: cogsAcc.id,
-          debit: dto.costOfGoodsSold,
+          debit: finalCogs,
           credit: 0,
           description: `Costo de ventas - NCF ${ncf}`,
         });
@@ -241,7 +302,7 @@ export class InvoiceService {
         journalLines.push({
           accountId: invAcc.id,
           debit: 0,
-          credit: dto.costOfGoodsSold,
+          credit: finalCogs,
           description: `Salida de inventario - NCF ${ncf}`,
         });
       }
@@ -258,23 +319,49 @@ export class InvoiceService {
       await this.journalEntryRepository.post(journalEntry.id, companyId, tx);
 
       // 5. Create the Invoice record referencing the JournalEntry
-      return this.invoiceRepository.create({
-        companyId,
-        clientRnc: dto.clientRnc,
-        clientName: dto.clientName,
-        ncf,
-        ncfType: dto.ncfType,
-        date: new Date(),
-        amount: dto.amount,
-        itbis: dto.itbis,
-        paymentMethod: dto.paymentMethod,
-        journalEntryId: journalEntry.id,
-        isVoided: false,
-        costOfGoodsSold: dto.costOfGoodsSold ?? null,
-        itbisRetained: dto.itbisRetained ?? 0,
-        isrRetained: dto.isrRetained ?? 0,
-        createdByUserId: createdByUserId ?? null,
-      }, tx);
+      const invoice = await tx.invoice.create({
+        data: {
+          companyId,
+          clientRnc: dto.clientRnc,
+          clientName: dto.clientName,
+          ncf,
+          ncfType: dto.ncfType,
+          date: new Date(),
+          amount: finalAmount,
+          itbis: finalItbis,
+          paymentMethod: dto.paymentMethod,
+          journalEntryId: journalEntry.id,
+          isVoided: false,
+          costOfGoodsSold: finalCogs > 0 ? finalCogs : null,
+          itbisRetained: dto.itbisRetained ?? 0,
+          isrRetained: dto.isrRetained ?? 0,
+          createdByUserId: createdByUserId ?? null,
+          ...(formattedLines.length > 0 && {
+            lines: {
+              create: formattedLines,
+            },
+          }),
+        },
+        include: {
+          lines: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
+
+      if (dto.quotationId) {
+        await tx.quotation.update({
+          where: { id: dto.quotationId },
+          data: {
+            status: 'CONVERTED',
+            invoiceId: invoice.id,
+          },
+        });
+      }
+
+      return invoice;
     });
   }
 
@@ -301,12 +388,11 @@ export class InvoiceService {
 
     // Credit Account: Accounts Receivable (1102)
     let creditAcc = accounts.find((a) => a.code === '1102');
-    if (!creditAcc) creditAcc = accounts.find((a) => a.code.startsWith('1')); // fallback to asset
+    if (!creditAcc) creditAcc = accounts.find((a) => a.code.startsWith('1'));
     if (!creditAcc) throw new BadRequestException('No se encontró cuenta de Cuentas por Cobrar (1102).');
 
     const netReceivable = Number(invoice.amount) - Number(invoice.itbisRetained || 0) - Number(invoice.isrRetained || 0);
 
-    // Create balanced journal entry representing the collection
     const journalLines = [
       {
         accountId: debitAcc.id,
@@ -333,7 +419,6 @@ export class InvoiceService {
 
       await this.journalEntryRepository.post(journalEntry.id, companyId, tx);
 
-      // Update invoice paymentDate
       return this.invoiceRepository.update(id, companyId, {
         paymentDate: new Date(dto.paymentDate),
       }, tx);
@@ -352,7 +437,6 @@ export class InvoiceService {
     checkPeriodLock(company?.lockDate, invoice.date);
 
     return this.prisma.$transaction(async (tx) => {
-      // Void associated Journal Entry
       if (invoice.journalEntryId) {
         await this.journalEntryRepository.void(invoice.journalEntryId, companyId, tx);
       }

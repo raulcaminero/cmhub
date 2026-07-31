@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Printer, Loader2 } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
+import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
 import {
   Table,
   TableBody,
@@ -37,7 +38,13 @@ const PAYMENT_METHODS = [
   { code: '04', label: '04 - Venta a Crédito' },
 ];
 
-export function InvoicesView() {
+interface InvoicesViewProps {
+  externalOpenModal?: boolean;
+  quotationToConvert?: any;
+  onCloseExternalModal?: () => void;
+}
+
+export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExternalModal }: InvoicesViewProps = {}) {
   const companyId = useAppSelector((state) => state.company.active?.id);
 
   const [page, setPage] = useState(1);
@@ -50,6 +57,17 @@ export function InvoicesView() {
   };
   const [startDate, setStartDate] = useState(getInitialStartDate());
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const [lines, setLines] = useState<EditableLine[]>([
+    {
+      id: `line-${Date.now()}`,
+      description: '',
+      quantity: 1,
+      unitPrice: 0,
+      discount: 0,
+      taxRate: 18,
+    },
+  ]);
 
   const { data: invoicesData, isLoading } = useGetInvoicesQuery(
     { companyId: companyId!, page, limit, startDate, endDate },
@@ -162,6 +180,8 @@ export function InvoicesView() {
       return;
     }
 
+    const validLines = lines.filter((l) => l.description.trim() && l.unitPrice > 0);
+
     try {
       const created = await createInvoice({
         companyId,
@@ -169,17 +189,28 @@ export function InvoicesView() {
           clientRnc: cleanRnc,
           clientName,
           ncfType,
-          amount: Number(amount),
-          itbis: Number(itbis),
+          amount: validLines.length === 0 ? Number(amount) : 0,
+          itbis: validLines.length === 0 ? Number(itbis) : 0,
           paymentMethod,
           bankAccountId: paymentMethod !== '04' && bankAccountId ? bankAccountId : undefined,
-          costOfGoodsSold: Number(costOfGoodsSold) > 0 ? Number(costOfGoodsSold) : undefined,
+          costOfGoodsSold: validLines.length === 0 && Number(costOfGoodsSold) > 0 ? Number(costOfGoodsSold) : undefined,
           itbisRetained: Number(itbisRetained) > 0 ? Number(itbisRetained) : undefined,
           isrRetained: Number(isrRetained) > 0 ? Number(isrRetained) : undefined,
+          quotationId: quotationToConvert?.id,
+          lines: validLines.length > 0 ? validLines.map((l) => ({
+            productId: l.productId,
+            description: l.description,
+            quantity: Number(l.quantity),
+            unitPrice: Number(l.unitPrice),
+            discount: Number(l.discount),
+            taxRate: Number(l.taxRate),
+            cost: l.cost,
+          })) : undefined,
         },
       }).unwrap();
       
       setIsOpen(false);
+      if (onCloseExternalModal) onCloseExternalModal();
       setClientRnc('');
       setClientName('');
       setAmount(0);
@@ -188,6 +219,16 @@ export function InvoicesView() {
       setCostOfGoodsSold(0);
       setItbisRetained(0);
       setIsrRetained(0);
+      setLines([
+        {
+          id: `line-${Date.now()}`,
+          description: '',
+          quantity: 1,
+          unitPrice: 0,
+          discount: 0,
+          taxRate: 18,
+        },
+      ]);
       
       // Auto open print view on create
       setSelectedInvoice(created);
@@ -457,8 +498,11 @@ export function InvoicesView() {
                 </div>
               )}
 
+              {/* Multi-line items editor */}
+              <InvoiceLineEditor companyId={companyId} lines={lines} onChange={setLines} />
+
               <div className="border p-4 rounded-md space-y-3 bg-muted/20">
-                <span className="text-xs font-semibold block border-b pb-1">Desglose de Facturación (RD$)</span>
+                <span className="text-xs font-semibold block border-b pb-1">Monto Global Manual o Retenciones de Ley (RD$)</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="inv-total">Monto Total (Con ITBIS)</Label>
