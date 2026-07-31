@@ -19,6 +19,20 @@ enum TaxRegime {
   RST
 }
 
+enum ProductType {
+  SERVICE
+  PRODUCT
+  DIGITAL
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
 enum AccountType {
   ASSET
   LIABILITY
@@ -86,6 +100,8 @@ model Company {
   payrolls         Payroll[]
   bankTransactions BankTransaction[]
   taxFilings       TaxFiling[]
+  products         Product[]
+  quotations       Quotation[]
 }
 
 model UserCompanyRole {
@@ -164,6 +180,8 @@ model Invoice {
   company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   journalEntry    JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
   createdByUser   User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lines           InvoiceLine[]
+  quotation       Quotation?
 
   @@index([companyId, date])
   @@index([companyId, isVoided, date])
@@ -365,3 +383,91 @@ model TaxDocumentChunk {
 
   @@index([taxDocumentId])
 }
+
+model Product {
+  id               String          @id @default(cuid())
+  companyId        String
+  code             String
+  sku              String?
+  name             String
+  description      String?
+  type             ProductType     @default(SERVICE)
+  price            Decimal         @db.Decimal(18, 2)
+  cost             Decimal?        @db.Decimal(18, 2)
+  taxRate          Decimal         @default(18) @db.Decimal(5, 2)
+  unit             String          @default("unidad")
+  revenueAccountId String?
+  isActive         Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  company          Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceLines     InvoiceLine[]
+  quotationLines   QuotationLine[]
+
+  @@unique([companyId, code])
+  @@index([companyId, isActive])
+  @@index([companyId, code])
+}
+
+model Quotation {
+  id          String          @id @default(cuid())
+  companyId   String
+  number      String
+  clientRnc   String?
+  clientName  String
+  clientEmail String?
+  status      QuotationStatus @default(DRAFT)
+  validUntil  DateTime?       @db.Date
+  notes       String?
+  subtotal    Decimal         @db.Decimal(18, 2)
+  itbis       Decimal         @default(0) @db.Decimal(18, 2)
+  total       Decimal         @db.Decimal(18, 2)
+  invoiceId   String?         @unique
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoice     Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  lines       QuotationLine[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+}
+
+model QuotationLine {
+  id          String    @id @default(cuid())
+  quotationId String
+  productId   String?
+  description String
+  quantity    Decimal   @db.Decimal(10, 2)
+  unitPrice   Decimal   @db.Decimal(18, 2)
+  discount    Decimal   @default(0) @db.Decimal(5, 2)
+  taxRate     Decimal   @default(18) @db.Decimal(5, 2)
+  subtotal    Decimal   @db.Decimal(18, 2)
+  itbis       Decimal   @default(0) @db.Decimal(18, 2)
+  total       Decimal   @db.Decimal(18, 2)
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product     Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([quotationId])
+}
+
+model InvoiceLine {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Decimal  @db.Decimal(10, 2)
+  unitPrice   Decimal  @db.Decimal(18, 2)
+  discount    Decimal  @default(0) @db.Decimal(5, 2)
+  taxRate     Decimal  @default(18) @db.Decimal(5, 2)
+  cost        Decimal? @db.Decimal(18, 2)
+  subtotal    Decimal  @db.Decimal(18, 2)
+  itbis       Decimal  @default(0) @db.Decimal(18, 2)
+  total       Decimal  @db.Decimal(18, 2)
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+}
+

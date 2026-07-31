@@ -1,6 +1,42 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { NcfType } from '@domain/enums';
+
+export class CreateInvoiceLineDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  productId?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @ApiProperty()
+  @IsNumber()
+  quantity: number;
+
+  @ApiProperty()
+  @IsNumber()
+  unitPrice: number;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  discount?: number;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  taxRate?: number;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  cost?: number;
+}
 
 export class CreateInvoiceDto {
   @ApiProperty()
@@ -17,13 +53,15 @@ export class CreateInvoiceDto {
   @IsEnum(NcfType)
   ncfType: NcfType;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsNumber()
-  amount: number;
+  @IsOptional()
+  amount?: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsNumber()
-  itbis: number;
+  @IsOptional()
+  itbis?: number;
 
   @ApiProperty()
   @IsString()
@@ -49,4 +87,16 @@ export class CreateInvoiceDto {
   @IsNumber()
   @IsOptional()
   isrRetained?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  quotationId?: string;
+
+  @ApiProperty({ type: [CreateInvoiceLineDto], required: false })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateInvoiceLineDto)
+  lines?: CreateInvoiceLineDto[];
 }

@@ -70,7 +70,8 @@ export const api = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: [
     'Account', 'JournalEntry', 'Company', 'Expense', 'NcfSequence', 
-    'Contact', 'UserProfile', 'Invoice', 'Employee', 'Payroll', 'BankTransaction'
+    'Contact', 'UserProfile', 'Invoice', 'Employee', 'Payroll', 'BankTransaction',
+    'Products', 'Quotations'
   ],
   endpoints: () => ({}),
 });

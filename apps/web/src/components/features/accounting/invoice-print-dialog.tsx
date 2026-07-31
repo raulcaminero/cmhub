@@ -81,14 +81,39 @@ export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDia
 
           {/* Detail Line */}
           <div className="space-y-2">
-            <p className="text-xxs text-gray-400 font-bold uppercase border-b pb-1 border-gray-100">Concepto de Factura</p>
-            <div className="flex justify-between items-center py-1">
-              <div>
-                <p className="font-semibold text-gray-800">Servicios de Consultoría / Venta Comercial</p>
-                <p className="text-xs text-gray-400">Cantidad: 1</p>
+            <p className="text-xxs text-gray-400 font-bold uppercase border-b pb-1 border-gray-100">Detalle de Productos / Servicios</p>
+            {invoice.lines && invoice.lines.length > 0 ? (
+              <table className="w-full text-xs text-left">
+                <thead>
+                  <tr className="border-b text-[10px] text-gray-400 uppercase font-bold">
+                    <th className="py-1">Descripción</th>
+                    <th className="py-1 text-center">Cant.</th>
+                    <th className="py-1 text-right">Precio</th>
+                    <th className="py-1 text-right">ITBIS</th>
+                    <th className="py-1 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-mono">
+                  {invoice.lines.map((l, idx) => (
+                    <tr key={idx}>
+                      <td className="py-1.5 font-sans font-medium text-gray-800">{l.description}</td>
+                      <td className="py-1.5 text-center">{l.quantity}</td>
+                      <td className="py-1.5 text-right">RD$ {(l.unitPrice || 0).toFixed(2)}</td>
+                      <td className="py-1.5 text-right">RD$ {(l.itbis || 0).toFixed(2)}</td>
+                      <td className="py-1.5 text-right font-semibold text-gray-900">RD$ {(l.total || 0).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex justify-between items-center py-1">
+                <div>
+                  <p className="font-semibold text-gray-800">Servicios de Consultoría / Venta Comercial</p>
+                  <p className="text-xs text-gray-400">Cantidad: 1</p>
+                </div>
+                <p className="font-mono font-medium text-gray-800">RD$ {subtotal.toFixed(2)}</p>
               </div>
-              <p className="font-mono font-medium text-gray-800">RD$ {subtotal.toFixed(2)}</p>
-            </div>
+            )}
           </div>
 
           <hr className="border-gray-200" />

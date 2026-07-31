@@ -1,0 +1,100 @@
+'use client';
+
+import { useState } from 'react';
+import { useAppSelector } from '@/store/hooks';
+import { Card, CardContent } from '@/components/ui/card';
+import { InvoicesView } from '@/components/features/accounting/invoices-view';
+import CatalogView from '@/components/features/sales/catalog-view';
+import QuotationsView from '@/components/features/sales/quotations-view';
+import { ShoppingCart, Package, FileText, Receipt } from 'lucide-react';
+import { Quotation } from '@/services/quotations.api';
+
+export default function SalesPage() {
+  const companyId = useAppSelector((state) => state.company.active?.id);
+  const [activeTab, setActiveTab] = useState<'invoices' | 'catalog' | 'quotations'>('invoices');
+  const [convertingQuotation, setConvertingQuotation] = useState<Quotation | null>(null);
+
+  if (!companyId) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground text-sm">Selecciona una empresa para gestionar tus ventas.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const handleConvertQuotation = (quotation: Quotation) => {
+    setConvertingQuotation(quotation);
+    setActiveTab('invoices');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
+            <ShoppingCart className="w-7 h-7 text-indigo-600" />
+            Gestión de Ventas
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Administra tu catálogo de servicios/productos, envía cotizaciones a clientes y emite facturas con comprobante NCF.
+          </p>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'invoices'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          Facturas de Venta
+        </button>
+        <button
+          onClick={() => setActiveTab('catalog')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'catalog'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Package className="w-4 h-4" />
+          Catálogo de Servicios
+        </button>
+        <button
+          onClick={() => setActiveTab('quotations')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'quotations'
+              ? 'border-indigo-600 text-indigo-600'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          Cotizaciones / Presupuestos
+        </button>
+      </div>
+
+      {/* Tab Contents */}
+      {activeTab === 'invoices' && (
+        <InvoicesView 
+          quotationToConvert={convertingQuotation} 
+          onCloseExternalModal={() => setConvertingQuotation(null)} 
+        />
+      )}
+      {activeTab === 'catalog' && <CatalogView companyId={companyId} />}
+      {activeTab === 'quotations' && (
+        <QuotationsView 
+          companyId={companyId} 
+          onConvertQuotationToInvoice={handleConvertQuotation} 
+        />
+      )}
+    </div>
+  );
+}
