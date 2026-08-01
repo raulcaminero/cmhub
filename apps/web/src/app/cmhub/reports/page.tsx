@@ -183,12 +183,12 @@ export default function ReportsPage() {
             <CardContent>
               <form onSubmit={handlePeriodChange} className="flex flex-wrap items-end gap-3 max-w-md">
                 <div className="space-y-1">
-                  <Label htmlFor="yearSelect" className="text-xs font-medium">Año</Label>
+                  <Label htmlFor="yearSelect" className="text-xs font-semibold text-muted-foreground block">Año</Label>
                   <select
                     id="yearSelect"
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
-                    className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus:outline-none"
+                    className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none"
                   >
                     {YEARS.map((y) => (
                       <option key={y} value={y}>{y}</option>
@@ -196,13 +196,13 @@ export default function ReportsPage() {
                   </select>
                 </div>
 
-                <div className="space-y-1 flex-1 min-w-[140px]">
-                  <Label htmlFor="monthSelect" className="text-xs font-medium">Mes</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="monthSelect" className="text-xs font-semibold text-muted-foreground block">Mes</Label>
                   <select
                     id="monthSelect"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background text-foreground px-3 text-xs focus:outline-none font-medium"
+                    className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none font-medium"
                   >
                     {MONTHS.map((m) => (
                       <option key={m.code} value={m.code}>{m.name}</option>
