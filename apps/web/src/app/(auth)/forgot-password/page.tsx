@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Loader2, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, Mail, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
+import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -30,17 +33,20 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <CardHeader className="space-y-1">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">CM</span>
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">CM</span>
           </div>
           <span className="font-semibold text-lg">CMHub</span>
         </div>
-        <CardTitle className="text-2xl">Recuperar Contraseña</CardTitle>
+        <CardTitle className="text-2xl">{t('auth.forgotTitle')}</CardTitle>
         <CardDescription>
-          Ingresa tu correo electrónico registrado para enviarte las instrucciones.
+          {t('auth.forgotSubtitle')}
         </CardDescription>
       </CardHeader>
 
@@ -50,7 +56,7 @@ export default function ForgotPasswordPage() {
             <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-slate-900">¡Correo Enviado!</h3>
+            <h3 className="font-bold text-base text-slate-900">{t('auth.emailSentTitle')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto">
               {successMessage}
             </p>
@@ -58,7 +64,7 @@ export default function ForgotPasswordPage() {
               <Link href="/login">
                 <Button variant="outline" className="w-full text-xs gap-1.5">
                   <ArrowLeft className="w-4 h-4" />
-                  Volver al Iniciar Sesión
+                  {t('auth.backToLogin')}
                 </Button>
               </Link>
             </div>
@@ -66,7 +72,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email">{t('auth.emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -78,19 +84,22 @@ export default function ForgotPasswordPage() {
             </div>
 
             {errorMessage && (
-              <p className="text-xs text-destructive font-semibold">{errorMessage}</p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start gap-2 leading-relaxed">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
             )}
 
-            <Button type="submit" className="w-full text-xs font-semibold gap-1.5" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1.5" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Enviando...
+                  {t('auth.sending')}
                 </>
               ) : (
                 <>
                   <Mail className="w-4 h-4" />
-                  Enviar Instrucciones
+                  {t('auth.sendInstructions')}
                 </>
               )}
             </Button>
@@ -98,7 +107,7 @@ export default function ForgotPasswordPage() {
             <div className="text-center pt-2">
               <Link href="/login" className="text-xs text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 font-medium">
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Volver al Iniciar Sesión
+                {t('auth.backToLogin')}
               </Link>
             </div>
           </form>

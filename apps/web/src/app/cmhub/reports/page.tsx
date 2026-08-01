@@ -97,106 +97,133 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadFinancials = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+      const response = await fetch(`${baseUrl}/companies/${companyId}/accounting/reports/financials/export`, {
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+        }
+      });
+      if (!response.ok) throw new Error(t('common.error'));
+      const text = await response.text();
+      
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Estados_Financieros_${period}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(t('common.error'));
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('reports.title')}</h1>
           <p className="text-muted-foreground">{t('reports.subtitle')}</p>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b gap-4 flex-wrap">
-        <Button
-          variant={activeTab === 'tax' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('tax')}
-          className="gap-2"
-        >
-          <Calendar className="w-4 h-4" />
-          {t('reports.taxTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'financials' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('financials')}
-          className="gap-2"
-        >
-          <BarChart2 className="w-4 h-4" />
-          {t('reports.financialsTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'ledger' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('ledger')}
-          className="gap-2"
-        >
-          <BookMarked className="w-4 h-4" />
-          {t('reports.ledgerTab')}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={activeTab === 'tax' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('tax')}
+            className="flex items-center gap-2"
+          >
+            <BarChart2 className="w-4 h-4" />
+            {t('reports.tabTax')}
+          </Button>
+          <Button
+            variant={activeTab === 'financials' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('financials')}
+            className="flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            {t('reports.tabFinancials')}
+          </Button>
+          <Button
+            variant={activeTab === 'ledger' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('ledger')}
+            className="flex items-center gap-2"
+          >
+            <BookMarked className="w-4 h-4" />
+            {t('reports.tabLedger')}
+          </Button>
+        </div>
       </div>
-
 
       {activeTab === 'tax' ? (
         <div className="space-y-6">
-          {/* Selector de periodo */}
           <Card>
-            <CardContent className="pt-6">
-              <form onSubmit={handlePeriodChange} className="flex flex-wrap items-end gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="report-period">{t('reports.selectPeriod')}</Label>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                {t('reports.selectPeriod')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePeriodChange} className="flex items-end gap-3 max-w-sm">
+                <div className="space-y-1 flex-1">
+                  <Label htmlFor="periodInput">{t('reports.monthYear')}</Label>
                   <Input
-                    id="report-period"
+                    id="periodInput"
                     type="month"
                     value={inputPeriod}
                     onChange={(e) => setInputPeriod(e.target.value)}
                   />
                 </div>
-                <Button type="submit">{t('reports.queryPeriod')}</Button>
+                <Button type="submit">{t('reports.update')}</Button>
               </form>
             </CardContent>
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Exportaciones DGII */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  {t('reports.dgiiFormats')}
-                </CardTitle>
+                <CardTitle>{t('reports.dgiiFormats')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <h4 className="font-semibold text-sm">{t('reports.format606Title')}</h4>
+                    <p className="font-semibold text-sm">{t('reports.format606')}</p>
                     <p className="text-xs text-muted-foreground">{t('reports.format606Desc')}</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => handleDownload('606')} className="gap-2">
+                  <Button size="sm" onClick={() => handleDownload('606')} className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
-                    TXT
+                    {t('reports.downloadTxt')}
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <h4 className="font-semibold text-sm">{t('reports.format607Title')}</h4>
+                    <p className="font-semibold text-sm">{t('reports.format607')}</p>
                     <p className="text-xs text-muted-foreground">{t('reports.format607Desc')}</p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => handleDownload('607')} className="gap-2">
+                  <Button size="sm" onClick={() => handleDownload('607')} className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
-                    TXT
+                    {t('reports.downloadTxt')}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Resumen IT-1 */}
             <Card>
               <CardHeader>
-                <CardTitle>{t('reports.it1Estimate')}</CardTitle>
+                <CardTitle>{t('reports.it1Summary')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoadingIt1 ? (
-                  <p className="text-sm text-muted-foreground">{t('reports.calculating')}</p>
+                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
                 ) : !it1 ? (
                   <p className="text-sm text-muted-foreground">{t('reports.noDataPeriod')}</p>
                 ) : (
@@ -230,19 +257,31 @@ export default function ReportsPage() {
       ) : activeTab === 'ledger' ? (
         <GeneralLedgerView companyId={companyId} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Balance Sheet */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('reports.balanceSheetTitle')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingFinancials ? (
-                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-              ) : !financials || financials.balanceSheet.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
-              ) : (
-                <Table>
+        <div className="space-y-4">
+          <div className="flex justify-end gap-3 print:hidden">
+            <Button variant="outline" onClick={handleDownloadFinancials} className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Exportar a Excel (.csv)
+            </Button>
+            <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Imprimir / PDF
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Balance Sheet */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('reports.balanceSheetTitle')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingFinancials ? (
+                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+                ) : !financials || financials.balanceSheet.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
+                ) : (
+                  <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t('reports.code')}</TableHead>
@@ -315,8 +354,8 @@ export default function ReportsPage() {
               )}
             </CardContent>
           </Card>
-
         </div>
+      </div>
       )}
     </div>
   );

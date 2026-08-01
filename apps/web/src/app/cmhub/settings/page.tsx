@@ -13,8 +13,9 @@ import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutatio
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
 import { useChangePasswordMutation } from '@/services/auth.api';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck } from 'lucide-react';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
+import { TeamMembersView } from '@/components/features/settings/team-members-view';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -64,7 +65,11 @@ export default function SettingsPage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts' | 'preferences' | 'security'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'team' | 'accounts' | 'preferences' | 'security'>('company');
+
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // Security & Password Change form
   const [currentPassword, setCurrentPassword] = useState('');
@@ -250,6 +255,14 @@ export default function SettingsPage() {
           {t('settings.myCompaniesTab')}
         </Button>
         <Button
+          variant={activeTab === 'team' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('team')}
+          className="gap-2 shrink-0"
+        >
+          <Users className="w-4 h-4" />
+          Equipo y Accesos
+        </Button>
+        <Button
           variant={activeTab === 'accounts' ? 'default' : 'outline'}
           onClick={() => setActiveTab('accounts')}
           className="gap-2 shrink-0"
@@ -275,6 +288,17 @@ export default function SettingsPage() {
         </Button>
       </div>
 
+      {activeTab === 'team' && (
+        activeCompany ? (
+          <TeamMembersView companyId={activeCompany.id} />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-slate-500">{t('common.selectCompany')}</p>
+            </CardContent>
+          </Card>
+        )
+      )}
 
       {activeTab === 'company' && (
         <div className="space-y-6">
@@ -658,26 +682,46 @@ export default function SettingsPage() {
             <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <Label htmlFor="current-pass">Contraseña Actual *</Label>
-                <Input
-                  id="current-pass"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="h-9"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="current-pass"
+                    type={showCurrentPass ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="h-9 pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showCurrentPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="new-pass">Nueva Contraseña *</Label>
-                <Input
-                  id="new-pass"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="h-9"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="new-pass"
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="h-9 pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               {/* Password criteria */}
@@ -701,14 +745,24 @@ export default function SettingsPage() {
 
               <div className="space-y-1">
                 <Label htmlFor="confirm-pass">Confirmar Nueva Contraseña *</Label>
-                <Input
-                  id="confirm-pass"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="h-9"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="confirm-pass"
+                    type={showConfirmPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="h-9 pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               {passSuccess && <p className="text-xs text-emerald-600 font-bold">{passSuccess}</p>}

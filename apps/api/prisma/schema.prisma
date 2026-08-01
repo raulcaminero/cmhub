@@ -73,12 +73,16 @@ model User {
   passwordResetExpires DateTime?
   failedLoginAttempts  Int               @default(0)
   lockUntil            DateTime?
-  createdAt            DateTime          @default(now())
+  hashedRefreshToken     String?
+  isEmailVerified        Boolean           @default(false)
+  emailVerificationToken String?
+  createdAt              DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   companyRoles         UserCompanyRole[]
   JournalEntry         JournalEntry[]
   Invoice              Invoice[]
   Expense              Expense[]
+  auditLogs            AuditLog[]
 }
 
 model Company {
@@ -106,6 +110,7 @@ model Company {
   taxFilings       TaxFiling[]
   products         Product[]
   quotations       Quotation[]
+  auditLogs        AuditLog[]
 }
 
 model UserCompanyRole {
@@ -271,6 +276,7 @@ model Contact {
   email     String?
   phone     String?
   address   String?
+  isActive  Boolean     @default(true)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -473,5 +479,25 @@ model InvoiceLine {
   product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  companyId String?
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
 }
 

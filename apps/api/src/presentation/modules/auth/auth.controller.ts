@@ -31,6 +31,22 @@ export class AuthController {
   }
 
   @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify user email with token' })
+  verifyEmail(@Body('email') email: string, @Body('token') token: string) {
+    return this.authService.verifyEmail(email, token);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email verification link' })
+  resendVerification(@Body('email') email: string) {
+    return this.authService.resendVerification(email);
+  }
+
+  @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset email' })
@@ -60,6 +76,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   refresh(@Body('refreshToken') refreshToken: string) {
     return this.authService.refresh(refreshToken);
+  }
+
+  @ApiBearerAuth()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout and revoke user refresh token' })
+  logout(@CurrentUser() user: CurrentUserPayload) {
+    return this.authService.logout(user.userId);
   }
 
   @ApiBearerAuth()

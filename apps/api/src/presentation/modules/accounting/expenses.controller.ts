@@ -11,6 +11,9 @@ import { Queue } from 'bullmq';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+
 @ApiTags('expenses')
 @ApiBearerAuth()
 @Controller('companies/:companyId/accounting/expenses')
@@ -53,10 +56,11 @@ export class ExpensesController {
     return this.expenseService.payExpense(companyId, id, dto);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post(':id/void')
   @ApiOperation({ summary: 'Void an expense and reverse its accounting ledger entry' })
-  voidExpense(@Param('companyId') companyId: string, @Param('id') id: string) {
-    return this.expenseService.voidExpense(companyId, id);
+  voidExpense(@Param('companyId') companyId: string, @Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.expenseService.voidExpense(companyId, id, user.userId);
   }
 
   @Post('import')

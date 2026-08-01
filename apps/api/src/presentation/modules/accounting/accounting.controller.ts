@@ -7,6 +7,9 @@ import { CreateAccountDto } from '@application/dtos/accounting/create-account.dt
 import { CreateJournalEntryDto } from '@application/dtos/accounting/create-journal-entry.dto';
 import { GetAccountsDto } from '@application/dtos/accounting/get-accounts.dto';
 
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+
 @ApiTags('accounting')
 @ApiBearerAuth()
 @Controller('companies/:companyId/accounting')
@@ -21,6 +24,7 @@ export class AccountingController {
     return this.accountingService.getAccounts(companyId, filters);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post('accounts')
   @ApiOperation({ summary: 'Create a new account' })
   createAccount(@Param('companyId') companyId: string, @Body() dto: CreateAccountDto) {
@@ -33,6 +37,7 @@ export class AccountingController {
     return this.accountingService.getJournalEntries(companyId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post('journal-entries')
   @ApiOperation({ summary: 'Create a journal entry (double-entry)' })
   createJournalEntry(
@@ -43,16 +48,18 @@ export class AccountingController {
     return this.accountingService.createJournalEntry(companyId, dto, user.userId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Patch('journal-entries/:id/post')
   @ApiOperation({ summary: 'Post/approve a journal entry' })
-  postJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string) {
-    return this.accountingService.postJournalEntry(companyId, id);
+  postJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.accountingService.postJournalEntry(companyId, id, user.userId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Patch('journal-entries/:id/void')
   @ApiOperation({ summary: 'Void a journal entry' })
-  voidJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string) {
-    return this.accountingService.voidJournalEntry(companyId, id);
+  voidJournalEntry(@Param('companyId') companyId: string, @Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.accountingService.voidJournalEntry(companyId, id, user.userId);
   }
 
   @Get('period-lock')
@@ -61,6 +68,7 @@ export class AccountingController {
     return this.accountingService.getPeriodLock(companyId);
   }
 
+  @Roles(UserRole.ADMIN)
   @Post('period-lock')
   @ApiOperation({ summary: 'Update accounting period lock date' })
   updatePeriodLock(
