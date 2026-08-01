@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res, BadRequestException } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportService } from '@application/services/report/report.service';
@@ -48,8 +48,23 @@ export class ReportsController {
     return this.reportService.getFinancials(companyId);
   }
 
+  @Get('general-ledger')
+  @ApiOperation({ summary: 'Get General Ledger movements for a specific account with running balance' })
+  getGeneralLedger(
+    @Param('companyId') companyId: string,
+    @Query('accountId') accountId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    if (!accountId) {
+      throw new BadRequestException('El parámetro accountId es obligatorio.');
+    }
+    return this.reportService.getGeneralLedger(companyId, accountId, startDate, endDate);
+  }
+
   @Get('608')
   @ApiOperation({ summary: 'Export 608 report (voided NCFs) for DGII' })
+
   async export608(
     @Param('companyId') companyId: string,
     @Query('period') period: string,

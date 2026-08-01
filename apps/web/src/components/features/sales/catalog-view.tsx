@@ -13,8 +13,10 @@ import {
   Product 
 } from '@/services/products.api';
 import { Plus, Search, Package, Edit, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 
 export default function CatalogView({ companyId }: { companyId: string }) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -126,72 +128,66 @@ export default function CatalogView({ companyId }: { companyId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Package className="w-5 h-5 text-indigo-600" />
-            Catálogo de Servicios y Productos
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Administra los servicios o productos que facturas a tus clientes.
-          </p>
-        </div>
-        <Button onClick={handleOpenCreateModal} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5">
-          <Plus className="w-4 h-4" />
-          Nuevo Servicio / Producto
-        </Button>
-      </div>
-
-      {/* Filter and Search */}
-      <div className="flex items-center gap-2 max-w-sm">
-        <div className="relative w-full">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por código o nombre..."
-            className="pl-9 text-xs h-9"
-          />
-        </div>
-      </div>
-
-      {/* Catalog Table */}
       <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Cargando catálogo...</div>
-          ) : !filteredProducts || filteredProducts.length === 0 ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              No hay ítems registrados en el catálogo. Haz clic en "Nuevo Servicio / Producto" para crear uno.
+        <CardHeader>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <Package className="w-5 h-5 text-indigo-600" />
+            {t('sales.catalogTitle')}
+          </CardTitle>
+          <CardDescription>
+            {t('sales.catalogDesc')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder={t('sales.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9 text-xs"
+              />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-slate-50 border-b uppercase text-[10px] text-slate-500 font-bold">
-                  <tr>
-                    <th className="py-3 px-4">Código</th>
-                    <th className="py-3 px-4">Nombre / Descripción</th>
-                    <th className="py-3 px-4">Tipo</th>
-                    <th className="py-3 px-4 text-right">Precio Venta</th>
-                    <th className="py-3 px-4 text-right">Costo (COGS)</th>
-                    <th className="py-3 px-4 text-center">ITBIS %</th>
-                    <th className="py-3 px-4 text-center">Estado</th>
-                    <th className="py-3 px-4 text-center">Acciones</th>
+            <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="w-4 h-4" />
+              {t('sales.newProduct')}
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            {isLoading ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">{t('common.loading')}</div>
+            ) : !filteredProducts || filteredProducts.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                {t('common.noData')}
+              </div>
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="border-b text-xs uppercase text-slate-500 bg-slate-50">
+                    <th className="py-2.5 px-3">{t('sales.code')}</th>
+                    <th className="py-2.5 px-3">{t('sales.sku')}</th>
+                    <th className="py-2.5 px-3">{t('sales.productName')}</th>
+                    <th className="py-2.5 px-3">{t('sales.type')}</th>
+                    <th className="py-2.5 px-3 text-right">{t('sales.price')}</th>
+                    <th className="py-2.5 px-3 text-right">{t('sales.cost')}</th>
+                    <th className="py-2.5 px-3">{t('common.status')}</th>
+                    <th className="py-2.5 px-3 text-right">{t('sales.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredProducts.map((prod) => (
                     <tr key={prod.id} className={`hover:bg-slate-50/60 ${!prod.isActive ? 'opacity-60 bg-slate-50/40' : ''}`}>
                       <td className="py-2.5 px-4 font-mono font-bold text-slate-700">{prod.code}</td>
+                      <td className="py-2.5 px-4">{prod.sku || '-'}</td>
                       <td className="py-2.5 px-4">
                         <div className="font-semibold text-slate-900">{prod.name}</div>
-                        {prod.description && <div className="text-[11px] text-slate-500 truncate max-w-xs">{prod.description}</div>}
                       </td>
                       <td className="py-2.5 px-4">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           prod.type === 'SERVICE' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
                         }`}>
-                          {prod.type === 'SERVICE' ? 'SERVICIO' : prod.type === 'PRODUCT' ? 'PRODUCTO' : 'DIGITAL'}
+                          {prod.type}
                         </span>
                       </td>
                       <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
@@ -200,8 +196,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                       <td className="py-2.5 px-4 text-right font-mono text-slate-600">
                         {prod.cost ? `RD$ ${Number(prod.cost).toFixed(2)}` : '-'}
                       </td>
-                      <td className="py-2.5 px-4 text-center font-mono">{prod.taxRate}%</td>
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-2.5 px-4">
                         {prod.isActive ? (
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
                             <CheckCircle className="w-3 h-3" /> Activo
@@ -212,7 +207,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 text-center space-x-1">
+                      <td className="py-2.5 px-4 text-right space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -234,8 +229,8 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -243,13 +238,13 @@ export default function CatalogView({ companyId }: { companyId: string }) {
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-slate-50">
-              <h3 className="text-sm font-bold text-slate-900">
-                {editingProduct ? 'Editar Ítem del Catálogo' : 'Nuevo Servicio o Producto'}
+            <div className="px-6 py-4 border-b bg-slate-50">
+              <h3 className="text-lg font-semibold mb-1">
+                {editingProduct ? t('sales.editItem') : t('sales.newItem')}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-sm font-bold">
-                ✕
-              </button>
+              <p className="text-xs text-muted-foreground mb-4">
+                {t('sales.itemSubtitle')}
+              </p>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
@@ -267,40 +262,37 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Código Interno (Opcional)</Label>
+                  <Label className="text-xs font-semibold">Código</Label>
                   <Input
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="Ej: SRV-001 (Auto si está vacío)"
                     className="h-9 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <Label className="text-xs font-semibold">Nombre del Servicio / Producto *</Label>
+                <Label className="text-xs font-semibold">Nombre *</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej: Diseño de Logotipo Corporativo"
                   className="h-9"
                   required
                 />
               </div>
 
               <div>
-                <Label className="text-xs font-semibold">Descripción (Opcional)</Label>
+                <Label className="text-xs font-semibold">Descripción</Label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detalles sobre lo que incluye este servicio..."
                   className="w-full h-16 rounded border border-input p-2 text-xs focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">Precio de Venta (RD$) *</Label>
+                  <Label className="text-xs font-semibold">Precio (RD$) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -312,39 +304,14 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Costo de Producción / COGS (RD$)</Label>
+                  <Label className="text-xs font-semibold">Costo (RD$)</Label>
                   <Input
                     type="number"
                     step="0.01"
                     min="0"
                     value={cost || ''}
                     onChange={(e) => setCost(Number(e.target.value))}
-                    placeholder="Opcional"
                     className="h-9 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-semibold">Tasa ITBIS</Label>
-                  <select
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(Number(e.target.value))}
-                    className="w-full h-9 rounded border border-input bg-background px-2 text-xs font-mono focus:outline-none"
-                  >
-                    <option value={18}>18% (Tasa general)</option>
-                    <option value={16}>16% (Tasa reducida)</option>
-                    <option value={0}>0% (Exento)</option>
-                  </select>
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Unidad de Medida</Label>
-                  <Input
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    placeholder="ej: hora, mes, unidad"
-                    className="h-9"
                   />
                 </div>
               </div>
@@ -352,11 +319,18 @@ export default function CatalogView({ companyId }: { companyId: string }) {
               {formError && <p className="text-xs text-red-600 font-semibold">{formError}</p>}
 
               <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="text-xs">
-                  Cancelar
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+                  {t('common.cancel')}
                 </Button>
-                <Button type="submit" disabled={isCreating || isUpdating} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs">
-                  {isCreating || isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Guardar Ítem'}
+                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="bg-indigo-600 hover:bg-indigo-700">
+                  {isCreating || isUpdating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      {t('common.saving')}
+                    </>
+                  ) : (
+                    t('sales.saveItem')
+                  )}
                 </Button>
               </div>
             </form>

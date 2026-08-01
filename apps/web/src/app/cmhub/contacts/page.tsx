@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -25,15 +26,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-const TYPE_LABELS: Record<ContactType, string> = {
-  CLIENT: 'Cliente',
-  PROVIDER: 'Proveedor',
-  BOTH: 'Cliente y Proveedor',
-};
-
 export default function ContactsPage() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
+
+  const TYPE_LABELS: Record<ContactType, string> = {
+    CLIENT: t('contacts.client'),
+    PROVIDER: t('contacts.provider'),
+    BOTH: t('contacts.both'),
+  };
 
   const { data: contacts, isLoading } = useGetContactsQuery(
     { companyId: companyId! },
@@ -131,7 +133,7 @@ export default function ContactsPage() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver los contactos.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -222,43 +224,43 @@ export default function ContactsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Users className="w-8 h-8 text-primary" />
-            Directorio de Contactos
+            {t('contacts.title')}
           </h1>
-          <p className="text-muted-foreground">Administra tus clientes y proveedores en un solo lugar.</p>
+          <p className="text-muted-foreground">{t('contacts.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
             <FileSpreadsheet className="w-4 h-4" />
-            Importar Excel / CSV
+            {t('contacts.importCsv')}
           </Button>
           <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
-            Registrar Contacto
+            {t('contacts.registerContact')}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Clientes y Proveedores</CardTitle>
+          <CardTitle>{t('contacts.cardTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando contactos...</p>
+            <p className="text-sm text-muted-foreground">{t('contacts.loading')}</p>
           ) : !contacts || contacts.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              No hay contactos registrados. Los contactos nuevos se guardan de forma automática cuando compras o facturas.
+              {t('contacts.noContacts')}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre / Razón Social</TableHead>
-                  <TableHead>RNC / Cédula</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('contacts.nameHeader')}</TableHead>
+                  <TableHead>{t('contacts.rncHeader')}</TableHead>
+                  <TableHead>{t('contacts.typeHeader')}</TableHead>
+                  <TableHead>{t('contacts.emailHeader')}</TableHead>
+                  <TableHead>{t('contacts.phoneHeader')}</TableHead>
+                  <TableHead className="text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -310,16 +312,16 @@ export default function ContactsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
             <h3 className="text-lg font-semibold mb-2">
-              {editingContact ? 'Editar Contacto' : 'Registrar Contacto'}
+              {editingContact ? t('contacts.editContact') : t('contacts.registerContact')}
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
               {editingContact
-                ? 'Modifica los datos del cliente o proveedor.'
-                : 'Registra los datos fiscales de tu cliente o proveedor.'}
+                ? t('contacts.editSubtitle')
+                : t('contacts.registerSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="cont-rnc">RNC o Cédula</Label>
+                <Label htmlFor="cont-rnc">{t('contacts.rncLabel')}</Label>
                 <Input
                   id="cont-rnc"
                   placeholder="Ej. 131234567"
@@ -330,7 +332,7 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-name">Razón Social / Nombre</Label>
+                <Label htmlFor="cont-name">{t('contacts.nameLabel')}</Label>
                 <Input
                   id="cont-name"
                   placeholder="Ej. Distribuidora del Norte SRL"
@@ -341,21 +343,21 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-type">Relación Comercial</Label>
+                <Label htmlFor="cont-type">{t('contacts.relationLabel')}</Label>
                 <select
                   id="cont-type"
                   value={type}
                   onChange={(e) => setType(e.target.value as ContactType)}
                   className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="CLIENT">Cliente</option>
-                  <option value="PROVIDER">Proveedor</option>
-                  <option value="BOTH">Ambos (Cliente y Proveedor)</option>
+                  <option value="CLIENT">{t('contacts.client')}</option>
+                  <option value="PROVIDER">{t('contacts.provider')}</option>
+                  <option value="BOTH">{t('contacts.both')}</option>
                 </select>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-email">Correo Electrónico (Opcional)</Label>
+                <Label htmlFor="cont-email">{t('contacts.emailLabel')}</Label>
                 <Input
                   id="cont-email"
                   type="email"
@@ -366,7 +368,7 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-phone">Teléfono (Opcional)</Label>
+                <Label htmlFor="cont-phone">{t('contacts.phoneLabel')}</Label>
                 <Input
                   id="cont-phone"
                   placeholder="Ej. 809-555-1234"
@@ -376,7 +378,7 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-address">Dirección (Opcional)</Label>
+                <Label htmlFor="cont-address">{t('contacts.addressLabel')}</Label>
                 <Input
                   id="cont-address"
                   placeholder="Ej. Av. Winston Churchill #12"
@@ -397,16 +399,16 @@ export default function ContactsPage() {
                   onClick={handleCloseModal}
                   disabled={isCreating || isUpdating}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={isCreating || isUpdating}>
                   {isCreating || isUpdating ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Guardando...
+                      {t('common.saving')}
                     </>
                   ) : (
-                    'Guardar'
+                    t('common.save')
                   )}
                 </Button>
               </div>
@@ -419,18 +421,18 @@ export default function ContactsPage() {
       {isExcelOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative my-8">
-            <h3 className="text-lg font-semibold mb-2">Importar Contactos desde Excel / CSV</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('contacts.importTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Sube tu archivo CSV o pega el texto en formato delimitado por comas para importar clientes y proveedores.
+              {t('contacts.importSubtitle')}
             </p>
             
             <form onSubmit={handleCsvImport} className="space-y-4">
               <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
                 <Label htmlFor="csv-contacts-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
-                  Haz clic para subir archivo CSV
+                  {t('contacts.uploadCsv')}
                 </Label>
-                <span className="text-[10px] text-muted-foreground">O arrastra el archivo aquí</span>
+                <span className="text-[10px] text-muted-foreground">{t('contacts.dragCsv')}</span>
                 <Input
                   id="csv-contacts-file"
                   type="file"
@@ -442,7 +444,7 @@ export default function ContactsPage() {
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="csv-contacts-text">Contenido o Vista Previa del CSV</Label>
+                  <Label htmlFor="csv-contacts-text">{t('contacts.csvPreview')}</Label>
                   <span className="text-[10px] text-muted-foreground font-mono">Formato: Nombre,RNC,Tipo,Telefono,Correo</span>
                 </div>
                 <textarea
@@ -466,7 +468,7 @@ export default function ContactsPage() {
                   download="plantilla_contactos.csv"
                   className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
                 >
-                  Descargar Plantilla CSV
+                  {t('contacts.downloadTemplate')}
                 </a>
                 <div className="flex gap-2">
                   <Button
@@ -480,16 +482,16 @@ export default function ContactsPage() {
                     }}
                     disabled={isImporting}
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" size="sm" disabled={isImporting}>
                     {isImporting ? (
                       <>
                         <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                        Importando...
+                        {t('contacts.importing')}
                       </>
                     ) : (
-                      'Importar Contactos'
+                      t('contacts.importButton')
                     )}
                   </Button>
                 </div>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAppSelector } from '@/store/hooks';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
 import { useGetExpensesQuery } from '@/services/expenses.api';
+import { useTranslation } from '@/lib/use-translation';
 import { 
   Building2, 
   ArrowUpRight, 
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/table';
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyId = activeCompany?.id;
   const [mounted, setMounted] = useState(false);
@@ -64,15 +66,15 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inicio</h1>
-          <p className="text-muted-foreground">Bienvenido al sistema de gestión empresarial de CMHub</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground">{t('nav.companyManagement')}</p>
         </div>
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <Building2 className="w-12 h-12 text-muted-foreground/60 mb-4" />
-            <CardTitle className="text-xl font-bold mb-2">Ninguna empresa seleccionada</CardTitle>
+            <CardTitle className="text-xl font-bold mb-2">{t('common.noCompanySelected')}</CardTitle>
             <CardDescription className="max-w-md">
-              Selecciona una empresa activa en la barra superior o registra una nueva empresa en Configuración para comenzar a ver las estadísticas del negocio.
+              {t('common.noCompanyDesc')}
             </CardDescription>
           </CardContent>
         </Card>
@@ -84,7 +86,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-muted-foreground">Cargando datos del dashboard...</p>
+        <p className="text-sm text-muted-foreground">{t('dashboard.loadingDashboard')}</p>
       </div>
     );
   }
@@ -136,7 +138,7 @@ export default function DashboardPage() {
     ...(invoices?.map(inv => ({
       id: inv.id,
       date: inv.date,
-      description: `Factura a ${inv.clientName} (${inv.ncf})`,
+      description: `${t('dashboard.invoiceFor')} ${inv.clientName} (${inv.ncf})`,
       amount: Number(inv.amount),
       type: 'INCOME' as const,
       paymentMethod: inv.paymentMethod,
@@ -144,7 +146,7 @@ export default function DashboardPage() {
     ...(expenses?.map(exp => ({
       id: exp.id,
       date: exp.date,
-      description: `Gasto de ${exp.providerName} (${exp.ncf})`,
+      description: `${t('dashboard.expenseFrom')} ${exp.providerName} (${exp.ncf})`,
       amount: Number(exp.amount),
       type: 'EXPENSE' as const,
       paymentMethod: exp.paymentMethod,
@@ -157,7 +159,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Resumen financiero de {activeCompany?.name}</p>
+          <p className="text-muted-foreground">{t('dashboard.subtitle')} {activeCompany?.name}</p>
         </div>
         
         <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">
@@ -173,29 +175,29 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Facturación (Ingresos)</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.invoicing')}</CardTitle>
             <ArrowUpRight className="w-4 h-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Total acumulado facturado</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.invoicingDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Gastos / Compras</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.expenses')}</CardTitle>
             <ArrowDownRight className="w-4 h-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">Total registrado de egresos</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.expensesDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.netFlow')}</CardTitle>
             {netCashFlow >= 0 ? (
               <TrendingUp className="w-4 h-4 text-green-500" />
             ) : (
@@ -206,13 +208,13 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold text-[#0a1128]">
               RD$ {netCashFlow.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
-            <p className="text-xs text-muted-foreground">Beneficio neto calculado</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.netFlowDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">ITBIS Neto (Estimado)</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.itbisNet')}</CardTitle>
             <Receipt className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
@@ -220,7 +222,7 @@ export default function DashboardPage() {
               RD$ {itbisBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">
-              {itbisBalance >= 0 ? 'Saldo a pagar estimado' : 'Saldo a favor estimado'}
+              {itbisBalance >= 0 ? t('dashboard.itbisToPay') : t('dashboard.itbisInFavor')}
             </p>
           </CardContent>
         </Card>
@@ -230,8 +232,8 @@ export default function DashboardPage() {
         {/* Monthly Trend Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Histórico de Ventas vs Gastos</CardTitle>
-            <CardDescription>Comparativo de los últimos 6 meses</CardDescription>
+            <CardTitle>{t('dashboard.chartTitle')}</CardTitle>
+            <CardDescription>{t('dashboard.chartDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="relative w-full h-[240px] flex items-end justify-between border-b pb-6 px-4">
@@ -282,11 +284,11 @@ export default function DashboardPage() {
             <div className="flex items-center gap-6 mt-4 justify-center text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-primary/80 rounded-sm"></div>
-                <span className="text-muted-foreground">Ventas / Ingresos</span>
+                <span className="text-muted-foreground">{t('dashboard.legendIncome')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-slate-400 rounded-sm"></div>
-                <span className="text-muted-foreground">Gastos / Egresos</span>
+                <span className="text-muted-foreground">{t('dashboard.legendExpense')}</span>
               </div>
             </div>
           </CardContent>
@@ -295,8 +297,8 @@ export default function DashboardPage() {
         {/* Quick Links / Guide */}
         <Card>
           <CardHeader>
-            <CardTitle>Accesos Rápidos</CardTitle>
-            <CardDescription>Gestión y consultas</CardDescription>
+            <CardTitle>{t('dashboard.quickLinks')}</CardTitle>
+            <CardDescription>{t('dashboard.quickLinksDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Link href="/cmhub/accounting" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -305,8 +307,8 @@ export default function DashboardPage() {
                   <DollarSign className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold">Registrar Asiento</p>
-                  <p className="text-xs text-muted-foreground">Transacciones diarias</p>
+                  <p className="text-sm font-semibold">{t('dashboard.recordEntry')}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.dailyTransactions')}</p>
                 </div>
               </div>
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
@@ -318,8 +320,8 @@ export default function DashboardPage() {
                   <FileText className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold">Secuencias NCF</p>
-                  <p className="text-xs text-muted-foreground">Comprobantes autorizados</p>
+                  <p className="text-sm font-semibold">{t('dashboard.ncfSequences')}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.authorizedVouchers')}</p>
                 </div>
               </div>
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
@@ -331,8 +333,8 @@ export default function DashboardPage() {
                   <Receipt className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold">Impuestos IT-1</p>
-                  <p className="text-xs text-muted-foreground">Liquidación de periodos</p>
+                  <p className="text-sm font-semibold">{t('dashboard.taxIt1')}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.periodLiquidation')}</p>
                 </div>
               </div>
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
@@ -344,23 +346,23 @@ export default function DashboardPage() {
       {/* Recent Activity Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Actividad Reciente</CardTitle>
-          <CardDescription>Últimas facturas y gastos registrados</CardDescription>
+          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+          <CardDescription>{t('dashboard.recentActivityDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {recentActivities.length === 0 ? (
             <div className="text-center py-6 text-sm text-muted-foreground">
-              No hay actividad reciente registrada para esta empresa.
+              {t('common.noRecentActivity')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Método</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead>{t('common.date')}</TableHead>
+                  <TableHead>{t('common.description')}</TableHead>
+                  <TableHead>{t('common.type')}</TableHead>
+                  <TableHead>{t('common.method')}</TableHead>
+                  <TableHead className="text-right">{t('common.amount')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -372,7 +374,7 @@ export default function DashboardPage() {
                     <TableCell className="font-medium">{act.description}</TableCell>
                     <TableCell>
                       <Badge variant={act.type === 'INCOME' ? 'default' : 'destructive'}>
-                        {act.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
+                        {act.type === 'INCOME' ? t('common.income') : t('common.expense')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground capitalize">
@@ -391,3 +393,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

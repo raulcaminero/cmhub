@@ -13,6 +13,7 @@ import {
 } from '@/services/quotations.api';
 import InvoiceLineEditor, { EditableLine } from './invoice-line-editor';
 import { Plus, FileText, CheckCircle, ArrowRight, Loader2, Clock, Send, XCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 
 interface QuotationsViewProps {
   companyId: string;
@@ -20,6 +21,7 @@ interface QuotationsViewProps {
 }
 
 export default function QuotationsView({ companyId, onConvertQuotationToInvoice }: QuotationsViewProps) {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientRnc, setClientRnc] = useState('');
   const [clientName, setClientName] = useState('');
@@ -123,39 +125,38 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <FileText className="w-5 h-5 text-indigo-600" />
-            Cotizaciones y Presupuestos
+            {t('sales.quotationsTitle')}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Envía presupuestos a tus clientes y conviértelos en facturas con un clic cuando sean aceptados.
+            {t('sales.quotationsDesc')}
           </p>
         </div>
         <Button onClick={handleOpenModal} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5">
           <Plus className="w-4 h-4" />
-          Nueva Cotización
+          {t('sales.newQuotation')}
         </Button>
       </div>
 
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">Cargando cotizaciones...</div>
+            <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">{t('common.loading')}</div>
           ) : !quotations || quotations.length === 0 ? (
             <div className="p-8 text-center text-xs text-muted-foreground">
-              Aún no has creado cotizaciones. Haz clic en "Nueva Cotización" para emitir la primera.
+              {t('common.noData')}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
                 <thead className="bg-slate-50 border-b uppercase text-[10px] text-slate-500 font-bold">
                   <tr>
-                    <th className="py-3 px-4">Número</th>
-                    <th className="py-3 px-4">Cliente</th>
-                    <th className="py-3 px-4">Fecha Emitida</th>
-                    <th className="py-3 px-4 text-right">Subtotal</th>
-                    <th className="py-3 px-4 text-right">ITBIS</th>
-                    <th className="py-3 px-4 text-right">Total</th>
-                    <th className="py-3 px-4 text-center">Estado</th>
-                    <th className="py-3 px-4 text-center">Acciones</th>
+                    <th className="py-3 px-4">{t('sales.code')}</th>
+                    <th className="py-3 px-4">{t('sales.client')}</th>
+                    <th className="py-3 px-4">{t('common.date')}</th>
+                    <th className="py-3 px-4">{t('sales.validUntil')}</th>
+                    <th className="py-3 px-4 text-right">{t('sales.total')}</th>
+                    <th className="py-3 px-4 text-center">{t('sales.status')}</th>
+                    <th className="py-3 px-4 text-center">{t('sales.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -164,8 +165,7 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
                       <td className="py-2.5 px-4 font-mono font-bold text-indigo-950">{quot.number}</td>
                       <td className="py-2.5 px-4 font-medium text-slate-900">{quot.clientName}</td>
                       <td className="py-2.5 px-4 text-slate-500">{new Date(quot.createdAt).toLocaleDateString()}</td>
-                      <td className="py-2.5 px-4 text-right font-mono text-slate-700">RD$ {Number(quot.subtotal).toFixed(2)}</td>
-                      <td className="py-2.5 px-4 text-right font-mono text-slate-700">RD$ {Number(quot.itbis).toFixed(2)}</td>
+                      <td className="py-2.5 px-4 text-slate-500">{quot.validUntil ? new Date(quot.validUntil).toLocaleDateString() : '-'}</td>
                       <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">RD$ {Number(quot.total).toFixed(2)}</td>
                       <td className="py-2.5 px-4 text-center">{getStatusBadge(quot.status)}</td>
                       <td className="py-2.5 px-4 text-center space-x-1">
@@ -207,7 +207,7 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-slate-50 shrink-0">
-              <h3 className="text-sm font-bold text-slate-900">Crear Nueva Cotización</h3>
+              <h3 className="text-sm font-bold text-slate-900">{t('sales.createQuotationTitle')}</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 text-sm font-bold">
                 ✕
               </button>
@@ -264,10 +264,10 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
 
               <div className="flex justify-end gap-2 pt-2 border-t shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="text-xs">
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={isCreating} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs">
-                  {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Guardar Cotización'}
+                  {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('sales.saveQuotation')}
                 </Button>
               </div>
             </form>

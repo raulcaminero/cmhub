@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ interface EntryLineForm {
 }
 
 export function JournalEntriesView() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
 
   const { data: entries, isLoading: isLoadingEntries } = useGetJournalEntriesQuery(
@@ -80,7 +82,7 @@ export function JournalEntriesView() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver los asientos contables.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -104,7 +106,7 @@ export function JournalEntriesView() {
     const updated = [...lines];
     if (field === 'debit') {
       updated[index].debit = Number(value) || 0;
-      if (updated[index].debit > 0) updated[index].credit = 0; // standard: cannot be both debit and credit
+      if (updated[index].debit > 0) updated[index].credit = 0;
     } else if (field === 'credit') {
       updated[index].credit = Number(value) || 0;
       if (updated[index].credit > 0) updated[index].debit = 0;
@@ -163,17 +165,17 @@ export function JournalEntriesView() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>Asientos de Diario</CardTitle>
+          <CardTitle>{t('entries.title')}</CardTitle>
           <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
-            Nuevo Asiento
+            {t('entries.newEntry')}
           </Button>
         </CardHeader>
         <CardContent>
           {isLoadingEntries ? (
-            <p className="text-sm text-muted-foreground">Cargando asientos...</p>
+            <p className="text-sm text-muted-foreground">{t('entries.loading')}</p>
           ) : !entries || entries.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No hay asientos contables registrados en esta empresa.</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('entries.noEntries')}</p>
           ) : (
             <div className="space-y-6">
               {entries.map((entry) => (
@@ -186,18 +188,18 @@ export function JournalEntriesView() {
                       <span className="text-sm font-semibold">{entry.description}</span>
                       
                       {entry.status === 'DRAFT' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border font-medium">Borrador</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border font-medium">{t('entries.draft')}</span>
                       )}
                       {entry.status === 'POSTED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border font-medium">Publicado</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border font-medium">{t('entries.posted')}</span>
                       )}
                       {entry.status === 'VOIDED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border font-medium">Anulado</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border font-medium">{t('entries.voided')}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>Ref: {entry.reference || 'N/A'}</span>
-                      <span>Fecha: {new Date(entry.date).toLocaleDateString()}</span>
+                      <span>{t('common.date')}: {new Date(entry.date).toLocaleDateString()}</span>
                       
                       {entry.status === 'DRAFT' && (
                         <Button
@@ -205,7 +207,7 @@ export function JournalEntriesView() {
                           onClick={() => handlePost(entry.id)}
                           className="h-7 text-xs px-2 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
                         >
-                          Aprobar
+                          {t('entries.approve')}
                         </Button>
                       )}
                       {entry.status === 'POSTED' && (
@@ -214,7 +216,7 @@ export function JournalEntriesView() {
                           onClick={() => handleVoid(entry.id)}
                           className="h-7 text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                         >
-                          Anular
+                          {t('entries.void')}
                         </Button>
                       )}
                     </div>
@@ -223,10 +225,10 @@ export function JournalEntriesView() {
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <TableHead className="h-8">Cuenta</TableHead>
-                        <TableHead className="h-8">Detalle</TableHead>
-                        <TableHead className="h-8 text-right">Débito</TableHead>
-                        <TableHead className="h-8 text-right">Crédito</TableHead>
+                        <TableHead className="h-8">{t('entries.account')}</TableHead>
+                        <TableHead className="h-8">{t('entries.detail')}</TableHead>
+                        <TableHead className="h-8 text-right">{t('entries.debit')}</TableHead>
+                        <TableHead className="h-8 text-right">{t('entries.credit')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -235,7 +237,7 @@ export function JournalEntriesView() {
                         return (
                           <TableRow key={line.id} className="hover:bg-transparent py-1">
                             <TableCell className="py-2 text-sm font-medium">
-                              {acc ? `${acc.code} — ${acc.name}` : 'Cuenta desconocida'}
+                              {acc ? `${acc.code} — ${acc.name}` : t('entries.unknownAccount')}
                             </TableCell>
                             <TableCell className="py-2 text-xs text-muted-foreground">
                               {line.description || '-'}
@@ -262,14 +264,14 @@ export function JournalEntriesView() {
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-3xl shadow-xl border relative my-8">
-            <h3 className="text-lg font-semibold mb-2">Crear Asiento Contable</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('entries.createTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Ingresa los detalles del movimiento contable de doble entrada.
+              {t('entries.createSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="entry-date">Fecha</Label>
+                  <Label htmlFor="entry-date">{t('entries.date')}</Label>
                   <Input
                     id="entry-date"
                     type="date"
@@ -279,7 +281,7 @@ export function JournalEntriesView() {
                   />
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="entry-desc">Concepto / Descripción</Label>
+                  <Label htmlFor="entry-desc">{t('entries.description')}</Label>
                   <Input
                     id="entry-desc"
                     placeholder="Ej. Registro de ventas del día"
@@ -291,7 +293,7 @@ export function JournalEntriesView() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="entry-ref">Referencia (Opcional)</Label>
+                  <Label htmlFor="entry-ref">{t('entries.reference')}</Label>
                   <Input
                     id="entry-ref"
                     placeholder="Ej. Fact-001"
@@ -303,10 +305,10 @@ export function JournalEntriesView() {
 
               <div className="border rounded-md p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold">Detalle de Cuentas</span>
+                  <span className="text-sm font-semibold">{t('entries.accountDetails')}</span>
                   <Button type="button" variant="outline" size="sm" onClick={handleAddLine} className="gap-1 text-xs">
                     <Plus className="w-3 h-3" />
-                    Línea
+                    {t('entries.addLine')}
                   </Button>
                 </div>
 
@@ -314,14 +316,14 @@ export function JournalEntriesView() {
                   {lines.map((line, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end border-b pb-2 md:border-none md:pb-0">
                       <div className="md:col-span-4 space-y-1">
-                        <Label className="text-xxs md:hidden">Cuenta</Label>
+                        <Label className="text-xxs md:hidden">{t('entries.account')}</Label>
                         <select
                           value={line.accountId}
                           onChange={(e) => handleLineChange(index, 'accountId', e.target.value)}
                           className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                           required
                         >
-                          <option value="">Selecciona Cuenta...</option>
+                          <option value="">{t('entries.selectAccount')}</option>
                           {accounts?.map((acc) => (
                             <option key={acc.id} value={acc.id}>
                               {acc.code} - {acc.name}
@@ -330,16 +332,16 @@ export function JournalEntriesView() {
                         </select>
                       </div>
                       <div className="md:col-span-3 space-y-1">
-                        <Label className="text-xxs md:hidden">Descripción de la línea</Label>
+                        <Label className="text-xxs md:hidden">{t('entries.detail')}</Label>
                         <Input
-                          placeholder="Nota (opcional)"
+                          placeholder={t('entries.notePlaceholder')}
                           value={line.description}
                           onChange={(e) => handleLineChange(index, 'description', e.target.value)}
                           className="h-9 text-xs"
                         />
                       </div>
                       <div className="md:col-span-2 space-y-1">
-                        <Label className="text-xxs md:hidden">Débito</Label>
+                        <Label className="text-xxs md:hidden">{t('entries.debit')}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -350,7 +352,7 @@ export function JournalEntriesView() {
                         />
                       </div>
                       <div className="md:col-span-2 space-y-1">
-                        <Label className="text-xxs md:hidden">Crédito</Label>
+                        <Label className="text-xxs md:hidden">{t('entries.credit')}</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -378,17 +380,17 @@ export function JournalEntriesView() {
 
                 <div className="flex flex-wrap justify-between items-center text-xs font-semibold bg-muted p-2 rounded gap-2">
                   <div>
-                    Líneas: {lines.length}
+                    {t('entries.linesCount')} {lines.length}
                   </div>
                   <div className="flex gap-4 font-mono">
-                    <div>Débitos: RD$ {totalDebits.toFixed(2)}</div>
-                    <div>Créditos: RD$ {totalCredits.toFixed(2)}</div>
+                    <div>{t('entries.debitsTotal')} RD$ {totalDebits.toFixed(2)}</div>
+                    <div>{t('entries.creditsTotal')} RD$ {totalCredits.toFixed(2)}</div>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
                   <span className={isBalanced ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
-                    {isBalanced ? '✓ Balance Cuadrado' : `✗ Descuadre: RD$ ${difference.toFixed(2)}`}
+                    {isBalanced ? t('entries.balanced') : `${t('entries.unbalanced')} RD$ ${difference.toFixed(2)}`}
                   </span>
                 </div>
               </div>
@@ -408,16 +410,16 @@ export function JournalEntriesView() {
                   }}
                   disabled={isCreating}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={!isBalanced || isCreating}>
                   {isCreating ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Registrando...
+                      {t('entries.registering')}
                     </>
                   ) : (
-                    'Registrar Asiento'
+                    t('entries.registerEntry')
                   )}
                 </Button>
               </div>

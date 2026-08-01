@@ -8,8 +8,10 @@ import CatalogView from '@/components/features/sales/catalog-view';
 import QuotationsView from '@/components/features/sales/quotations-view';
 import { ShoppingCart, Package, FileText, Receipt } from 'lucide-react';
 import { Quotation } from '@/services/quotations.api';
+import { useTranslation } from '@/lib/use-translation';
 
 export default function SalesPage() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [activeTab, setActiveTab] = useState<'invoices' | 'catalog' | 'quotations'>('invoices');
   const [convertingQuotation, setConvertingQuotation] = useState<Quotation | null>(null);
@@ -18,7 +20,7 @@ export default function SalesPage() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para gestionar tus ventas.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -36,10 +38,10 @@ export default function SalesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
             <ShoppingCart className="w-7 h-7 text-indigo-600" />
-            Gestión de Ventas
+            {t('sales.title')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Administra tu catálogo de servicios/productos, envía cotizaciones a clientes y emite facturas con comprobante NCF.
+            {t('sales.subtitle')}
           </p>
         </div>
       </div>
@@ -55,7 +57,7 @@ export default function SalesPage() {
           }`}
         >
           <Receipt className="w-4 h-4" />
-          Facturas de Venta
+          {t('sales.invoicesTab')}
         </button>
         <button
           onClick={() => setActiveTab('catalog')}
@@ -66,7 +68,7 @@ export default function SalesPage() {
           }`}
         >
           <Package className="w-4 h-4" />
-          Catálogo de Servicios
+          {t('sales.catalogTab')}
         </button>
         <button
           onClick={() => setActiveTab('quotations')}
@@ -77,7 +79,7 @@ export default function SalesPage() {
           }`}
         >
           <FileText className="w-4 h-4" />
-          Cotizaciones / Presupuestos
+          {t('sales.quotationsTab')}
         </button>
       </div>
 

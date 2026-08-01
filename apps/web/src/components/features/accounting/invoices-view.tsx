@@ -15,6 +15,7 @@ import { Plus, Printer, Loader2 } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
 import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ interface InvoicesViewProps {
 }
 
 export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExternalModal }: InvoicesViewProps = {}) {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
 
   const [page, setPage] = useState(1);
@@ -241,55 +243,32 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
-          <CardTitle>Facturas Emitidas (Ventas)</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">Desde:</span>
-              <Input
-                type="date"
-                className="h-8 text-xs w-[130px] p-2 bg-background"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">Hasta:</span>
-              <Input
-                type="date"
-                className="h-8 text-xs w-[130px] p-2 bg-background"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Button size="sm" className="gap-2 h-8" onClick={() => setIsOpen(true)}>
-              <Plus className="w-4 h-4" />
-              Nueva Factura
-            </Button>
-          </div>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle>{t('invoicesView.title')}</CardTitle>
+          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
+            <Plus className="w-4 h-4" />
+            {t('invoicesView.newInvoice')}
+          </Button>
         </CardHeader>
         <CardContent>
+
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando facturas...</p>
-          ) : !invoices || invoices.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No hay facturas de ventas registradas en esta empresa.</p>
+            <p className="text-sm text-muted-foreground">{t('invoicesView.loading')}</p>
+          ) : invoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{t('invoicesView.noInvoices')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>NCF</TableHead>
-                  <TableHead>Cliente (RNC)</TableHead>
-                  <TableHead className="text-right">Monto Total</TableHead>
-                  <TableHead className="text-right">ITBIS</TableHead>
-                  <TableHead>Pago</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('invoicesView.invoiceNo')}</TableHead>
+                  <TableHead>{t('invoicesView.client')}</TableHead>
+                  <TableHead>{t('common.date')}</TableHead>
+                  <TableHead>{t('invoicesView.ncfType')}</TableHead>
+                  <TableHead className="text-right">{t('invoicesView.amount')}</TableHead>
+                  <TableHead className="text-right">{t('invoicesView.itbis')}</TableHead>
+                  <TableHead className="text-right">{t('invoicesView.balance')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-right">{t('invoicesView.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -410,9 +389,9 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-xl shadow-xl border relative my-8">
-            <h3 className="text-lg font-semibold mb-2">Emitir Factura de Venta</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('invoicesView.createTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Ingresa los datos del cliente para emitir el comprobante fiscal y registrar la venta.
+              {t('invoicesView.createSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

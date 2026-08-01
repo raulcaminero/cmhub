@@ -9,6 +9,7 @@ import { useAppSelector } from '@/store/hooks';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
 import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
 import TaxCopilotView from '@/components/features/tax/tax-copilot-view';
+import { useTranslation } from '@/lib/use-translation';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
@@ -36,6 +37,7 @@ const RETENTION_TEMPLATES = [
 ];
 
 export default function TaxPage() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
@@ -172,11 +174,11 @@ export default function TaxPage() {
       {/* Header with Period Selector */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Impuestos y Retenciones</h1>
-          <p className="text-muted-foreground">Monitorea tus obligaciones fiscales con la DGII y descarga los archivos de envío (606, 607, 608, 609).</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('tax.title')}</h1>
+          <p className="text-muted-foreground">{t('tax.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 bg-card border rounded-md p-2 shadow-sm self-start">
-          <Label className="text-xs font-semibold px-1">Período Fiscal:</Label>
+          <Label className="text-xs font-semibold px-1">{t('tax.fiscalPeriod')}</Label>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
@@ -201,7 +203,7 @@ export default function TaxPage() {
       {!companyId ? (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground text-sm">Selecciona una empresa en la barra superior o en configuración para ver el tablero fiscal.</p>
+            <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
           </CardContent>
         </Card>
       ) : (
@@ -216,7 +218,7 @@ export default function TaxPage() {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              Tablero Fiscal
+              {t('tax.boardTab')}
             </button>
             <button
               onClick={() => setActiveTab('copilot')}
@@ -227,7 +229,7 @@ export default function TaxPage() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              Copiloto Inteligente
+              {t('tax.copilotTab')}
             </button>
           </div>
 
@@ -240,9 +242,9 @@ export default function TaxPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-emerald-600" />
-                  Obligaciones Estimadas del Período ({selectedYear}-{selectedMonth})
+                  {t('tax.obligationsTitle')} ({selectedYear}-{selectedMonth})
                 </CardTitle>
-                <CardDescription>Resumen acumulado del ITBIS y retenciones calculadas en base a facturas y gastos registrados.</CardDescription>
+                <CardDescription>{t('tax.obligationsDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loadingIt1 ? (
@@ -254,26 +256,26 @@ export default function TaxPage() {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b pb-4">
                       <div className="p-3 bg-muted/40 rounded-md">
-                        <span className="text-xs text-muted-foreground block font-medium">ITBIS por Pagar (Ventas)</span>
+                        <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisDue')}</span>
                         <span className="text-lg font-bold font-mono">RD$ {it1Summary?.salesItbis.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="p-3 bg-muted/40 rounded-md">
-                        <span className="text-xs text-muted-foreground block font-medium">ITBIS Adelantado (Compras)</span>
+                        <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisAdvanced')}</span>
                         <span className="text-lg font-bold font-mono">RD$ {it1Summary?.purchasesItbis.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/15 rounded-md">
-                        <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">ITBIS Neto a Declarar</span>
+                        <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">{t('tax.itbisNet')}</span>
                         <span className="text-lg font-bold font-mono text-emerald-600">RD$ {it1Summary?.itbisToPay.toFixed(2) || '0.00'}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm py-1">
-                        <span className="text-muted-foreground">Ventas Brutas Declaradas (Sin impuestos)</span>
+                        <span className="text-muted-foreground">{t('tax.grossSales')}</span>
                         <span className="font-semibold font-mono">RD$ {it1Summary?.salesAmount.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm py-1">
-                        <span className="text-muted-foreground">Compras Brutas Declaradas (Sin impuestos)</span>
+                        <span className="text-muted-foreground">{t('tax.grossPurchases')}</span>
                         <span className="font-semibold font-mono">RD$ {it1Summary?.purchasesAmount.toFixed(2) || '0.00'}</span>
                       </div>
                     </div>
@@ -283,12 +285,12 @@ export default function TaxPage() {
                         {isPeriodFiled ? (
                           <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
                             <ShieldCheck className="w-5 h-5 text-emerald-600" />
-                            Este período fiscal ha sido presentado y bloqueado.
+                            {t('tax.periodFiled')}
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 text-amber-600 text-xs">
                             <Clock className="w-4 h-4 text-amber-600" />
-                            Este período está abierto y puede recibir facturas y gastos.
+                            {t('tax.periodOpen')}
                           </div>
                         )}
                       </div>
@@ -304,12 +306,12 @@ export default function TaxPage() {
                           {isSubmitting ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              Presentando...
+                              {t('tax.submitting')}
                             </>
                           ) : (
                             <>
                               <Send className="w-4 h-4" />
-                              Presentar Declaración IT-1
+                              {t('tax.submitDeclaration')}
                             </>
                           )}
                         </Button>
@@ -327,26 +329,26 @@ export default function TaxPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Download className="w-5 h-5 text-blue-600" />
-                  Archivos de Envío (TXT)
+                  {t('tax.downloadsTitle')}
                 </CardTitle>
-                <CardDescription>Genera y descarga el archivo comprimido/plano delimitado por pipe (`|`) para subir al portal DGII.</CardDescription>
+                 <CardDescription>{t('tax.downloadsDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button variant="outline" className="w-full justify-start text-left gap-2 text-xs font-mono" onClick={() => handleDownload('606')}>
                   <FileText className="w-4 h-4 text-orange-500" />
-                  Descargar Reporte 606 (Gastos)
+                  {t('tax.download606')}
                 </Button>
                 <Button variant="outline" className="w-full justify-start text-left gap-2 text-xs font-mono" onClick={() => handleDownload('607')}>
                   <FileText className="w-4 h-4 text-emerald-500" />
-                  Descargar Reporte 607 (Ventas)
+                  {t('tax.download607')}
                 </Button>
                 <Button variant="outline" className="w-full justify-start text-left gap-2 text-xs font-mono" onClick={() => handleDownload('608')}>
                   <FileText className="w-4 h-4 text-red-500" />
-                  Descargar Reporte 608 (Anulados)
+                  {t('tax.download608')}
                 </Button>
                 <Button variant="outline" className="w-full justify-start text-left gap-2 text-xs font-mono" onClick={() => handleDownload('609')}>
                   <FileText className="w-4 h-4 text-purple-500" />
-                  Descargar Reporte 609 (Extranjero)
+                  {t('tax.download609')}
                 </Button>
               </CardContent>
             </Card>
@@ -359,22 +361,22 @@ export default function TaxPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-indigo-600" />
-                  Próximos Vencimientos Fiscales
+                  {t('tax.upcomingDeadlines')}
                 </CardTitle>
-                <CardDescription>Fechas límites para declarar el período {selectedMonth}/{selectedYear}.</CardDescription>
+                <CardDescription>{t('tax.deadlinesDesc')} {selectedMonth}/{selectedYear}.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* IR-3 / TSS */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Pago TSS e IR-3 (Retenciones Salarios)</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineTss')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(10)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(10) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Vence en {getDaysRemaining(10)} d</span>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(10)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">Vencido</span>
+                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -382,14 +384,14 @@ export default function TaxPage() {
                 {/* Envíos 606/7/8/9 */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Envíos de Datos (606, 607, 608, 609)</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineEnvios')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(15)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(15) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Vence en {getDaysRemaining(15)} d</span>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(15)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">Vencido</span>
+                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -397,14 +399,14 @@ export default function TaxPage() {
                 {/* IT-1 ITBIS */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Declaración IT-1 (Pago ITBIS Neto)</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineIt1')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(20)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(20) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Vence en {getDaysRemaining(20)} d</span>
+                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(20)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">Vencido</span>
+                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -416,14 +418,14 @@ export default function TaxPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-emerald-600" />
-                  Calculadora y Simulador de Retenciones DGII
+                  {t('tax.calculatorTitle')}
                 </CardTitle>
-                <CardDescription>Simula retenciones de ITBIS e ISR para prestadores de servicios o proveedores informales.</CardDescription>
+                <CardDescription>{t('tax.calculatorDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="calc-template" className="text-xs font-medium">Tipo de Operación y Tasa Legal</Label>
+                    <Label htmlFor="calc-template" className="text-xs font-medium">{t('tax.operationType')}</Label>
                     <select
                       id="calc-template"
                       value={calcTemplate}
@@ -436,7 +438,7 @@ export default function TaxPage() {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="calc-gross" className="text-xs font-medium">Monto Bruto Facturado (RD$)</Label>
+                    <Label htmlFor="calc-gross" className="text-xs font-medium">{t('tax.grossAmount')}</Label>
                     <Input
                       id="calc-gross"
                       type="number"
@@ -452,15 +454,15 @@ export default function TaxPage() {
                   {/* Left Column: Totals details */}
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between py-1 border-b">
-                      <span className="text-muted-foreground">Monto Bruto / Subtotal</span>
+                      <span className="text-muted-foreground">{t('tax.grossAmount')}</span>
                       <span className="font-semibold font-mono">RD$ {calcGross.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b">
-                      <span className="text-muted-foreground">ITBIS Facturado (18%)</span>
+                      <span className="text-muted-foreground">{t('tax.itbisBilled')}</span>
                       <span className="font-semibold font-mono">RD$ {calcItbis.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold">
-                      <span>Total Facturado Original</span>
+                      <span>{t('tax.totalOriginal')}</span>
                       <span className="font-mono">RD$ {(calcGross + calcItbis).toFixed(2)}</span>
                     </div>
                   </div>
@@ -468,19 +470,19 @@ export default function TaxPage() {
                   {/* Right Column: Deductions & Net */}
                   <div className="space-y-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-md border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between py-1 text-red-600">
-                      <span>(-) Retención ITBIS</span>
+                      <span>(-) {t('tax.retentionItbis')}</span>
                       <span className="font-semibold font-mono">RD$ {calcItbisRetained.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-1 text-red-600">
-                      <span>(-) Retención ISR</span>
+                      <span>(-) {t('tax.retentionIsr')}</span>
                       <span className="font-semibold font-mono">RD$ {calcIsrRetained.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold text-emerald-600 border-t pt-2 mt-1">
-                      <span>Neto a Pagar al Proveedor</span>
+                      <span>{t('tax.netToPay')}</span>
                       <span className="font-mono text-sm">RD$ {calcNetToProvider.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-0.5 text-[10px] text-muted-foreground">
-                      <span>Total Retenciones a Enterar a DGII</span>
+                      <span>{t('tax.totalToDgi')}</span>
                       <span className="font-mono">RD$ {calcTotalToDgi.toFixed(2)}</span>
                     </div>
                   </div>
@@ -494,27 +496,27 @@ export default function TaxPage() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-indigo-600" />
-                Historial de Declaraciones de Impuestos (IT-1)
+                {t('tax.filingHistoryTitle')}
               </CardTitle>
-              <CardDescription>Registro histórico de los formularios presentados y los períodos cerrados.</CardDescription>
+              <CardDescription>{t('tax.filingHistoryDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingFilings ? (
-                <p className="text-sm text-muted-foreground animate-pulse">Cargando historial...</p>
+                <p className="text-sm text-muted-foreground animate-pulse">{t('tax.loadingHistory')}</p>
               ) : !taxFilings || taxFilings.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">Aún no se han presentado declaraciones de impuestos para esta empresa.</p>
+                <p className="text-sm text-muted-foreground text-center py-6">{t('tax.noFilings')}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead>
                       <tr className="border-b text-xs uppercase text-muted-foreground">
-                        <th className="py-2">Período</th>
-                        <th className="py-2">Impuesto</th>
-                        <th className="py-2 text-right">Monto Ventas</th>
-                        <th className="py-2 text-right">Monto Compras</th>
-                        <th className="py-2 text-right">Impuesto Resultante</th>
-                        <th className="py-2">Fecha Presentación</th>
-                        <th className="py-2">Estado</th>
+                        <th className="py-2">{t('tax.period')}</th>
+                        <th className="py-2">{t('common.type')}</th>
+                        <th className="py-2 text-right">{t('tax.salesAmount')}</th>
+                        <th className="py-2 text-right">{t('tax.purchasesAmount')}</th>
+                        <th className="py-2 text-right">{t('tax.taxResult')}</th>
+                        <th className="py-2">{t('tax.filedDate')}</th>
+                        <th className="py-2">{t('common.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -530,7 +532,7 @@ export default function TaxPage() {
                           <td className="py-2 text-muted-foreground">{new Date(filing.filedAt).toLocaleString()}</td>
                           <td className="py-2">
                             <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
-                              PRESENTADA
+                              {t('tax.filed')}
                             </span>
                           </td>
                         </tr>

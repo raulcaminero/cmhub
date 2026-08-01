@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccountsView } from '@/components/features/accounting/accounts-view';
+import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
+import { useTranslation } from '@/lib/use-translation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -10,10 +12,11 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutation } from '@/services/companies.api';
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus } from 'lucide-react';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyList = useAppSelector((state) => state.company.list);
@@ -60,7 +63,7 @@ export default function SettingsPage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts' | 'preferences'>('company');
 
   // Company settings edit form
   const [compName, setCompName] = useState('');
@@ -105,7 +108,7 @@ export default function SettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-muted-foreground">Cargando configuración...</p>
+        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       </div>
     );
   }
@@ -188,8 +191,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
-          <p className="text-muted-foreground">Administra los datos de tus empresas, cuentas y preferencias.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
+          <p className="text-muted-foreground">{t('settings.subtitle')}</p>
         </div>
       </div>
 
@@ -200,7 +203,7 @@ export default function SettingsPage() {
           className="gap-2 shrink-0"
         >
           <Building2 className="w-4 h-4" />
-          Empresa Activa
+          {t('settings.activeCompanyTab')}
         </Button>
         <Button
           variant={activeTab === 'my-companies' ? 'default' : 'outline'}
@@ -208,7 +211,7 @@ export default function SettingsPage() {
           className="gap-2 shrink-0"
         >
           <Layers className="w-4 h-4" />
-          Mis Empresas
+          {t('settings.myCompaniesTab')}
         </Button>
         <Button
           variant={activeTab === 'accounts' ? 'default' : 'outline'}
@@ -216,27 +219,36 @@ export default function SettingsPage() {
           className="gap-2 shrink-0"
         >
           <BookOpen className="w-4 h-4" />
-          Plan de Cuentas
+          {t('settings.chartOfAccountsTab')}
+        </Button>
+        <Button
+          variant={activeTab === 'preferences' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('preferences')}
+          className="gap-2 shrink-0"
+        >
+          <Globe className="w-4 h-4" />
+          {t('settings.preferences')}
         </Button>
       </div>
+
 
       {activeTab === 'company' && (
         <div className="space-y-6">
           <Card>
           <CardHeader>
-            <CardTitle>Datos de la Empresa Activa</CardTitle>
-            <CardDescription>Configura los datos comerciales y de facturación fiscal.</CardDescription>
+            <CardTitle>{t('settings.activeCompanyTitle')}</CardTitle>
+            <CardDescription>{t('settings.activeCompanyDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!activeCompany ? (
               <div className="text-center py-6 text-sm text-muted-foreground">
-                Ninguna empresa seleccionada. Dirígete a la pestaña "Mis Empresas" para registrar una.
+                {t('settings.noCompanySelected')}
               </div>
             ) : (
               <form onSubmit={handleUpdateCompany} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="edit-name">Razón Social</Label>
+                    <Label htmlFor="edit-name">{t('settings.tradeName')}</Label>
                     <Input
                       id="edit-name"
                       value={compName}
@@ -245,7 +257,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-tradeName">Nombre Comercial (Opcional)</Label>
+                    <Label htmlFor="edit-tradeName">{t('settings.commercialName')}</Label>
                     <Input
                       id="edit-tradeName"
                       value={compTradeName}
@@ -253,7 +265,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-rnc">RNC (Cédula o comercial)</Label>
+                    <Label htmlFor="edit-rnc">{t('settings.rnc')}</Label>
                     <Input
                       id="edit-rnc"
                       value={compRnc}
@@ -262,19 +274,19 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-regime">Régimen Fiscal</Label>
+                    <Label htmlFor="edit-regime">{t('settings.taxRegime')}</Label>
                     <select
                       id="edit-regime"
                       value={compTaxRegime}
                       onChange={(e) => setCompTaxRegime(e.target.value)}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="ORDINARIO">Régimen Ordinario (ITBIS mensual)</option>
-                      <option value="RST">RST (Simplificado)</option>
+                      <option value="ORDINARIO">{t('settings.ordinaryRegime')}</option>
+                      <option value="RST">{t('settings.rst')}</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-phone">Teléfono (Opcional)</Label>
+                    <Label htmlFor="edit-phone">{t('settings.phone')}</Label>
                     <Input
                       id="edit-phone"
                       value={compPhone}
@@ -282,7 +294,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-email">Correo de Contacto (Opcional)</Label>
+                    <Label htmlFor="edit-email">{t('settings.contactEmail')}</Label>
                     <Input
                       id="edit-email"
                       type="email"
@@ -293,7 +305,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="edit-address">Dirección Física (Opcional)</Label>
+                  <Label htmlFor="edit-address">{t('settings.address')}</Label>
                   <Input
                     id="edit-address"
                     value={compAddress}
@@ -312,10 +324,10 @@ export default function SettingsPage() {
                   {isUpdatingCompany ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Guardando...
+                      {t('common.saving')}
                     </>
                   ) : (
-                    'Guardar Cambios'
+                    t('header.saveChanges')
                   )}
                 </Button>
               </form>
@@ -326,19 +338,19 @@ export default function SettingsPage() {
         {activeCompany && (
           <Card>
             <CardHeader>
-              <CardTitle>Cierre de Período Contable</CardTitle>
+              <CardTitle>{t('settings.periodLockTitle')}</CardTitle>
               <CardDescription>
-                Bloquea el registro, edición o anulación de transacciones (asientos, facturas, gastos, nóminas) antes de la fecha indicada para proteger tus declaraciones fiscales presentadas.
+                {t('settings.periodLockDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loadingLock ? (
-                <p className="text-sm text-muted-foreground animate-pulse">Cargando cierre de período...</p>
+                <p className="text-sm text-muted-foreground animate-pulse">{t('common.loading')}</p>
               ) : (
                 <form onSubmit={handleUpdateLock} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label htmlFor="lock-date">Bloquear transacciones en o antes de:</Label>
+                      <Label htmlFor="lock-date">{t('settings.lockDateLabel')}</Label>
                       <Input
                         id="lock-date"
                         type="date"
@@ -346,7 +358,7 @@ export default function SettingsPage() {
                         onChange={(e) => setLockDate(e.target.value)}
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Cualquier transacción posterior a esta fecha podrá registrarse normalmente. Las fechas anteriores o iguales serán denegadas.
+                        {t('settings.lockDateHint')}
                       </p>
                     </div>
                   </div>
@@ -363,10 +375,10 @@ export default function SettingsPage() {
                       {isUpdatingLock ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Guardando...
+                          {t('common.saving')}
                         </>
                       ) : (
-                        'Guardar Bloqueo'
+                        t('settings.saveLock')
                       )}
                     </Button>
                     {lockDate && (
@@ -390,7 +402,7 @@ export default function SettingsPage() {
                         }}
                         disabled={isUpdatingLock}
                       >
-                        Quitar Bloqueo / Reabrir
+                        {t('settings.removeLock')}
                       </Button>
                     )}
                   </div>
@@ -406,7 +418,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Company Registry List */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold tracking-tight">Empresas Registradas</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('settings.registeredCompanies')}</h2>
             {loadingCompanies ? (
               <div className="flex justify-center p-6">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -415,7 +427,7 @@ export default function SettingsPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
                   <Building2 className="w-10 h-10 mb-2 opacity-50" />
-                  <p className="text-sm">Aún no has registrado ninguna empresa.</p>
+                  <p className="text-sm">{t('settings.noCompaniesYet')}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -430,7 +442,7 @@ export default function SettingsPage() {
                           {isActive && (
                             <span className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                               <Check className="w-3 h-3" />
-                              Activa
+                              {t('common.active')}
                             </span>
                           )}
                         </div>
@@ -448,7 +460,7 @@ export default function SettingsPage() {
                             className="w-full text-xs"
                             onClick={() => dispatch(setActiveCompany(comp))}
                           >
-                            Activar Empresa
+                            {t('settings.activateCompany')}
                           </Button>
                         )}
                       </CardContent>
@@ -463,13 +475,13 @@ export default function SettingsPage() {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Agregar Nueva Empresa</CardTitle>
-                <CardDescription>Registra un nuevo negocio en tu cuenta.</CardDescription>
+                <CardTitle className="text-lg">{t('settings.addNewCompany')}</CardTitle>
+                <CardDescription>{t('settings.addNewCompanyDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleRegisterCompany} className="space-y-3">
                   <div className="space-y-1">
-                    <Label htmlFor="new-name">Razón Social</Label>
+                    <Label htmlFor="new-name">{t('settings.tradeName')}</Label>
                     <Input
                       id="new-name"
                       placeholder="Mi Empresa SRL"
@@ -479,16 +491,15 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-tradeName">Nombre Comercial</Label>
+                    <Label htmlFor="new-tradeName">{t('settings.commercialName')}</Label>
                     <Input
                       id="new-tradeName"
-                      placeholder="Opcional"
                       value={newTradeName}
                       onChange={(e) => setNewTradeName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-rnc">RNC (9 u 11 dígitos)</Label>
+                    <Label htmlFor="new-rnc">{t('settings.rnc')}</Label>
                     <Input
                       id="new-rnc"
                       placeholder="131234567"
@@ -498,28 +509,27 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-regime">Régimen Fiscal</Label>
+                    <Label htmlFor="new-regime">{t('settings.taxRegime')}</Label>
                     <select
                       id="new-regime"
                       value={newTaxRegime}
                       onChange={(e) => setNewTaxRegime(e.target.value)}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="ORDINARIO">Régimen Ordinario (ITBIS mensual)</option>
-                      <option value="RST">RST (Simplificado)</option>
+                      <option value="ORDINARIO">{t('settings.ordinaryRegime')}</option>
+                      <option value="RST">{t('settings.rst')}</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-phone">Teléfono</Label>
+                    <Label htmlFor="new-phone">{t('settings.phone')}</Label>
                     <Input
                       id="new-phone"
-                      placeholder="Opcional"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-email">Correo de Contacto</Label>
+                    <Label htmlFor="new-email">{t('settings.contactEmail')}</Label>
                     <Input
                       id="new-email"
                       type="email"
@@ -529,10 +539,9 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-address">Dirección Física</Label>
+                    <Label htmlFor="new-address">{t('settings.address')}</Label>
                     <Input
                       id="new-address"
-                      placeholder="Opcional"
                       value={newAddress}
                       onChange={(e) => setNewAddress(e.target.value)}
                     />
@@ -549,12 +558,12 @@ export default function SettingsPage() {
                     {isCreatingCompany ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Registrando...
+                        {t('settings.registering')}
                       </>
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        Registrar Empresa
+                        {t('settings.registerCompany')}
                       </>
                     )}
                   </Button>
@@ -568,6 +577,28 @@ export default function SettingsPage() {
       {activeTab === 'accounts' && (
         <AccountsView />
       )}
+
+      {activeTab === 'preferences' && (
+        <Card className="max-w-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-indigo-600" />
+              {t('settings.preferences')}
+            </CardTitle>
+            <CardDescription>{t('settings.languageDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+              <div>
+                <h4 className="font-semibold text-sm">{t('settings.languageSelect')}</h4>
+                <p className="text-xs text-muted-foreground">ES (Español) / EN (English)</p>
+              </div>
+              <LanguageSwitcher />
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
