@@ -19,6 +19,23 @@ import {
 } from '@/components/ui/table';
 import { GeneralLedgerView } from '@/components/features/accounting/general-ledger-view';
 
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+const MONTHS = [
+  { code: '01', name: 'Enero' },
+  { code: '02', name: 'Febrero' },
+  { code: '03', name: 'Marzo' },
+  { code: '04', name: 'Abril' },
+  { code: '05', name: 'Mayo' },
+  { code: '06', name: 'Junio' },
+  { code: '07', name: 'Julio' },
+  { code: '08', name: 'Agosto' },
+  { code: '09', name: 'Septiembre' },
+  { code: '10', name: 'Octubre' },
+  { code: '11', name: 'Noviembre' },
+  { code: '12', name: 'Diciembre' },
+];
+
 export default function ReportsPage() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
@@ -26,15 +43,10 @@ export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'tax' | 'financials' | 'ledger'>('tax');
-  const [period, setPeriod] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState(() => String(new Date().getMonth() + 1).padStart(2, '0'));
 
-  const [inputPeriod, setInputPeriod] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const period = `${selectedYear}${selectedMonth}`;
 
   const { data: it1, isLoading: isLoadingIt1 } = useGetIt1SummaryQuery(
     { companyId: companyId!, period },
@@ -66,10 +78,7 @@ export default function ReportsPage() {
 
   function handlePeriodChange(e: React.FormEvent) {
     e.preventDefault();
-    const [year, month] = inputPeriod.split('-');
-    if (year && month) {
-      setPeriod(`${year}${month}`);
-    }
+    // Period updates automatically via selectedYear and selectedMonth state
   }
 
   const handleDownload = async (format: '606' | '607') => {
@@ -167,22 +176,43 @@ export default function ReportsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 {t('reports.selectPeriod')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handlePeriodChange} className="flex items-end gap-3 max-w-sm">
-                <div className="space-y-1 flex-1">
-                  <Label htmlFor="periodInput">{t('reports.monthYear')}</Label>
-                  <Input
-                    id="periodInput"
-                    type="month"
-                    value={inputPeriod}
-                    onChange={(e) => setInputPeriod(e.target.value)}
-                  />
+              <form onSubmit={handlePeriodChange} className="flex flex-wrap items-end gap-3 max-w-md">
+                <div className="space-y-1">
+                  <Label htmlFor="yearSelect" className="text-xs font-medium">Año</Label>
+                  <select
+                    id="yearSelect"
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus:outline-none"
+                  >
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
                 </div>
-                <Button type="submit">{t('reports.update')}</Button>
+
+                <div className="space-y-1 flex-1 min-w-[140px]">
+                  <Label htmlFor="monthSelect" className="text-xs font-medium">Mes</Label>
+                  <select
+                    id="monthSelect"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background text-foreground px-3 text-xs focus:outline-none font-medium"
+                  >
+                    {MONTHS.map((m) => (
+                      <option key={m.code} value={m.code}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button type="submit" size="sm" className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
+                  {t('reports.update')}
+                </Button>
               </form>
             </CardContent>
           </Card>
