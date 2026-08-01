@@ -200,7 +200,7 @@ export default function ReportsPage() {
                   </div>
                   <Button size="sm" onClick={() => handleDownload('606')} className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
-                    {t('reports.downloadTxt')}
+                    {t('reports.download606')}
                   </Button>
                 </div>
 
@@ -211,7 +211,7 @@ export default function ReportsPage() {
                   </div>
                   <Button size="sm" onClick={() => handleDownload('607')} className="flex items-center gap-2">
                     <Download className="w-4 h-4" />
-                    {t('reports.downloadTxt')}
+                    {t('reports.download607')}
                   </Button>
                 </div>
               </CardContent>
