@@ -210,7 +210,7 @@ export default function ReportsPage() {
                   </select>
                 </div>
 
-                <Button type="submit" size="sm" className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
+                <Button type="submit" size="sm" className="h-9 gap-1.5 font-medium">
                   {t('reports.update')}
                 </Button>
               </form>
