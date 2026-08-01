@@ -688,8 +688,8 @@ export default function SettingsPage() {
       {activeTab === 'security' && (
         <Card className="max-w-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-900">
-              <KeyRound className="w-5 h-5 text-indigo-600" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <KeyRound className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               Cambiar Contraseña de Acceso
             </CardTitle>
             <CardDescription>
@@ -744,9 +744,9 @@ export default function SettingsPage() {
 
               {/* Password criteria */}
               {newPassword.length > 0 && (
-                <div className="p-3 bg-slate-50 border rounded-md text-[11px] space-y-1 text-slate-600">
-                  <p className="font-semibold text-slate-800 mb-1 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                <div className="p-3 bg-muted/40 border rounded-md text-[11px] space-y-1 text-muted-foreground">
+                  <p className="font-semibold text-foreground mb-1 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                     Criterios de seguridad:
                   </p>
                   <div className={newPassword.length >= 8 ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
