@@ -12,6 +12,8 @@ import { useRouter } from 'next/navigation';
 import { useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
 import { LogOut, User, X, Loader2 } from 'lucide-react';
 
+import { ThemeToggle } from '@/components/theme-toggle';
+
 export function Header() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -86,10 +88,11 @@ export function Header() {
       <CompanySwitcher />
 
       {/* User profile section */}
-      <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+      <div className="flex items-center gap-3 relative" ref={dropdownRef}>
+        <ThemeToggle />
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm hover:brightness-95 transition-all outline-none"
+          className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm hover:brightness-95 transition-all outline-none"
         >
           {initials}
         </button>

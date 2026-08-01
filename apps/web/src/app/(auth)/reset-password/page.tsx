@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useResetPasswordMutation } from '@/services/auth.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,12 @@ function ResetPasswordForm() {
 
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
+  // Sync state if searchParams load after mount
+  useEffect(() => {
+    if (emailQuery && (!email || email !== emailQuery)) setEmail(emailQuery);
+    if (tokenQuery && (!token || token !== tokenQuery)) setToken(tokenQuery);
+  }, [emailQuery, tokenQuery]);
+
   // Password strength validation
   const hasMinLength = newPassword.length >= 8;
   const hasNumber = /\d/.test(newPassword);
@@ -41,6 +47,14 @@ function ResetPasswordForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage('');
+
+    const effectiveEmail = (email || searchParams.get('email') || '').trim();
+    const effectiveToken = (token || searchParams.get('token') || '').trim();
+
+    if (!effectiveEmail || !effectiveToken) {
+      setErrorMessage('El enlace de recuperación es incompleto. Solicita un nuevo enlace.');
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setErrorMessage(t('auth.passwordsDoNotMatch'));
@@ -54,8 +68,8 @@ function ResetPasswordForm() {
 
     try {
       await resetPassword({
-        email,
-        token,
+        email: effectiveEmail,
+        token: effectiveToken,
         newPassword,
       }).unwrap();
       setIsSuccess(true);

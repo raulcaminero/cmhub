@@ -13,9 +13,10 @@ import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutatio
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
 import { useChangePasswordMutation } from '@/services/auth.api';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff } from 'lucide-react';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 import { TeamMembersView } from '@/components/features/settings/team-members-view';
+import { ThemeSelector } from '@/components/theme-toggle';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -647,24 +648,41 @@ export default function SettingsPage() {
       )}
 
       {activeTab === 'preferences' && (
-        <Card className="max-w-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-indigo-600" />
-              {t('settings.preferences')}
-            </CardTitle>
-            <CardDescription>{t('settings.languageDescription')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
-              <div>
-                <h4 className="font-semibold text-sm">{t('settings.languageSelect')}</h4>
-                <p className="text-xs text-muted-foreground">ES (Español) / EN (English)</p>
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-indigo-600" />
+                {t('settings.preferences')}
+              </CardTitle>
+              <CardDescription>{t('settings.languageDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                <div>
+                  <h4 className="font-semibold text-sm">{t('settings.languageSelect')}</h4>
+                  <p className="text-xs text-muted-foreground">ES (Español) / EN (English)</p>
+                </div>
+                <LanguageSwitcher />
               </div>
-              <LanguageSwitcher />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Moon className="w-5 h-5 text-indigo-600" />
+                Tema Visual de la Aplicación
+              </CardTitle>
+              <CardDescription>
+                Personaliza la apariencia de la plataforma según tus preferencias o la luz del ambiente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemeSelector />
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {activeTab === 'security' && (
