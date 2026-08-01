@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Patch, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { AccountingService } from '@application/services/accounting/accounting.service';
 import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { CreateAccountDto } from '@application/dtos/accounting/create-account.dto';
@@ -13,6 +14,8 @@ export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 
   @Get('accounts')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300000) // 5 minutes cache in ms
   @ApiOperation({ summary: 'List chart of accounts' })
   getAccounts(@Param('companyId') companyId: string, @Query() filters: GetAccountsDto) {
     return this.accountingService.getAccounts(companyId, filters);

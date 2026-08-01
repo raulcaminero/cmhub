@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Body, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ProductService, CreateProductDto, UpdateProductDto } from '../../../application/services/product/product.service';
 
 @ApiTags('Sales - Catalog')
@@ -9,6 +10,8 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300000) // 5 minutes cache in ms
   @ApiOperation({ summary: 'List company products and services' })
   async getProducts(
     @Param('companyId') companyId: string,
