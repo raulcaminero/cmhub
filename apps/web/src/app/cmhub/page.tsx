@@ -176,10 +176,10 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">{t('dashboard.invoicing')}</CardTitle>
-            <ArrowUpRight className="w-4 h-4 text-green-500" />
+            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-card-foreground">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">{t('dashboard.invoicingDesc')}</p>
           </CardContent>
         </Card>
@@ -187,10 +187,10 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">{t('dashboard.expenses')}</CardTitle>
-            <ArrowDownRight className="w-4 h-4 text-red-500" />
+            <ArrowDownRight className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-card-foreground">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">{t('dashboard.expensesDesc')}</p>
           </CardContent>
         </Card>
@@ -199,13 +199,13 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">{t('dashboard.netFlow')}</CardTitle>
             {netCashFlow >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
             ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
+              <TrendingDown className="w-4 h-4 text-rose-500" />
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">
+            <div className="text-2xl font-bold text-card-foreground">
               RD$ {netCashFlow.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">{t('dashboard.netFlowDesc')}</p>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
             <Receipt className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">
+            <div className="text-2xl font-bold text-card-foreground">
               RD$ {itbisBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">
