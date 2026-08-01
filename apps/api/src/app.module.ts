@@ -9,6 +9,7 @@ import { RagModule } from '@presentation/modules/rag/rag.module';
 import { SalesModule } from '@presentation/modules/sales/sales.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { AppCacheModule } from './infrastructure/cache/app-cache.module';
+import { AuditLogModule } from './presentation/modules/audit/audit-log.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AppCacheModule } from './infrastructure/cache/app-cache.module';
     PrismaModule,
     AppCacheModule,
     MailModule,
+    AuditLogModule,
     AuthModule,
     CompaniesModule,
     AccountingModule,

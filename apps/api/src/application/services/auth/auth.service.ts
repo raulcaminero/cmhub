@@ -35,18 +35,87 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.userRepository.findByEmail(dto.email);
+    const email = dto.email.toLowerCase().trim();
+    const existing = await this.userRepository.findByEmail(email);
     if (existing) throw new ConflictException('El correo ya está registrado');
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
-    const user = await this.userRepository.create({
-      email: dto.email,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      passwordHash,
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        passwordHash,
+        isEmailVerified: false,
+        emailVerificationToken: verificationToken,
+      },
     });
 
-    return this.generateTokens(user.id, user.email);
+    const webUrl = this.config.get<string>('ALLOWED_ORIGINS')?.split(',')[0] || 'http://localhost:3000';
+    const verifyLink = `${webUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(user.email)}`;
+
+    await this.mailService.sendVerificationEmail(
+      user.email,
+      verifyLink,
+      `${user.firstName} ${user.lastName}`
+    );
+
+    return {
+      message: 'Registro exitoso. Te hemos enviado un correo electrónico para verificar tu cuenta antes de ingresar.',
+      email: user.email,
+    };
+  }
+
+  async verifyEmail(email: string, token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user || !user.emailVerificationToken || user.emailVerificationToken !== token) {
+      throw new BadRequestException('El enlace de verificación es inválido o ha expirado.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        emailVerificationToken: null,
+      },
+    });
+
+    return { message: '¡Correo verificado exitosamente! Ya puedes iniciar sesión en CMHub.' };
+  }
+
+  async resendVerification(emailInput: string) {
+    const email = emailInput.toLowerCase().trim();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return { message: 'Si el correo está registrado, recibirás un enlace de confirmación.' };
+    }
+
+    if (user.isEmailVerified) {
+      return { message: 'Esta cuenta ya está verificada. Puedes iniciar sesión.' };
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken: verificationToken },
+    });
+
+    const webUrl = this.config.get<string>('ALLOWED_ORIGINS')?.split(',')[0] || 'http://localhost:3000';
+    const verifyLink = `${webUrl}/verify-email?token=${verificationToken}&email=${encodeURIComponent(user.email)}`;
+
+    await this.mailService.sendVerificationEmail(
+      user.email,
+      verifyLink,
+      `${user.firstName} ${user.lastName}`
+    );
+
+    return { message: 'Si el correo está registrado, recibirás un enlace de confirmación.' };
   }
 
   async login(dto: LoginDto) {
@@ -56,6 +125,12 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    // Require email verification unless explicitly disabled via REQUIRE_EMAIL_VERIFICATION=false
+    const requireVerification = this.config.get<string>('REQUIRE_EMAIL_VERIFICATION') !== 'false';
+    if (requireVerification && !user.isEmailVerified) {
+      throw new UnauthorizedException('Debes verificar tu correo electrónico antes de ingresar. Revisa tu bandeja de entrada o solicita un nuevo enlace.');
     }
 
     // Check account lockout
@@ -149,14 +224,19 @@ export class AuthService {
     if (
       !user ||
       !user.passwordResetToken ||
-      user.passwordResetToken !== dto.token ||
+      user.passwordResetToken !== dto.token.trim() ||
       !user.passwordResetExpires ||
       user.passwordResetExpires < new Date()
     ) {
-      throw new BadRequestException('El enlace de recuperación es inválido o ha expirado.');
+      throw new BadRequestException('El enlace de recuperación es inválido o ha expirado. Solicita un nuevo enlace.');
     }
 
-    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    const pass = dto.newPassword;
+    if (pass.length < 8 || !/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/\d/.test(pass)) {
+      throw new BadRequestException('La nueva contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números.');
+    }
+
+    const passwordHash = await bcrypt.hash(pass, 12);
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -166,12 +246,13 @@ export class AuthService {
         passwordResetExpires: null,
         failedLoginAttempts: 0,
         lockUntil: null,
+        isEmailVerified: true,
       },
     });
 
     await this.mailService.sendPasswordChangedNotice(user.email, `${user.firstName} ${user.lastName}`);
 
-    return { message: 'Tu contraseña ha sido restablecida exitosamente.' };
+    return { message: 'Tu contraseña ha sido restablecida exitosamente. Ya puedes ingresar.' };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -187,7 +268,10 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        hashedRefreshToken: null, // Revoke all sessions on password change
+      },
     });
 
     await this.mailService.sendPasswordChangedNotice(user.email, `${user.firstName} ${user.lastName}`);
@@ -195,7 +279,15 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente.' };
   }
 
-  private generateTokens(userId: string, email: string) {
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken: null },
+    });
+    return { message: 'Sesión cerrada correctamente.' };
+  }
+
+  private async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
     const accessSecret = this.config.get<string>('JWT_SECRET');
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
@@ -215,6 +307,13 @@ export class AuthService {
       secret: finalRefreshSecret,
       expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
     });
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken },
+    });
+
     return { accessToken, refreshToken };
   }
 
@@ -258,9 +357,14 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const user = await this.userRepository.findById(payload.sub);
-      if (!user) {
-        throw new UnauthorizedException('User not found');
+      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+      if (!user || !user.hashedRefreshToken) {
+        throw new UnauthorizedException('Invalid or revoked refresh token');
+      }
+
+      const refreshTokenMatches = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
+      if (!refreshTokenMatches) {
+        throw new UnauthorizedException('Invalid or revoked refresh token');
       }
 
       return this.generateTokens(user.id, user.email);

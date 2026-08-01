@@ -8,6 +8,7 @@ import { AuthService, USER_REPOSITORY } from '@application/services/auth/auth.se
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CompanyAccessGuard } from './guards/company-access.guard';
+import { RolesGuard } from './guards/roles.guard';
 import { UserRepository } from '@infrastructure/persistence/repositories/user.repository';
 
 @Module({
@@ -29,6 +30,7 @@ import { UserRepository } from '@infrastructure/persistence/repositories/user.re
     { provide: USER_REPOSITORY, useClass: UserRepository },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: CompanyAccessGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
   exports: [AuthService],
 })

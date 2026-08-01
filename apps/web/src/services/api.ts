@@ -23,7 +23,15 @@ const baseQueryWithReauth: BaseQueryFn<
 > = async (args, apiInstance, extraOptions) => {
   let result = await baseQuery(args, apiInstance, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  const requestUrl = typeof args === 'string' ? args : args.url;
+  const isAuthEndpoint =
+    requestUrl.includes('/auth/login') ||
+    requestUrl.includes('/auth/refresh') ||
+    requestUrl.includes('/auth/register') ||
+    requestUrl.includes('/auth/forgot-password') ||
+    requestUrl.includes('/auth/reset-password');
+
+  if (result.error && result.error.status === 401 && !isAuthEndpoint) {
     if (!isRefreshing) {
       isRefreshing = true;
       refreshPromise = new Promise<string | null>(async (resolve) => {
@@ -71,7 +79,7 @@ export const api = createApi({
   tagTypes: [
     'Account', 'JournalEntry', 'Company', 'Expense', 'NcfSequence', 
     'Contact', 'UserProfile', 'Invoice', 'Employee', 'Payroll', 'BankTransaction',
-    'Products', 'Quotations'
+    'Products', 'Quotations', 'CompanyUser'
   ],
   endpoints: () => ({}),
 });

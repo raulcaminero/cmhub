@@ -7,6 +7,8 @@ import { GetAccountsDto } from '../../dtos/accounting/get-accounts.dto';
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 import { checkPeriodLock } from './period-lock.helper';
 
+import { AuditLogService } from '../audit/audit-log.service';
+
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
 export const JOURNAL_ENTRY_REPOSITORY = 'JOURNAL_ENTRY_REPOSITORY';
 
@@ -16,6 +18,7 @@ export class AccountingService {
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
     @Inject(JOURNAL_ENTRY_REPOSITORY) private readonly journalEntryRepository: IJournalEntryRepository,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async getAccounts(companyId: string, filters: GetAccountsDto) {
@@ -26,7 +29,7 @@ export class AccountingService {
     const existing = await this.accountRepository.findByCode(dto.code, companyId);
     if (existing) throw new BadRequestException(`Account code ${dto.code} already exists`);
 
-    return this.accountRepository.create({
+    const account = await this.accountRepository.create({
       companyId,
       code: dto.code,
       name: dto.name,
@@ -34,6 +37,16 @@ export class AccountingService {
       parentId: dto.parentId ?? null,
       isActive: true,
     });
+
+    await this.auditLogService.logAction({
+      companyId,
+      action: 'ACCOUNT_CREATE',
+      entity: 'Account',
+      entityId: account.id,
+      details: { code: account.code, name: account.name, type: account.type },
+    });
+
+    return account;
   }
 
   async getJournalEntries(companyId: string) {
@@ -48,7 +61,7 @@ export class AccountingService {
     checkPeriodLock(company?.lockDate, dto.date);
     this.validateDoubleEntry(dto.lines);
 
-    return this.journalEntryRepository.create({
+    const entry = await this.journalEntryRepository.create({
       companyId,
       date: new Date(dto.date),
       description: dto.description,
@@ -61,6 +74,17 @@ export class AccountingService {
         description: l.description ?? null,
       })),
     });
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId: createdByUserId,
+      action: 'JOURNAL_CREATE',
+      entity: 'JournalEntry',
+      entityId: entry.id,
+      details: { description: entry.description, reference: entry.reference },
+    });
+
+    return entry;
   }
 
   private validateDoubleEntry(lines: JournalEntryLineDto[]): void {
@@ -74,7 +98,7 @@ export class AccountingService {
     }
   }
 
-  async postJournalEntry(companyId: string, id: string) {
+  async postJournalEntry(companyId: string, id: string, userId?: string) {
     const entry = await this.journalEntryRepository.findById(id, companyId);
     if (!entry) throw new BadRequestException('Asiento no encontrado');
     const company = await this.prisma.company.findUnique({
@@ -82,10 +106,22 @@ export class AccountingService {
       select: { lockDate: true },
     });
     checkPeriodLock(company?.lockDate, entry.date);
-    return this.journalEntryRepository.post(id, companyId);
+
+    const result = await this.journalEntryRepository.post(id, companyId);
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId,
+      action: 'JOURNAL_POST',
+      entity: 'JournalEntry',
+      entityId: id,
+      details: { description: entry.description, reference: entry.reference },
+    });
+
+    return result;
   }
 
-  async voidJournalEntry(companyId: string, id: string) {
+  async voidJournalEntry(companyId: string, id: string, userId?: string) {
     const entry = await this.journalEntryRepository.findById(id, companyId);
     if (!entry) throw new BadRequestException('Asiento no encontrado');
     const company = await this.prisma.company.findUnique({
@@ -93,7 +129,19 @@ export class AccountingService {
       select: { lockDate: true },
     });
     checkPeriodLock(company?.lockDate, entry.date);
-    return this.journalEntryRepository.void(id, companyId);
+
+    const result = await this.journalEntryRepository.void(id, companyId);
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId,
+      action: 'JOURNAL_VOID',
+      entity: 'JournalEntry',
+      entityId: id,
+      details: { description: entry.description, reference: entry.reference },
+    });
+
+    return result;
   }
 
   async getPeriodLock(companyId: string) {

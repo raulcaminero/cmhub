@@ -48,6 +48,18 @@ export class ReportsController {
     return this.reportService.getFinancials(companyId);
   }
 
+  @Get('financials/export')
+  @ApiOperation({ summary: 'Export Balance Sheet and Income Statement to CSV/Excel' })
+  async exportFinancialsCsv(
+    @Param('companyId') companyId: string,
+    @Res() res: Response,
+  ) {
+    const csv = await this.reportService.exportFinancialsCsv(companyId);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=Estados_Financieros_${companyId}.csv`);
+    return res.send(csv);
+  }
+
   @Get('general-ledger')
   @ApiOperation({ summary: 'Get General Ledger movements for a specific account with running balance' })
   getGeneralLedger(

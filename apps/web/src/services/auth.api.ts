@@ -26,6 +26,7 @@ export interface UpdateProfileRequest {
 }
 
 export const authApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (body) => ({ url: '/auth/login', method: 'POST', body }),
@@ -61,6 +62,26 @@ export const authApi = api.injectEndpoints({
         body,
       }),
     }),
+    logout: builder.mutation<{ message: string }, void>({
+      query: () => ({
+        url: '/auth/logout',
+        method: 'POST',
+      }),
+    }),
+    verifyEmail: builder.mutation<{ message: string }, { email: string; token: string }>({
+      query: (body) => ({
+        url: '/auth/verify-email',
+        method: 'POST',
+        body,
+      }),
+    }),
+    resendVerification: builder.mutation<{ message: string }, { email: string }>({
+      query: (body) => ({
+        url: '/auth/resend-verification',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -72,5 +93,8 @@ export const {
   useChangePasswordMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
-  useRefreshMutation
+  useRefreshMutation,
+  useLogoutMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation
 } = authApi;

@@ -9,8 +9,11 @@ import { ICompanyRepository } from '@domain/repositories/company.repository.inte
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { CreateCompanyDto } from '../../dtos/company/create-company.dto';
 import { UpdateCompanyDto } from '../../dtos/company/update-company.dto';
-import { TaxRegime, UserRole, AccountType } from '@domain/enums';
+import { TaxRegime, AccountType } from '@domain/enums';
+import { UserRole } from '@prisma/client';
 import { ACCOUNT_REPOSITORY } from '../accounting/accounting.service';
+
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
 export const COMPANY_REPOSITORY = 'COMPANY_REPOSITORY';
 
@@ -19,6 +22,7 @@ export class CompanyService {
   constructor(
     @Inject(COMPANY_REPOSITORY) private readonly companyRepository: ICompanyRepository,
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(dto: CreateCompanyDto, userId: string) {
@@ -336,5 +340,149 @@ export class CompanyService {
     }
 
     return this.companyRepository.update(companyId, updateData);
+  }
+
+  // --- TEAM USER MANAGEMENT ---
+
+  async getCompanyUsers(companyId: string) {
+    const userRoles = await this.prisma.userCompanyRole.findMany({
+      where: { companyId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return userRoles.map((ur) => ({
+      userId: ur.user.id,
+      email: ur.user.email,
+      firstName: ur.user.firstName,
+      lastName: ur.user.lastName,
+      role: ur.role,
+      joinedAt: ur.createdAt,
+    }));
+  }
+
+  async addCompanyUser(companyId: string, emailInput: string, role: UserRole) {
+    const email = emailInput.toLowerCase().trim();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('El usuario con este correo electrónico no está registrado en el sistema.');
+    }
+
+    const existingRole = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: user.id,
+          companyId,
+        },
+      },
+    });
+
+    if (existingRole) {
+      throw new ConflictException('Este usuario ya es miembro de esta empresa.');
+    }
+
+    const createdRole = await this.prisma.userCompanyRole.create({
+      data: {
+        userId: user.id,
+        companyId,
+        role,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return {
+      userId: createdRole.user.id,
+      email: createdRole.user.email,
+      firstName: createdRole.user.firstName,
+      lastName: createdRole.user.lastName,
+      role: createdRole.role,
+      joinedAt: createdRole.createdAt,
+    };
+  }
+
+  async updateUserRole(companyId: string, targetUserId: string, newRole: UserRole) {
+    const existing = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('El usuario no pertenece a esta empresa.');
+    }
+
+    const updated = await this.prisma.userCompanyRole.update({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+      data: { role: newRole },
+      include: {
+        user: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+    });
+
+    return {
+      userId: updated.user.id,
+      email: updated.user.email,
+      firstName: updated.user.firstName,
+      lastName: updated.user.lastName,
+      role: updated.role,
+    };
+  }
+
+  async removeCompanyUser(companyId: string, targetUserId: string, currentUserId: string) {
+    if (targetUserId === currentUserId) {
+      throw new ForbiddenException('No puedes removerte a ti mismo de la empresa.');
+    }
+
+    const existing = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('El usuario no pertenece a esta empresa.');
+    }
+
+    await this.prisma.userCompanyRole.delete({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    return { message: 'Usuario removido de la empresa exitosamente.' };
   }
 }
