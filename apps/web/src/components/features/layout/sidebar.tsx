@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslation } from '@/lib/use-translation';
 import {
   LayoutDashboard,
   BookOpen,
@@ -15,19 +16,20 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const NAV_ITEMS = [
-  { href: '/cmhub', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/cmhub/sales', label: 'Ventas', icon: ShoppingCart },
-  { href: '/cmhub/accounting', label: 'Contabilidad', icon: BookOpen },
-  { href: '/cmhub/contacts', label: 'Contactos', icon: Users },
-  { href: '/cmhub/tax', label: 'Impuestos', icon: Receipt },
-  { href: '/cmhub/reports', label: 'Reportes', icon: BarChart3 },
-  { href: '/cmhub/ncf', label: 'NCF', icon: FileText },
-  { href: '/cmhub/settings', label: 'Configuración', icon: Settings },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const NAV_ITEMS = [
+    { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
+    { href: '/cmhub/sales', label: t('nav.sales'), icon: ShoppingCart },
+    { href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen },
+    { href: '/cmhub/contacts', label: t('nav.contacts'), icon: Users },
+    { href: '/cmhub/tax', label: t('nav.tax'), icon: Receipt },
+    { href: '/cmhub/reports', label: t('nav.reports'), icon: BarChart3 },
+    { href: '/cmhub/ncf', label: t('nav.ncf'), icon: FileText },
+    { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
+  ];
 
   return (
     <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground shrink-0">
@@ -37,7 +39,7 @@ export function Sidebar() {
         </div>
         <div>
           <p className="font-semibold text-sm">CMHub</p>
-          <p className="text-xs text-sidebar-foreground/60">Gestión Empresarial</p>
+          <p className="text-xs text-sidebar-foreground/60">{t('nav.companyManagement')}</p>
         </div>
       </div>
 
@@ -64,3 +66,4 @@ export function Sidebar() {
     </aside>
   );
 }
+

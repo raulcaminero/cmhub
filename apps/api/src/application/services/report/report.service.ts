@@ -333,6 +333,92 @@ export class ReportService {
     });
   }
 
+  async getGeneralLedger(
+    companyId: string,
+    accountId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    // Verify account belongs to this company
+    const account = await this.prisma.account.findFirst({
+      where: { id: accountId, companyId },
+    });
+    if (!account) {
+      throw new Error('Cuenta no encontrada o no pertenece a esta empresa');
+    }
+
+    const dateFilter: Record<string, any> = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      dateFilter.lte = end;
+    }
+
+    const lines = await this.prisma.journalEntryLine.findMany({
+      where: {
+        accountId,
+        journalEntry: {
+          companyId,
+          status: 'POSTED',
+          ...(Object.keys(dateFilter).length > 0 && { date: dateFilter }),
+        },
+      },
+      include: {
+        journalEntry: {
+          select: {
+            id: true,
+            date: true,
+            description: true,
+            reference: true,
+          },
+        },
+      },
+      orderBy: [{ journalEntry: { date: 'asc' } }],
+    });
+
+    // Compute running balance based on account nature
+    // ASSET & EXPENSE are debit-nature: balance = cumulative (debit - credit)
+    // LIABILITY, EQUITY, REVENUE are credit-nature: balance = cumulative (credit - debit)
+    const isDebitNature = account.type === 'ASSET' || account.type === 'EXPENSE';
+    let runningBalance = 0;
+
+    const movements = lines.map((line) => {
+      const debit = Number(line.debit);
+      const credit = Number(line.credit);
+      runningBalance += isDebitNature ? debit - credit : credit - debit;
+
+      return {
+        id: line.id,
+        date: line.journalEntry.date,
+        journalEntryId: line.journalEntry.id,
+        description: line.description || line.journalEntry.description,
+        reference: line.journalEntry.reference,
+        debit,
+        credit,
+        balance: runningBalance,
+      };
+    });
+
+    const totalDebit = movements.reduce((s, m) => s + m.debit, 0);
+    const totalCredit = movements.reduce((s, m) => s + m.credit, 0);
+
+    return {
+      account: {
+        id: account.id,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+      },
+      movements,
+      totals: {
+        debit: totalDebit,
+        credit: totalCredit,
+        balance: runningBalance,
+      },
+    };
+  }
+
   async createTaxFiling(companyId: string, dto: { period: string; taxType: string }) {
     const { startDate, endDate } = this.parsePeriod(dto.period);
 

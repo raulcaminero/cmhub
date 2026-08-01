@@ -36,6 +36,32 @@ export interface TaxFiling {
   filedAt: string;
 }
 
+export interface GeneralLedgerLine {
+  id: string;
+  date: string;
+  journalEntryId: string;
+  description: string;
+  reference: string | null;
+  debit: number;
+  credit: number;
+  balance: number;
+}
+
+export interface GeneralLedgerReport {
+  account: {
+    id: string;
+    code: string;
+    name: string;
+    type: string;
+  };
+  movements: GeneralLedgerLine[];
+  totals: {
+    debit: number;
+    credit: number;
+    balance: number;
+  };
+}
+
 export const reportsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getFinancials: builder.query<FinancialsReport, { companyId: string }>({
@@ -61,7 +87,23 @@ export const reportsApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Company', 'JournalEntry'],
     }),
+    getGeneralLedger: builder.query<
+      GeneralLedgerReport,
+      { companyId: string; accountId: string; startDate?: string; endDate?: string }
+    >({
+      query: ({ companyId, accountId, startDate, endDate }) => ({
+        url: `/companies/${companyId}/accounting/reports/general-ledger`,
+        params: { accountId, ...(startDate && { startDate }), ...(endDate && { endDate }) },
+      }),
+      providesTags: ['JournalEntry'],
+    }),
   }),
 });
 
-export const { useGetFinancialsQuery, useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } = reportsApi;
+export const {
+  useGetFinancialsQuery,
+  useGetIt1SummaryQuery,
+  useGetTaxFilingsQuery,
+  useCreateTaxFilingMutation,
+  useGetGeneralLedgerQuery,
+} = reportsApi;

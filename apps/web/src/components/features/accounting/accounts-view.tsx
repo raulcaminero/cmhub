@@ -10,8 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader2 } from 'lucide-react';
 import { AccountType } from '@cmhub/shared-types';
+import { useTranslation } from '@/lib/use-translation';
 
 export function AccountsView() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
 
   const { data: accounts, isLoading } = useGetAccountsQuery(
@@ -32,7 +34,7 @@ export function AccountsView() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver el plan de cuentas.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -67,15 +69,15 @@ export function AccountsView() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <CardTitle>Plan de Cuentas</CardTitle>
+        <CardTitle>{t('accounts.title')}</CardTitle>
         <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
           <Plus className="w-4 h-4" />
-          Nueva Cuenta
+          {t('accounts.newAccount')}
         </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Cargando cuentas...</p>
+          <p className="text-sm text-muted-foreground">{t('accounts.loading')}</p>
         ) : (
           <AccountsTable accounts={accounts ?? []} />
         )}
@@ -84,13 +86,13 @@ export function AccountsView() {
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Crear nueva cuenta contable</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('accounts.createTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Crea una cuenta en el catálogo para registrar transacciones y asientos.
+              {t('accounts.createSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="acc-code">Código de Cuenta</Label>
+                <Label htmlFor="acc-code">{t('accounts.accountCode')}</Label>
                 <Input
                   id="acc-code"
                   placeholder="Ej. 110101 (Debe ser único)"
@@ -101,7 +103,7 @@ export function AccountsView() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-name">Nombre de Cuenta</Label>
+                <Label htmlFor="acc-name">{t('accounts.accountName')}</Label>
                 <Input
                   id="acc-name"
                   placeholder="Ej. Caja General"
@@ -112,30 +114,30 @@ export function AccountsView() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-type">Tipo de Cuenta</Label>
+                <Label htmlFor="acc-type">{t('accounts.accountType')}</Label>
                 <select
                   id="acc-type"
                   value={type}
                   onChange={(e) => setType(e.target.value as AccountType)}
                   className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value={AccountType.ASSET}>Activo</option>
-                  <option value={AccountType.LIABILITY}>Pasivo</option>
-                  <option value={AccountType.EQUITY}>Patrimonio</option>
-                  <option value={AccountType.REVENUE}>Ingreso</option>
-                  <option value={AccountType.EXPENSE}>Gasto</option>
+                  <option value={AccountType.ASSET}>{t('accounts.asset')}</option>
+                  <option value={AccountType.LIABILITY}>{t('accounts.liability')}</option>
+                  <option value={AccountType.EQUITY}>{t('accounts.equity')}</option>
+                  <option value={AccountType.REVENUE}>{t('accounts.revenue')}</option>
+                  <option value={AccountType.EXPENSE}>{t('accounts.expense')}</option>
                 </select>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-parent">Cuenta Padre (Opcional)</Label>
+                <Label htmlFor="acc-parent">{t('accounts.parentAccount')}</Label>
                 <select
                   id="acc-parent"
                   value={parentId}
                   onChange={(e) => setParentId(e.target.value)}
                   className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="">Ninguna (Cuenta Principal)</option>
+                  <option value="">{t('accounts.noParent')}</option>
                   {accounts?.map((acc) => (
                     <option key={acc.id} value={acc.id}>
                       {acc.code} - {acc.name}
@@ -159,16 +161,16 @@ export function AccountsView() {
                   }}
                   disabled={isCreating}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={isCreating}>
                   {isCreating ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Creando...
+                      {t('accounts.creating')}
                     </>
                   ) : (
-                    'Crear Cuenta'
+                    t('accounts.createButton')
                   )}
                 </Button>
               </div>

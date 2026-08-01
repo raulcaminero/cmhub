@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { CompanySwitcher } from './company-switcher';
+import { useTranslation } from '@/lib/use-translation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ import { useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } fr
 import { LogOut, User, X, Loader2 } from 'lucide-react';
 
 export function Header() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { data: profile } = useGetProfileQuery();
@@ -67,11 +69,11 @@ export function Header() {
       if (password && password.trim()) body.password = password;
 
       await updateProfile(body).unwrap();
-      setSuccessMessage('Perfil actualizado correctamente');
+      setSuccessMessage(t('common.success'));
       setPassword('');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al actualizar el perfil.');
+      setErrorMessage(err.data?.message || t('common.error'));
     }
   }
 
@@ -92,6 +94,7 @@ export function Header() {
           {initials}
         </button>
 
+
         {dropdownOpen && (
           <div className="absolute right-0 top-11 w-56 bg-card text-card-foreground border rounded-lg shadow-lg py-1 z-40 animate-in fade-in slide-in-from-top-1 duration-150">
             {profile && (
@@ -108,7 +111,7 @@ export function Header() {
               className="w-full text-left px-4 py-2 text-sm flex items-center gap-2.5 hover:bg-muted transition-colors"
             >
               <User className="w-4 h-4 text-muted-foreground" />
-              Ajustes de Perfil
+              {t('header.profileSettings')}
             </button>
             <div className="border-t my-1"></div>
             <button
@@ -116,11 +119,12 @@ export function Header() {
               className="w-full text-left px-4 py-2 text-sm flex items-center gap-2.5 hover:bg-muted text-destructive hover:text-destructive transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              Cerrar Sesión
+              {t('header.logout')}
             </button>
           </div>
         )}
       </div>
+
 
       {/* Profile Modal */}
       {modalOpen && (

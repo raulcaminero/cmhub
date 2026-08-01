@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader2, Info, FileSpreadsheet, Upload } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ const NCF_TYPE_LABELS: Record<NcfType, string> = {
 };
 
 export default function NcfPage() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
 
@@ -69,7 +71,7 @@ export default function NcfPage() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver las secuencias NCF.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -77,7 +79,7 @@ export default function NcfPage() {
 
   function handleTypeChange(selectedType: NcfType) {
     setType(selectedType);
-    setPrefix(selectedType); // Default prefix matches type (e.g. B01 prefix is B01)
+    setPrefix(selectedType);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -166,50 +168,48 @@ export default function NcfPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">NCF (Comprobantes Fiscales)</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('ncf.title')}</h1>
             <div className="relative group">
               <Info className="w-5 h-5 text-muted-foreground cursor-help hover:text-primary transition-colors" />
               <div className="absolute left-1/2 -translate-x-1/2 lg:left-full lg:translate-x-0 top-full lg:top-1/2 lg:-translate-y-1/2 mt-2 lg:mt-0 lg:ml-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl hidden group-hover:block z-50 leading-relaxed font-normal normal-case">
-                <p className="font-semibold mb-1">¿Qué es esta página?</p>
-                Aquí administras las secuencias autorizadas por la DGII (B01, B02, etc.). 
-                <br /><br />
-                Al registrar tus rangos, el sistema generará automáticamente el NCF de tus facturas de venta, evitándote la digitación manual.
+                <p className="font-semibold mb-1">{t('ncf.tooltipTitle')}</p>
+                {t('ncf.tooltipText')}
               </div>
             </div>
           </div>
-          <p className="text-muted-foreground">Administración de secuencias y rangos autorizados por la DGII.</p>
+          <p className="text-muted-foreground">{t('ncf.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
             <FileSpreadsheet className="w-4 h-4" />
-            Importar Excel / CSV
+            {t('contacts.importCsv')}
           </Button>
           <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
-            Registrar Secuencia
+            {t('ncf.registerSequence')}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Rangos Autorizados</CardTitle>
+          <CardTitle>{t('ncf.cardTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando secuencias...</p>
+            <p className="text-sm text-muted-foreground">{t('ncf.loading')}</p>
           ) : !sequences || sequences.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No hay rangos de NCF registrados. Agrega uno para poder emitir comprobantes.</p>
+            <p className="text-sm text-muted-foreground text-center py-6">{t('ncf.noSequences')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo de Comprobante</TableHead>
-                  <TableHead>Prefijo</TableHead>
-                  <TableHead className="text-right">Siguiente Secuencia</TableHead>
-                  <TableHead className="text-right">Límite Máximo</TableHead>
-                  <TableHead>Vencimiento</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead>{t('ncf.voucherType')}</TableHead>
+                  <TableHead>{t('ncf.prefix')}</TableHead>
+                  <TableHead className="text-right">{t('ncf.nextSequence')}</TableHead>
+                  <TableHead className="text-right">{t('ncf.maxLimit')}</TableHead>
+                  <TableHead>{t('ncf.expiration')}</TableHead>
+                  <TableHead>{t('common.status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,7 +226,7 @@ export default function NcfPage() {
                       </TableCell>
                       <TableCell className="font-mono text-sm">{seq.prefix}</TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {nextNum <= seq.max ? `${seq.prefix}${paddedNext}` : 'Agotado'}
+                        {nextNum <= seq.max ? `${seq.prefix}${paddedNext}` : t('ncf.exhausted')}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{seq.max}</TableCell>
                       <TableCell className={isExpired ? 'text-destructive font-medium' : ''}>
@@ -238,7 +238,7 @@ export default function NcfPage() {
                             ? 'bg-green-50 text-green-700 border border-green-200' 
                             : 'bg-red-50 text-red-700 border border-red-200'
                         }`}>
-                          {seq.isActive && !isExpired ? 'Activo' : isExpired ? 'Vencido' : 'Inactivo'}
+                          {seq.isActive && !isExpired ? t('ncf.active') : isExpired ? t('ncf.expired') : t('ncf.inactive')}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -254,13 +254,13 @@ export default function NcfPage() {
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Registrar Secuencia NCF</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('ncf.registerTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Ingresa los datos del rango de comprobantes autorizados por la DGII.
+              {t('ncf.registerSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="ncf-type">Tipo de NCF</Label>
+                <Label htmlFor="ncf-type">{t('ncf.ncfType')}</Label>
                 <select
                   id="ncf-type"
                   value={type}
@@ -276,7 +276,7 @@ export default function NcfPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-prefix">Prefijo de Secuencia</Label>
+                <Label htmlFor="ncf-prefix">{t('ncf.prefixLabel')}</Label>
                 <Input
                   id="ncf-prefix"
                   placeholder="Ej. B01 o E31"
@@ -287,7 +287,7 @@ export default function NcfPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-max">Cantidad Autorizada (Máximo)</Label>
+                <Label htmlFor="ncf-max">{t('ncf.maxLabel')}</Label>
                 <Input
                   id="ncf-max"
                   type="number"
@@ -300,7 +300,7 @@ export default function NcfPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-expiry">Fecha de Vencimiento</Label>
+                <Label htmlFor="ncf-expiry">{t('ncf.expiryLabel')}</Label>
                 <Input
                   id="ncf-expiry"
                   type="date"
@@ -325,16 +325,16 @@ export default function NcfPage() {
                   }}
                   disabled={isCreating}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={isCreating}>
                   {isCreating ? (
                     <>
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Registrando...
+                      {t('common.saving')}
                     </>
                   ) : (
-                    'Registrar'
+                    t('common.save')
                   )}
                 </Button>
               </div>
@@ -347,18 +347,18 @@ export default function NcfPage() {
       {isExcelOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Importar Secuencias NCF desde Excel / CSV</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('ncf.importTitle')}</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Carga un archivo CSV o pega el texto en formato delimitado por comas con las columnas autorizadas por la DGII.
+              {t('ncf.importSubtitle')}
             </p>
             
             <form onSubmit={handleCsvImport} className="space-y-4">
               <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
                 <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
-                  Haz clic para subir archivo CSV
+                  {t('contacts.uploadCsv')}
                 </Label>
-                <span className="text-[10px] text-muted-foreground">O arrastra el archivo aquí</span>
+                <span className="text-[10px] text-muted-foreground">{t('contacts.dragCsv')}</span>
                 <Input
                   id="csv-file"
                   type="file"
@@ -370,7 +370,7 @@ export default function NcfPage() {
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="csv-text">Contenido o Vista Previa del CSV</Label>
+                  <Label htmlFor="csv-text">{t('contacts.csvPreview')}</Label>
                   <span className="text-[10px] text-muted-foreground font-mono">Formato: Tipo,Prefijo,Max,Vencimiento</span>
                 </div>
                 <textarea
@@ -394,7 +394,7 @@ export default function NcfPage() {
                   download="plantilla_ncf.csv"
                   className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
                 >
-                  Descargar Plantilla CSV
+                  {t('contacts.downloadTemplate')}
                 </a>
                 <div className="flex gap-2">
                   <Button
@@ -408,16 +408,16 @@ export default function NcfPage() {
                     }}
                     disabled={isImporting}
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" size="sm" disabled={isImporting}>
                     {isImporting ? (
                       <>
                         <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                        Importando...
+                        {t('contacts.importing')}
                       </>
                     ) : (
-                      'Importar Rangos'
+                      t('ncf.importRanges')
                     )}
                   </Button>
                 </div>

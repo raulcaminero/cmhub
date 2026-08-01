@@ -33,6 +33,7 @@ import {
   Camera,
   Loader2,
 } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -43,6 +44,7 @@ import {
 } from '@/components/ui/table';
 
 export function ReconciliationView() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
 
@@ -591,10 +593,10 @@ export function ReconciliationView() {
       ) : (
         <div className="bg-card p-6 rounded-lg border text-center space-y-4">
           <Info className="w-12 h-12 text-muted-foreground mx-auto" />
-          <h3 className="text-lg font-bold">Sin información de Conciliación</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Selecciona una cuenta contable bancaria para ver el reporte comparativo e importar tus movimientos.
-          </p>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">{t('reconciliationView.title')}</h2>
+            <p className="text-muted-foreground">{t('reconciliationView.subtitle')}</p>
+          </div>
         </div>
       )}
 

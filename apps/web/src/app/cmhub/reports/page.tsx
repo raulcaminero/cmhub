@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetFinancialsQuery, useGetIt1SummaryQuery } from '@/services/reports.api';
+import { useTranslation } from '@/lib/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Download, BarChart2, Calendar } from 'lucide-react';
+import { FileText, Download, BarChart2, Calendar, BookMarked } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,13 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { GeneralLedgerView } from '@/components/features/accounting/general-ledger-view';
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const token = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'tax' | 'financials'>('tax');
+  const [activeTab, setActiveTab] = useState<'tax' | 'financials' | 'ledger'>('tax');
   const [period, setPeriod] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -55,7 +58,7 @@ export default function ReportsPage() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">Selecciona una empresa para ver los reportes.</p>
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -77,7 +80,7 @@ export default function ReportsPage() {
           'Authorization': `Bearer ${token || ''}`,
         }
       });
-      if (!response.ok) throw new Error('Error al descargar el archivo');
+      if (!response.ok) throw new Error(t('common.error'));
       const text = await response.text();
       
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -90,7 +93,7 @@ export default function ReportsPage() {
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Error descargando el archivo impositivo.');
+      alert(t('common.error'));
     }
   };
 
@@ -98,20 +101,20 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Reportes y Cierre</h1>
-          <p className="text-muted-foreground">Genera exportaciones de formatos fiscales y visualiza estados financieros en tiempo real.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('reports.title')}</h1>
+          <p className="text-muted-foreground">{t('reports.subtitle')}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b gap-4">
+      <div className="flex border-b gap-4 flex-wrap">
         <Button
           variant={activeTab === 'tax' ? 'default' : 'outline'}
           onClick={() => setActiveTab('tax')}
           className="gap-2"
         >
           <Calendar className="w-4 h-4" />
-          Formatos Impositivos (606, 607, IT-1)
+          {t('reports.taxTab')}
         </Button>
         <Button
           variant={activeTab === 'financials' ? 'default' : 'outline'}
@@ -119,9 +122,18 @@ export default function ReportsPage() {
           className="gap-2"
         >
           <BarChart2 className="w-4 h-4" />
-          Estados Financieros
+          {t('reports.financialsTab')}
+        </Button>
+        <Button
+          variant={activeTab === 'ledger' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('ledger')}
+          className="gap-2"
+        >
+          <BookMarked className="w-4 h-4" />
+          {t('reports.ledgerTab')}
         </Button>
       </div>
+
 
       {activeTab === 'tax' ? (
         <div className="space-y-6">
@@ -130,7 +142,7 @@ export default function ReportsPage() {
             <CardContent className="pt-6">
               <form onSubmit={handlePeriodChange} className="flex flex-wrap items-end gap-4">
                 <div className="space-y-1">
-                  <Label htmlFor="report-period">Seleccionar Periodo Fiscal</Label>
+                  <Label htmlFor="report-period">{t('reports.selectPeriod')}</Label>
                   <Input
                     id="report-period"
                     type="month"
@@ -138,7 +150,7 @@ export default function ReportsPage() {
                     onChange={(e) => setInputPeriod(e.target.value)}
                   />
                 </div>
-                <Button type="submit">Consultar Periodo</Button>
+                <Button type="submit">{t('reports.queryPeriod')}</Button>
               </form>
             </CardContent>
           </Card>
@@ -149,14 +161,14 @@ export default function ReportsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  Formatos de Envío DGII
+                  {t('reports.dgiiFormats')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
                   <div>
-                    <h4 className="font-semibold text-sm">Formato 606 (Compras)</h4>
-                    <p className="text-xs text-muted-foreground">Reporte mensual de compras de bienes y servicios.</p>
+                    <h4 className="font-semibold text-sm">{t('reports.format606Title')}</h4>
+                    <p className="text-xs text-muted-foreground">{t('reports.format606Desc')}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => handleDownload('606')} className="gap-2">
                     <Download className="w-4 h-4" />
@@ -166,8 +178,8 @@ export default function ReportsPage() {
 
                 <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
                   <div>
-                    <h4 className="font-semibold text-sm">Formato 607 (Ventas)</h4>
-                    <p className="text-xs text-muted-foreground">Reporte mensual de ventas de bienes y servicios.</p>
+                    <h4 className="font-semibold text-sm">{t('reports.format607Title')}</h4>
+                    <p className="text-xs text-muted-foreground">{t('reports.format607Desc')}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => handleDownload('607')} className="gap-2">
                     <Download className="w-4 h-4" />
@@ -180,33 +192,33 @@ export default function ReportsPage() {
             {/* Resumen IT-1 */}
             <Card>
               <CardHeader>
-                <CardTitle>Estimación Declaración IT-1 (ITBIS)</CardTitle>
+                <CardTitle>{t('reports.it1Estimate')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoadingIt1 ? (
-                  <p className="text-sm text-muted-foreground">Calculando cifras...</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.calculating')}</p>
                 ) : !it1 ? (
-                  <p className="text-sm text-muted-foreground">No se pudieron obtener datos del periodo.</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.noDataPeriod')}</p>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm py-1 border-b">
-                      <span>Ingresos Facturados (Neto)</span>
+                      <span>{t('reports.billedIncome')}</span>
                       <span className="font-mono font-medium">RD$ {Number(it1.salesAmount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
-                      <span>ITBIS Facturado (Ventas)</span>
+                      <span>{t('reports.billedItbis')}</span>
                       <span className="font-mono font-medium text-destructive">RD$ {Number(it1.salesItbis).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
-                      <span>Compras Realizadas (Neto)</span>
+                      <span>{t('reports.purchasesNet')}</span>
                       <span className="font-mono font-medium">RD$ {Number(it1.purchasesAmount).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
-                      <span>ITBIS Pagado (Adelantado)</span>
+                      <span>{t('reports.paidItbis')}</span>
                       <span className="font-mono font-medium text-green-600">RD$ {Number(it1.purchasesItbis).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-base pt-2">
-                      <span>Total ITBIS a Pagar</span>
+                      <span>{t('reports.totalItbisPay')}</span>
                       <span className="font-mono text-primary">RD$ {Number(it1.itbisToPay).toFixed(2)}</span>
                     </div>
                   </div>
@@ -215,25 +227,27 @@ export default function ReportsPage() {
             </Card>
           </div>
         </div>
+      ) : activeTab === 'ledger' ? (
+        <GeneralLedgerView companyId={companyId} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Balance Sheet */}
           <Card>
             <CardHeader>
-              <CardTitle>Balance de Situación (General)</CardTitle>
+              <CardTitle>{t('reports.balanceSheetTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingFinancials ? (
-                <p className="text-sm text-muted-foreground">Cargando balance...</p>
+                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
               ) : !financials || financials.balanceSheet.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay transacciones registradas para este balance.</p>
+                <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nombre Cuenta</TableHead>
-                      <TableHead className="text-right">Balance (RD$)</TableHead>
+                      <TableHead>{t('reports.code')}</TableHead>
+                      <TableHead>{t('reports.accountName')}</TableHead>
+                      <TableHead className="text-right">{t('reports.balance')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -255,21 +269,21 @@ export default function ReportsPage() {
           {/* Income Statement */}
           <Card>
             <CardHeader>
-              <CardTitle>Estado de Resultados</CardTitle>
+              <CardTitle>{t('reports.incomeStatementTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingFinancials ? (
-                <p className="text-sm text-muted-foreground">Cargando ingresos y gastos...</p>
+                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
               ) : !financials || financials.incomeStatement.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay transacciones registradas para este estado de resultados.</p>
+                <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
               ) : (
                 <div className="space-y-4">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Nombre Cuenta</TableHead>
-                        <TableHead className="text-right">Balance (RD$)</TableHead>
+                        <TableHead>{t('reports.code')}</TableHead>
+                        <TableHead>{t('reports.accountName')}</TableHead>
+                        <TableHead className="text-right">{t('reports.balance')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -292,7 +306,7 @@ export default function ReportsPage() {
 
                     return (
                       <div className="flex justify-between items-center p-3 rounded-lg border bg-primary/5 text-primary font-semibold text-lg">
-                        <span>Resultado Neto del Periodo</span>
+                        <span>{t('reports.netIncome')}</span>
                         <span className="font-mono">RD$ {netIncome.toFixed(2)}</span>
                       </div>
                     );
@@ -301,6 +315,7 @@ export default function ReportsPage() {
               )}
             </CardContent>
           </Card>
+
         </div>
       )}
     </div>

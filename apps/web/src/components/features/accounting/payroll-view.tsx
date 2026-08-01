@@ -30,6 +30,7 @@ import {
   Eye,
   Calendar,
 } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
   TableBody,
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/table';
 
 export function PayrollView() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'employees' | 'payrolls'>('payrolls');
@@ -236,7 +238,7 @@ export function PayrollView() {
             </div>
             <Button size="sm" className="gap-2" onClick={() => setIsEmpModalOpen(true)}>
               <Plus className="w-4 h-4" />
-              Nuevo Empleado
+              {t('payrollView.addEmployee')}
             </Button>
           </div>
 
@@ -290,12 +292,12 @@ export function PayrollView() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">Nóminas Ejecutadas</h2>
-              <p className="text-xs text-muted-foreground">Historial de procesamiento y liquidación de TSS e ISR.</p>
+              <h2 className="text-2xl font-bold tracking-tight">{t('payrollView.title')}</h2>
+              <p className="text-muted-foreground">{t('payrollView.subtitle')}</p>
             </div>
             <Button size="sm" className="gap-2" onClick={() => setIsPayrollModalOpen(true)}>
               <Calculator className="w-4 h-4" />
-              Procesar Nómina del Mes
+              {t('payrollView.processPayroll')}
             </Button>
           </div>
 
@@ -565,7 +567,7 @@ export function PayrollView() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payrollDetails.items?.map((item: PayrollItem) => (
+                      {payrollDetails.items?.map((item: any) => (
                         <TableRow key={item.id}>
                           <TableCell className="font-semibold text-xs">{item.employeeName}</TableCell>
                           <TableCell className="font-mono text-xs">{item.employeeCedula}</TableCell>
