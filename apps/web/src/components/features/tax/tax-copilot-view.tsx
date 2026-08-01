@@ -130,11 +130,11 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
   }
 
   return (
-    <Card className="border border-indigo-100 shadow-md bg-slate-50/20 max-w-4xl mx-auto h-[600px] flex flex-col overflow-hidden">
-      <CardHeader className="bg-white border-b py-3 px-4 flex flex-row justify-between items-center shrink-0">
+    <Card className="border border-border shadow-md bg-card max-w-4xl mx-auto h-[600px] flex flex-col overflow-hidden">
+      <CardHeader className="bg-card border-b py-3 px-4 flex flex-row justify-between items-center shrink-0">
         <div>
-          <CardTitle className="text-md font-bold flex items-center gap-2 text-indigo-950">
-            <Sparkles className="w-5 h-5 text-indigo-600 animate-pulse" />
+          <CardTitle className="text-md font-bold flex items-center gap-2 text-foreground">
+            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
             Copiloto Fiscal y Financiero
           </CardTitle>
           <CardDescription className="text-xs">
@@ -145,7 +145,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           variant="ghost" 
           size="sm" 
           onClick={handleClearChat}
-          className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5"
+          className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 gap-1.5"
           title="Reiniciar chat"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -154,27 +154,27 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
       </CardHeader>
       
       {/* Messages viewport */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-indigo-50/10 to-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
         {messages.map((msg) => (
           <div 
             key={msg.id} 
             className={`flex gap-3 max-w-[85%] ${msg.sender === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
           >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-              msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'
+              msg.sender === 'user' ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
             }`}>
-              {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Cpu className="w-4 h-4 text-indigo-700" />}
+              {msg.sender === 'user' ? <User className="w-4 h-4" /> : <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
             </div>
             
             <div className={`p-3 rounded-lg text-xs shadow-sm border ${
               msg.sender === 'user' 
                 ? 'bg-indigo-600 text-white border-indigo-700 rounded-tr-none' 
-                : 'bg-white text-slate-800 border-slate-100 rounded-tl-none'
+                : 'bg-card text-card-foreground border-border dark:bg-slate-800/90 dark:text-slate-100 rounded-tl-none'
             }`}>
               {msg.sender === 'user' ? (
                 <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
               ) : (
-                <div className="prose prose-xs max-w-none text-slate-800 leading-relaxed">
+                <div className="prose prose-xs max-w-none text-foreground dark:text-slate-100 leading-relaxed">
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
               )}

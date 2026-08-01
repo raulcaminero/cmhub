@@ -188,13 +188,13 @@ export function JournalEntriesView() {
                       <span className="text-sm font-semibold">{entry.description}</span>
                       
                       {entry.status === 'DRAFT' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border font-medium">{t('entries.draft')}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium">{t('entries.draft')}</span>
                       )}
                       {entry.status === 'POSTED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border font-medium">{t('entries.posted')}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-medium">{t('entries.posted')}</span>
                       )}
                       {entry.status === 'VOIDED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border font-medium">{t('entries.voided')}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-medium">{t('entries.voided')}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -12,24 +12,19 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>('light');
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
     root.classList.remove('light', 'dark');
-
-    if (newTheme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(newTheme);
-    }
+    root.classList.add(newTheme);
   };
 
   useEffect(() => {
-    const savedTheme = (localStorage.getItem('cmhub_theme') as Theme) || 'system';
-    setThemeState(savedTheme);
-    applyTheme(savedTheme);
+    const savedTheme = (localStorage.getItem('cmhub_theme') as Theme) || 'light';
+    const validTheme: Theme = savedTheme === 'dark' ? 'dark' : 'light';
+    setThemeState(validTheme);
+    applyTheme(validTheme);
   }, []);
 
   const setTheme = (newTheme: Theme) => {
@@ -37,16 +32,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cmhub_theme', newTheme);
     applyTheme(newTheme);
   };
-
-  useEffect(() => {
-    if (theme !== 'system') return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      applyTheme('system');
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
@@ -58,9 +43,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
-    // Return fallback if used outside provider during SSR/testing
     return {
-      theme: 'system' as Theme,
+      theme: 'light' as Theme,
       setTheme: () => {},
     };
   }

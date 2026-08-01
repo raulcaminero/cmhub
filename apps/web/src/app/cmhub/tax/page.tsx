@@ -369,14 +369,14 @@ export default function TaxPage() {
                 {/* IR-3 / TSS */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineTss')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineTss')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(10)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(10) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(10)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(10)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -384,14 +384,14 @@ export default function TaxPage() {
                 {/* Envíos 606/7/8/9 */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineEnvios')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineEnvios')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(15)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(15) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(15)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(15)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -399,14 +399,14 @@ export default function TaxPage() {
                 {/* IT-1 ITBIS */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineIt1')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineIt1')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(20)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(20) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(20)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(20)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>

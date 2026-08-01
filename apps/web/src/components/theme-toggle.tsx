@@ -1,29 +1,27 @@
 'use client';
 
 import { useTheme, Theme } from '@/components/providers/theme-provider';
-import { Sun, Moon, Laptop } from 'lucide-react';
-import { useTranslation } from '@/lib/use-translation';
+import { Sun, Moon } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const { t } = useTranslation();
 
-  const cycleTheme = () => {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   return (
     <button
       type="button"
-      onClick={cycleTheme}
+      onClick={toggleTheme}
       className="p-1.5 rounded-lg border border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground transition-colors flex items-center justify-center gap-1.5 text-xs focus:outline-none"
-      title={`Tema actual: ${theme}`}
+      title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
     >
-      {theme === 'light' && <Sun className="w-4 h-4 text-amber-500" />}
-      {theme === 'dark' && <Moon className="w-4 h-4 text-indigo-400" />}
-      {theme === 'system' && <Laptop className="w-4 h-4 text-slate-400" />}
+      {theme === 'light' ? (
+        <Sun className="w-4 h-4 text-amber-500" />
+      ) : (
+        <Moon className="w-4 h-4 text-indigo-400" />
+      )}
     </button>
   );
 }
@@ -42,18 +40,12 @@ export function ThemeSelector() {
       id: 'dark',
       label: 'Oscuro (Dark)',
       icon: Moon,
-      desc: 'Fondo pizarra oscuro agradable a la vista.',
-    },
-    {
-      id: 'system',
-      label: 'Sistema (System)',
-      icon: Laptop,
-      desc: 'Sigue automáticamente el tema de tu dispositivo.',
+      desc: 'Fondo pizarra oscuro agradable a la vista con textos nítidos.',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
       {options.map((opt) => {
         const Icon = opt.icon;
         const isSelected = theme === opt.id;

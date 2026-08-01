@@ -291,7 +291,7 @@ export function GeneralLedgerView({ companyId }: Props) {
                         </TableCell>
                         <TableCell
                           className={`text-right font-mono font-semibold text-sm ${
-                            line.balance >= 0 ? 'text-slate-800' : 'text-rose-600'
+                            line.balance >= 0 ? 'text-foreground font-bold' : 'text-rose-500'
                           }`}
                         >
                           {line.balance < 0
@@ -306,15 +306,15 @@ export function GeneralLedgerView({ companyId }: Props) {
                       <TableCell colSpan={4} className="text-right text-sm">
                         {t('ledger.totals')}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-emerald-700">
+                      <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">
                         {fmt(ledger.totals.debit)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-rose-600">
+                      <TableCell className="text-right font-mono text-rose-500 dark:text-rose-400">
                         {fmt(ledger.totals.credit)}
                       </TableCell>
                       <TableCell
                         className={`text-right font-mono ${
-                          ledger.totals.balance >= 0 ? 'text-indigo-700' : 'text-rose-700'
+                          ledger.totals.balance >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-500'
                         }`}
                       >
                         {ledger.totals.balance < 0
