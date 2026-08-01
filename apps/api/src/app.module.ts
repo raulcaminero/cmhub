@@ -8,6 +8,7 @@ import { AccountingModule } from '@presentation/modules/accounting/accounting.mo
 import { RagModule } from '@presentation/modules/rag/rag.module';
 import { SalesModule } from '@presentation/modules/sales/sales.module';
 import { MailModule } from './infrastructure/mail/mail.module';
+import { AppCacheModule } from './infrastructure/cache/app-cache.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MailModule } from './infrastructure/mail/mail.module';
       expandVariables: true,
     }),
     PrismaModule,
+    AppCacheModule,
     MailModule,
     AuthModule,
     CompaniesModule,
