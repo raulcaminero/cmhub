@@ -4,6 +4,9 @@ import { AuthService } from '@application/services/auth/auth.service';
 import { LoginDto } from '@application/dtos/auth/login.dto';
 import { RegisterDto } from '@application/dtos/auth/register.dto';
 import { UpdateProfileDto } from '@application/dtos/auth/update-profile.dto';
+import { ForgotPasswordDto } from '@application/dtos/auth/forgot-password.dto';
+import { ResetPasswordDto } from '@application/dtos/auth/reset-password.dto';
+import { ChangePasswordDto } from '@application/dtos/auth/change-password.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser, CurrentUserPayload } from './decorators/current-user.decorator';
 
@@ -25,6 +28,30 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email and password' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset email' })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using token' })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @ApiBearerAuth()
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password from user settings' })
+  changePassword(@CurrentUser() user: CurrentUserPayload, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.userId, dto);
   }
 
   @Public()

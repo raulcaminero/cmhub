@@ -33,6 +33,15 @@ export const authApi = api.injectEndpoints({
     register: builder.mutation<AuthResponse, LoginRequest & { firstName: string; lastName: string }>({
       query: (body) => ({ url: '/auth/register', method: 'POST', body }),
     }),
+    forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+      query: (body) => ({ url: '/auth/forgot-password', method: 'POST', body }),
+    }),
+    resetPassword: builder.mutation<{ message: string }, { email: string; token: string; newPassword: string }>({
+      query: (body) => ({ url: '/auth/reset-password', method: 'POST', body }),
+    }),
+    changePassword: builder.mutation<{ message: string }, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: '/auth/change-password', method: 'POST', body }),
+    }),
     getProfile: builder.query<UserProfile, void>({
       query: () => '/auth/me',
       providesTags: ['UserProfile'],
@@ -58,6 +67,9 @@ export const authApi = api.injectEndpoints({
 export const { 
   useLoginMutation, 
   useRegisterMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
   useRefreshMutation
