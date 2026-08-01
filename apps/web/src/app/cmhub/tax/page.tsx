@@ -177,26 +177,33 @@ export default function TaxPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t('tax.title')}</h1>
           <p className="text-muted-foreground">{t('tax.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-2 bg-card border rounded-md p-2 shadow-sm self-start">
-          <Label className="text-xs font-semibold px-1">{t('tax.fiscalPeriod')}</Label>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="h-8 rounded border border-input bg-background px-2 text-xs focus-visible:outline-none"
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="h-8 rounded border border-input bg-background px-2 text-xs focus-visible:outline-none"
-          >
-            {MONTHS.map((m) => (
-              <option key={m.code} value={m.code}>{m.name}</option>
-            ))}
-          </select>
+        <div className="flex items-end gap-3 bg-card border rounded-lg p-3 shadow-sm self-start">
+          <div className="space-y-1">
+            <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground block">Año</Label>
+            <select
+              id="taxYearSelect"
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none"
+            >
+              {YEARS.map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="taxMonthSelect" className="text-xs font-semibold text-muted-foreground block">Mes</Label>
+            <select
+              id="taxMonthSelect"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none font-medium"
+            >
+              {MONTHS.map((m) => (
+                <option key={m.code} value={m.code}>{m.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
