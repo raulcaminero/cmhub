@@ -12,7 +12,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutation } from '@/services/companies.api';
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe } from 'lucide-react';
+import { useChangePasswordMutation } from '@/services/auth.api';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 
 export default function SettingsPage() {
@@ -63,7 +64,42 @@ export default function SettingsPage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts' | 'preferences'>('company');
+  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts' | 'preferences' | 'security'>('company');
+
+  // Security & Password Change form
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passSuccess, setPassSuccess] = useState('');
+  const [passError, setPassError] = useState('');
+  const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPassSuccess('');
+    setPassError('');
+
+    if (newPassword !== confirmPassword) {
+      setPassError('La nueva contraseña y su confirmación no coinciden.');
+      return;
+    }
+
+    if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+      setPassError('La nueva contraseña debe tener al menos 8 caracteres, incluir números y mayúsculas.');
+      return;
+    }
+
+    try {
+      const res = await changePassword({ currentPassword, newPassword }).unwrap();
+      setPassSuccess(res.message);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPassSuccess(''), 4000);
+    } catch (err: any) {
+      setPassError(err.data?.message || 'Error al cambiar la contraseña. Verifica tu clave actual.');
+    }
+  }
 
   // Company settings edit form
   const [compName, setCompName] = useState('');
@@ -228,6 +264,14 @@ export default function SettingsPage() {
         >
           <Globe className="w-4 h-4" />
           {t('settings.preferences')}
+        </Button>
+        <Button
+          variant={activeTab === 'security' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('security')}
+          className="gap-2 shrink-0"
+        >
+          <KeyRound className="w-4 h-4" />
+          Seguridad
         </Button>
       </div>
 
@@ -595,6 +639,85 @@ export default function SettingsPage() {
               </div>
               <LanguageSwitcher />
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'security' && (
+        <Card className="max-w-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <KeyRound className="w-5 h-5 text-indigo-600" />
+              Cambiar Contraseña de Acceso
+            </CardTitle>
+            <CardDescription>
+              Actualiza tu contraseña de usuario de forma segura.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
+              <div className="space-y-1">
+                <Label htmlFor="current-pass">Contraseña Actual *</Label>
+                <Input
+                  id="current-pass"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="h-9"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="new-pass">Nueva Contraseña *</Label>
+                <Input
+                  id="new-pass"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-9"
+                  required
+                />
+              </div>
+
+              {/* Password criteria */}
+              {newPassword.length > 0 && (
+                <div className="p-3 bg-slate-50 border rounded-md text-[11px] space-y-1 text-slate-600">
+                  <p className="font-semibold text-slate-800 mb-1 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    Criterios de seguridad:
+                  </p>
+                  <div className={newPassword.length >= 8 ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                    {newPassword.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                  </div>
+                  <div className={/\d/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                    {/\d/.test(newPassword) ? '✓' : '○'} Al menos un número (0-9)
+                  </div>
+                  <div className={/[A-Z]/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                    {/[A-Z]/.test(newPassword) ? '✓' : '○'} Al menos una letra mayúscula (A-Z)
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label htmlFor="confirm-pass">Confirmar Nueva Contraseña *</Label>
+                <Input
+                  id="confirm-pass"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-9"
+                  required
+                />
+              </div>
+
+              {passSuccess && <p className="text-xs text-emerald-600 font-bold">{passSuccess}</p>}
+              {passError && <p className="text-xs text-red-600 font-bold">{passError}</p>}
+
+              <Button type="submit" disabled={isChangingPassword} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5">
+                {isChangingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Actualizar Contraseña'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       )}

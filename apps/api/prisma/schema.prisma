@@ -64,17 +64,21 @@ enum JournalEntryStatus {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String
-  firstName    String
-  lastName     String
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  companyRoles UserCompanyRole[]
-  JournalEntry JournalEntry[]
-  Invoice      Invoice[]
-  Expense      Expense[]
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  passwordHash         String
+  firstName            String
+  lastName             String
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  failedLoginAttempts  Int               @default(0)
+  lockUntil            DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  companyRoles         UserCompanyRole[]
+  JournalEntry         JournalEntry[]
+  Invoice              Invoice[]
+  Expense              Expense[]
 }
 
 model Company {

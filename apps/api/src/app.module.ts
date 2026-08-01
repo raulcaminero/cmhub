@@ -7,6 +7,7 @@ import { CompaniesModule } from '@presentation/modules/companies/companies.modul
 import { AccountingModule } from '@presentation/modules/accounting/accounting.module';
 import { RagModule } from '@presentation/modules/rag/rag.module';
 import { SalesModule } from '@presentation/modules/sales/sales.module';
+import { MailModule } from './infrastructure/mail/mail.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SalesModule } from '@presentation/modules/sales/sales.module';
       expandVariables: true,
     }),
     PrismaModule,
+    MailModule,
     AuthModule,
     CompaniesModule,
     AccountingModule,
