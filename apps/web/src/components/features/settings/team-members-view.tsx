@@ -118,7 +118,7 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
           </div>
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             <UserPlus className="w-4 h-4" />
             Agregar Miembro
@@ -176,7 +176,7 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
                 <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isAdding} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button type="submit" disabled={isAdding} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar y Asignar Rol'}
                 </Button>
               </div>
