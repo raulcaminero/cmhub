@@ -149,7 +149,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                 className="pl-9 h-9 text-xs"
               />
             </div>
-            <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="w-4 h-4" />
               {t('sales.newProduct')}
             </Button>
@@ -322,7 +322,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                 <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreating || isUpdating ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />

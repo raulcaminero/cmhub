@@ -123,15 +123,15 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             {t('sales.quotationsTitle')}
           </h2>
           <p className="text-xs text-muted-foreground">
             {t('sales.quotationsDesc')}
           </p>
         </div>
-        <Button onClick={handleOpenModal} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5">
+        <Button onClick={handleOpenModal} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 font-medium">
           <Plus className="w-4 h-4" />
           {t('sales.newQuotation')}
         </Button>
