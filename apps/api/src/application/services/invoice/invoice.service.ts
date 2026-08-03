@@ -13,6 +13,7 @@ import { ContactService } from '../contact/contact.service';
 import { ContactType } from '@domain/entities/contact.entity';
 
 import { AuditLogService } from '../audit/audit-log.service';
+import { TaxEngineService } from '../tax/tax-engine.service';
 
 export const INVOICE_REPOSITORY = 'INVOICE_REPOSITORY';
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
@@ -28,6 +29,7 @@ export class InvoiceService {
     private readonly contactService: ContactService,
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly taxEngineService: TaxEngineService,
   ) {}
 
   async getInvoices(
@@ -141,13 +143,14 @@ export class InvoiceService {
     let calculatedItbis = 0;
     let calculatedCogs = 0;
     const formattedLines: any[] = [];
+    const defaultTaxRate = await this.taxEngineService.getDefaultVatRate(companyId);
 
     if (dto.lines && dto.lines.length > 0) {
       for (const l of dto.lines) {
         const qty = Number(l.quantity) || 1;
         const price = Number(l.unitPrice) || 0;
         const disc = Number(l.discount) || 0;
-        const taxRate = l.taxRate !== undefined ? Number(l.taxRate) : 18;
+        const taxRate = l.taxRate !== undefined ? Number(l.taxRate) : defaultTaxRate;
         const cost = l.cost !== undefined && l.cost !== null ? Number(l.cost) * qty : 0;
 
         const subtotal = qty * price * (1 - disc / 100);
