@@ -142,8 +142,8 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('reports.title')}</h1>
-          <p className="text-muted-foreground">{t('reports.subtitle')}</p>
+          <h1 className="text-xl font-bold tracking-tight">{t('reports.title')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('reports.subtitle')}</p>
         </div>
 
         <div className="flex gap-2">
