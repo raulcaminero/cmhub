@@ -52,7 +52,7 @@ export default function SalesPage() {
           onClick={() => setActiveTab('invoices')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'invoices'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -63,7 +63,7 @@ export default function SalesPage() {
           onClick={() => setActiveTab('catalog')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'catalog'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -74,7 +74,7 @@ export default function SalesPage() {
           onClick={() => setActiveTab('quotations')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeTab === 'quotations'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >

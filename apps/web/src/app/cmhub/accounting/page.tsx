@@ -124,43 +124,55 @@ export default function AccountingPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between border-b pb-4 gap-4 flex-wrap">
-        <div className="flex gap-2">
-          <Button
-            variant={activeTab === 'entries' ? 'default' : 'outline'}
+      <div className="flex items-center justify-between border-b border-border gap-4 flex-wrap">
+        <div className="flex">
+          <button
             onClick={() => setActiveTab('entries')}
-            className="gap-2"
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'entries'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             <FileText className="w-4 h-4" />
             {t('accounting.journalEntriesTab')}
-          </Button>
-          <Button
-            variant={activeTab === 'invoices' ? 'default' : 'outline'}
+          </button>
+          <button
             onClick={() => setActiveTab('invoices')}
-            className="gap-2"
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'invoices'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             <Receipt className="w-4 h-4" />
             {t('accounting.invoicesTab')}
-          </Button>
-          <Button
-            variant={activeTab === 'payroll' ? 'default' : 'outline'}
+          </button>
+          <button
             onClick={() => setActiveTab('payroll')}
-            className="gap-2"
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'payroll'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             <Users className="w-4 h-4" />
             {t('accounting.payrollTab')}
-          </Button>
-          <Button
-            variant={activeTab === 'reconciliation' ? 'default' : 'outline'}
+          </button>
+          <button
             onClick={() => setActiveTab('reconciliation')}
-            className="gap-2"
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'reconciliation'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
           >
             <Landmark className="w-4 h-4" />
             {t('accounting.reconciliationTab')}
-          </Button>
+          </button>
         </div>
-        <div className="flex gap-2">
-          <Link href="/cmhub/accounting/expenses" className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent transition-colors">
+        <div className="flex gap-2 pb-1.5">
+          <Link href="/cmhub/accounting/expenses" className="rounded-md border px-3 py-1.5 text-xs font-semibold hover:bg-accent transition-colors flex items-center gap-1.5">
             {t('accounting.registerExpense')}
           </Link>
         </div>
