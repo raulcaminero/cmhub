@@ -1,9 +1,9 @@
 import { useAppSelector } from '@/store/hooks';
+import { DEFAULT_CURRENCY, DEFAULT_LOCALE, SUPPORTED_COUNTRIES } from '@/lib/constants';
 
 /**
  * Returns a currency formatter function based on the active company's
- * locale and currency settings. Falls back to RD$ (DOP) for backward
- * compatibility with Dominican Republic companies.
+ * locale and currency settings.
  *
  * Usage:
  *   const formatCurrency = useCurrency();
@@ -12,8 +12,8 @@ import { useAppSelector } from '@/store/hooks';
 export function useCurrency() {
   const company = useAppSelector((state) => state.company.active);
 
-  const locale = company?.locale ?? 'es-DO';
-  const currency = company?.currency ?? 'DOP';
+  const locale = company?.locale ?? DEFAULT_LOCALE;
+  const currency = company?.currency ?? DEFAULT_CURRENCY;
 
   return (amount: number, opts?: { minimumFractionDigits?: number; maximumFractionDigits?: number }) => {
     const val = Number.isFinite(amount) ? amount : 0;
@@ -74,3 +74,11 @@ export function useIsDominicanCompany() {
   return isDrFiscalEnabled;
 }
 
+/**
+ * Returns tax label for the current company (e.g. ITBIS for DO, Sales Tax for US, IVA for MX/CO)
+ */
+export function useCompanyTaxLabel() {
+  const company = useAppSelector((state) => state.company.active);
+  const countryConfig = company?.country ? SUPPORTED_COUNTRIES[company.country] : null;
+  return countryConfig?.taxLabel ?? 'ITBIS';
+}
