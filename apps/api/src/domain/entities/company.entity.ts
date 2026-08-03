@@ -9,6 +9,10 @@ export class CompanyEntity {
   address: string | null;
   phone: string | null;
   email: string | null;
+  country: string;
+  currency: string;
+  locale: string;
+  enabledModules: string[];
   createdAt: Date;
   updatedAt: Date;
 }

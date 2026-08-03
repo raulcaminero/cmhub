@@ -33,11 +33,39 @@ export function useActiveCompany() {
 }
 
 /**
- * Returns true if the active company is from Dominican Republic.
- * Used to conditionally show DR-specific modules (NCF, DGII, IT-1, 606/607).
+ * Hook to inspect activated system modules for the active company.
+ * Supports DR Fiscal (NCF, DGII, 606/607), US Accounting, LatAm, and International.
+ */
+export function useModules() {
+  const company = useAppSelector((state) => state.company.active);
+  const enabledModules = company?.enabledModules && company.enabledModules.length > 0 
+    ? company.enabledModules 
+    : ['DR_FISCAL'];
+
+  const isInternational = enabledModules.includes('INTERNATIONAL');
+  const isDrFiscalEnabled = enabledModules.includes('DR_FISCAL') || isInternational;
+  const isUsAccountingEnabled = enabledModules.includes('US_ACCOUNTING') || isInternational;
+  const isLatamEnabled = enabledModules.includes('LATAM') || isInternational;
+
+  return {
+    enabledModules,
+    isDrFiscalEnabled,
+    isUsAccountingEnabled,
+    isLatamEnabled,
+    isInternational,
+
+    // UI Shorthands
+    showNcfModule: isDrFiscalEnabled,
+    showTaxModule: isDrFiscalEnabled,
+    showDgiiReports: isDrFiscalEnabled,
+  };
+}
+
+/**
+ * Returns true if the active company has Dominican Republic fiscal functionality enabled.
  */
 export function useIsDominicanCompany() {
-  const company = useAppSelector((state) => state.company.active);
-  // Default to DR behavior if company has no country set (backward compat)
-  return !company || !company.country || company.country === 'DO';
+  const { isDrFiscalEnabled } = useModules();
+  return isDrFiscalEnabled;
 }
+
