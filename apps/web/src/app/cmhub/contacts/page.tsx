@@ -223,7 +223,7 @@ export default function ContactsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="w-7 h-7 text-primary" />
+            <Users className="w-5 h-5 text-primary shrink-0" />
             {t('contacts.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>

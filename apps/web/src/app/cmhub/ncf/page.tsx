@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, Info, FileSpreadsheet, Upload } from 'lucide-react';
+import { Plus, Loader2, Info, FileSpreadsheet, Upload, FileText } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { useTranslation } from '@/lib/use-translation';
 import {
@@ -168,7 +168,10 @@ export default function NcfPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight">{t('ncf.title')}</h1>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary shrink-0" />
+              {t('ncf.title')}
+            </h1>
             <div className="relative group">
               <Info className="w-5 h-5 text-muted-foreground cursor-help hover:text-primary transition-colors" />
               <div className="absolute left-1/2 -translate-x-1/2 lg:left-full lg:translate-x-0 top-full lg:top-1/2 lg:-translate-y-1/2 mt-2 lg:mt-0 lg:ml-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl hidden group-hover:block z-50 leading-relaxed font-normal normal-case">

@@ -37,7 +37,7 @@ export default function SalesPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <ShoppingCart className="w-5 h-5 text-primary shrink-0" />
             {t('sales.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">

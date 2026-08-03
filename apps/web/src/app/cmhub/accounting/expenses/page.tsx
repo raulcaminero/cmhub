@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -371,7 +371,10 @@ export default function AccountingExpensesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Registro de Gastos</h1>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-primary shrink-0" />
+            Registro de Gastos
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
         </div>
         <div className="flex items-center gap-2">

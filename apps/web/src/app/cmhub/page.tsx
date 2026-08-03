@@ -17,7 +17,8 @@ import {
   FileText,
   Calendar,
   DollarSign,
-  TrendingDown
+  TrendingDown,
+  LayoutDashboard
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -160,7 +161,10 @@ export default function DashboardPage() {
     <div className="space-y-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <LayoutDashboard className="w-5 h-5 text-primary shrink-0" />
+            Dashboard
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.subtitle')} {activeCompany?.name}</p>
         </div>
         

@@ -8,7 +8,7 @@ import { InvoicesView } from '@/components/features/accounting/invoices-view';
 import { PayrollView } from '@/components/features/accounting/payroll-view';
 import { ReconciliationView } from '@/components/features/accounting/reconciliation-view';
 import { Button } from '@/components/ui/button';
-import { FileText, Receipt, Users, Landmark } from 'lucide-react';
+import { FileText, Receipt, Users, Landmark, BookOpen } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
 import { useGetAccountsQuery } from '@/services/accounting.api';
@@ -103,7 +103,10 @@ export default function AccountingPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold tracking-tight">{t('accounting.title')}</h1>
+        <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-primary shrink-0" />
+          {t('accounting.title')}
+        </h1>
         <p className="text-xs text-muted-foreground mt-0.5">{t('accounting.subtitle')}</p>
       </div>
 

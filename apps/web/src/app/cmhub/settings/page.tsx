@@ -14,7 +14,7 @@ import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutatio
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
 import { useChangePasswordMutation, useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User } from 'lucide-react';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User, Settings as SettingsIcon } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 import { TeamMembersView } from '@/components/features/settings/team-members-view';
 import { ThemeSelector } from '@/components/theme-toggle';
@@ -310,7 +310,10 @@ export default function SettingsPage() {
       </Suspense>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('settings.title')}</h1>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <SettingsIcon className="w-5 h-5 text-primary shrink-0" />
+            {t('settings.title')}
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
         </div>
       </div>

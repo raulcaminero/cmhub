@@ -26,9 +26,14 @@ export function CompanySwitcher() {
   const companyList = useAppSelector((state) => state.company.list);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: companies, isLoading } = useGetCompaniesQuery();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sync server data to Redux
   useEffect(() => {
@@ -47,6 +52,17 @@ export function CompanySwitcher() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-input bg-card text-foreground opacity-70">
+        <div className="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+          <Building2 className="w-4 h-4" />
+        </div>
+        <span className="text-xs text-muted-foreground">Cargando...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>
