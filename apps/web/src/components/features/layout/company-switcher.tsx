@@ -7,6 +7,18 @@ import { setActiveCompany, setCompanies } from '@/store/slices/company.slice';
 import { Building2, ChevronDown, Check, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+const getCountryFlag = (country?: string) => {
+  switch (country) {
+    case 'US': return '🇺🇸';
+    case 'MX': return '🇲🇽';
+    case 'CO': return '🇨🇴';
+    case 'PE': return '🇵🇪';
+    case 'CL': return '🇨🇱';
+    case 'AR': return '🇦🇷';
+    default: return '🇩🇴';
+  }
+};
+
 export function CompanySwitcher() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -43,8 +55,8 @@ export function CompanySwitcher() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border border-input bg-card hover:bg-accent/60 text-foreground transition-all duration-150 shadow-sm outline-none group"
       >
-        <div className="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-          <Building2 className="w-4 h-4" />
+        <div className="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 text-xs font-bold">
+          {activeCompany ? getCountryFlag(activeCompany.country) : <Building2 className="w-4 h-4" />}
         </div>
 
         <div className="text-left min-w-0">
@@ -53,9 +65,14 @@ export function CompanySwitcher() {
           ) : !activeCompany ? (
             <span className="text-sm font-semibold text-muted-foreground">Seleccionar empresa</span>
           ) : (
-            <p className="text-sm font-bold tracking-tight text-foreground truncate max-w-[160px] sm:max-w-[220px]">
-              {activeCompany.name}
-            </p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="text-sm font-bold tracking-tight text-foreground truncate max-w-[150px] sm:max-w-[200px]">
+                {activeCompany.name}
+              </p>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono shrink-0">
+                {activeCompany.currency || 'DOP'}
+              </span>
+            </div>
           )}
         </div>
 
@@ -81,6 +98,7 @@ export function CompanySwitcher() {
             ) : (
               companyList.map((comp) => {
                 const isSelected = activeCompany?.id === comp.id;
+                const flag = getCountryFlag(comp.country);
                 return (
                   <button
                     key={comp.id}
@@ -94,11 +112,14 @@ export function CompanySwitcher() {
                         : 'hover:bg-muted text-foreground'
                     }`}
                   >
-                    <div className="min-w-0 pr-2">
-                      <p className="font-semibold text-sm truncate">{comp.name}</p>
-                      {comp.rnc && (
-                        <p className="text-[10px] text-muted-foreground font-mono">RNC: {comp.rnc}</p>
-                      )}
+                    <div className="min-w-0 pr-2 flex items-center gap-2">
+                      <span className="text-base leading-none">{flag}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{comp.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">
+                          {comp.rnc ? `ID/RNC: ${comp.rnc}` : ''} • {comp.currency || 'DOP'}
+                        </p>
+                      </div>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
                   </button>
