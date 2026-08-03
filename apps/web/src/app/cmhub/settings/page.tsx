@@ -591,6 +591,13 @@ export default function SettingsPage() {
                 </div>
 
                 {/* System Modules Configuration & Presets */}
+                {/* TODO: Re-enable when multi-country accounting engine is ready.
+                    Currently this is a UI-only flag — the backend accounting logic
+                    (ITBIS, NCF, retentions) is always Dominican Republic style.
+                    USA requires a completely different tax model (Sales Tax, no VAT credit system).
+                    Tracked as: FEATURE_FLAGS.MODULES_UI
+                    @see packages/shared-types/src/enums.ts for SystemModule definitions */}
+                {false && (
                 <div className="space-y-4 pt-4 border-t">
                   <div>
                     <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -797,6 +804,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+                )}
 
                 {compSuccess && (
                   <p className="text-xs text-green-600 font-medium">{compSuccess}</p>
