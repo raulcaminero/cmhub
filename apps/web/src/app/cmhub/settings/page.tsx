@@ -510,6 +510,8 @@ export default function SettingsPage() {
                       <option value="RST">{t('settings.rst')}</option>
                     </select>
                   </div>
+                  {/* TODO: Re-enable País/Moneda selectors when multi-country engine is ready */}
+                  {false && (<>
                   <div className="space-y-1">
                     <Label htmlFor="edit-country">País</Label>
                     <select
@@ -562,6 +564,7 @@ export default function SettingsPage() {
                       <option value="CRC">CRC — Colón Costarricense</option>
                     </select>
                   </div>
+                  </>)}
                   <div className="space-y-1">
                     <Label htmlFor="edit-phone">{t('settings.phone')}</Label>
                     <Input

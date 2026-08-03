@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAppSelector } from '@/store/hooks';
-import { useCurrency, useIsDominicanCompany } from '@/hooks/use-company';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
-import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2, Globe } from 'lucide-react';
+import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 
 const currentYear = new Date().getFullYear();
@@ -42,7 +42,7 @@ export default function TaxPage() {
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
   const formatCurrency = useCurrency();
-  const isDominicanCompany = useIsDominicanCompany();
+  // TODO: When multi-country engine is ready, gate this page using useModules().showTaxModule
 
   // Period Selector States
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -170,27 +170,6 @@ export default function TaxPage() {
     return diffDays;
   };
 
-  // Country gate: Tax module is DR-specific
-  if (!isDominicanCompany) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-          <Globe className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <div className="max-w-md">
-          <h2 className="text-2xl font-bold mb-2">Módulo de Impuestos DGII (RD)</h2>
-          <p className="text-muted-foreground">
-            Esta sección requiere el <strong>Módulo Fiscal RD</strong> activado
-            para la gestión de normativas de la DGII (ITBIS, IT-1, NCF, etc.).
-          </p>
-          <p className="text-muted-foreground mt-3 text-sm">
-            Puedes activar el <strong>Módulo Fiscal RD</strong> o el <strong>Modo Internacional</strong> en la pantalla de{' '}
-            <strong>Configuración &gt; Módulos del Sistema</strong>.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
