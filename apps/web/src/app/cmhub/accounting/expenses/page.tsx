@@ -368,7 +368,7 @@ export default function AccountingExpensesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Registro de Gastos</h1>
