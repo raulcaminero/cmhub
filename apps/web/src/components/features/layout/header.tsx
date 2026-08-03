@@ -51,10 +51,10 @@ export function Header() {
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('toggle-copilot-widget'))}
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-xs font-semibold transition-all shadow-sm active:scale-95"
-          title="Abrir Copiloto IA"
+          title="Abrir Asistente IA"
         >
           <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-          <span>Copiloto IA</span>
+          <span>Asistente IA</span>
         </button>
 
         <ThemeToggle />

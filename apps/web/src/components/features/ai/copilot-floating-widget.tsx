@@ -18,7 +18,8 @@ import {
   HelpCircle,
   X,
   Bot,
-  MessageSquare
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 
 interface Message {
@@ -56,11 +57,12 @@ export function CopilotFloatingWidget() {
   const companyId = activeCompany?.id;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       sender: 'assistant',
-      text: '¡Hola! Soy tu **Copiloto Fiscal y Financiero**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio en tiempo real. ¿En qué puedo ayudarte hoy?',
+      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio en tiempo real. ¿En qué puedo ayudarte hoy?',
       timestamp: new Date(),
     },
   ]);
@@ -126,7 +128,7 @@ export function CopilotFloatingWidget() {
         {
           id: `err-${Date.now()}`,
           sender: 'assistant',
-          text: '⚠️ **Ocurrió un error al consultar al Copiloto.** Por favor verifica tu conexión o intenta nuevamente.',
+          text: '⚠️ **Ocurrió un error al consultar al Asistente.** Por favor verifica tu conexión o intenta nuevamente.',
           timestamp: new Date(),
         },
       ]);
@@ -151,12 +153,12 @@ export function CopilotFloatingWidget() {
         {!isOpen && (
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border shadow-lg text-xs font-semibold text-foreground animate-in fade-in slide-in-from-right-2 duration-300">
             <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
-            <span>Copiloto IA</span>
+            <span>Asistente IA</span>
           </div>
         )}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Abrir Copiloto IA"
+          aria-label="Abrir Asistente IA"
           className={`w-13 h-13 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 outline-none ${
             isOpen 
               ? 'bg-slate-800 text-white rotate-90 dark:bg-slate-700' 
@@ -174,7 +176,13 @@ export function CopilotFloatingWidget() {
 
       {/* Floating Drawer/Card Window */}
       {isOpen && (
-        <div className="fixed bottom-22 right-6 z-50 w-[calc(100vw-3rem)] sm:w-[420px] h-[580px] max-h-[calc(100vh-7rem)] bg-card text-card-foreground border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div 
+          className={`fixed z-50 bg-card text-card-foreground border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ${
+            isMaximized 
+              ? 'inset-3 sm:inset-6 max-w-5xl mx-auto h-[calc(100vh-3rem)] rounded-2xl' 
+              : 'bottom-22 right-6 w-[calc(100vw-3rem)] sm:w-[440px] h-[590px] max-h-[calc(100vh-7rem)] rounded-2xl'
+          }`}
+        >
           {/* Header */}
           <div className="p-4 border-b bg-gradient-to-r from-indigo-900/90 via-slate-900 to-slate-900 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
@@ -183,14 +191,21 @@ export function CopilotFloatingWidget() {
               </div>
               <div>
                 <h3 className="font-bold text-sm leading-tight flex items-center gap-1.5 text-white">
-                  Copiloto Fiscal & Financiero
-                  <span className="text-[10px] bg-indigo-500/30 text-indigo-200 px-1.5 py-0.5 rounded-full border border-indigo-400/20 font-medium">RAG IA</span>
+                  Asistente Fiscal & Financiero
+                  <span className="text-[10px] bg-indigo-500/30 text-indigo-200 px-1.5 py-0.5 rounded-full border border-indigo-400/20 font-medium">IA</span>
                 </h3>
-                <p className="text-[11px] text-indigo-200/80">Leyes DGII + Datos de tu negocio</p>
+                <p className="text-[11px] text-indigo-200/80">Leyes DGII + Datos de tu negocio en tiempo real</p>
               </div>
             </div>
             
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsMaximized(!isMaximized)}
+                title={isMaximized ? "Restaurar tamaño" : "Pantalla completa"}
+                className="p-1.5 text-indigo-200/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
               <button
                 onClick={handleClearHistory}
                 title="Limpiar conversación"
@@ -210,7 +225,7 @@ export function CopilotFloatingWidget() {
 
           {!companyId ? (
             <div className="flex-1 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
-              Por favor selecciona una empresa activa para consultar al Copiloto IA.
+              Por favor selecciona una empresa activa para consultar al Asistente IA.
             </div>
           ) : (
             <>
