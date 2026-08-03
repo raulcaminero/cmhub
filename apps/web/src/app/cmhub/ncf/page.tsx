@@ -168,7 +168,7 @@ export default function NcfPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{t('ncf.title')}</h1>
+            <h1 className="text-xl font-bold tracking-tight">{t('ncf.title')}</h1>
             <div className="relative group">
               <Info className="w-5 h-5 text-muted-foreground cursor-help hover:text-primary transition-colors" />
               <div className="absolute left-1/2 -translate-x-1/2 lg:left-full lg:translate-x-0 top-full lg:top-1/2 lg:-translate-y-1/2 mt-2 lg:mt-0 lg:ml-2 w-72 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl hidden group-hover:block z-50 leading-relaxed font-normal normal-case">
@@ -177,7 +177,7 @@ export default function NcfPage() {
               </div>
             </div>
           </div>
-          <p className="text-muted-foreground">{t('ncf.subtitle')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('ncf.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>

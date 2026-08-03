@@ -36,11 +36,11 @@ export default function SalesPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            <ShoppingCart className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <ShoppingCart className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             {t('sales.title')}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t('sales.subtitle')}
           </p>
         </div>

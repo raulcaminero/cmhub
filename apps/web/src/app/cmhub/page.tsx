@@ -160,8 +160,8 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">{t('dashboard.subtitle')} {activeCompany?.name}</p>
+          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.subtitle')} {activeCompany?.name}</p>
         </div>
         
         <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">

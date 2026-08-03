@@ -310,8 +310,8 @@ export default function SettingsPage() {
       </Suspense>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h1>
-          <p className="text-muted-foreground">{t('settings.subtitle')}</p>
+          <h1 className="text-xl font-bold tracking-tight">{t('settings.title')}</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
         </div>
       </div>
 

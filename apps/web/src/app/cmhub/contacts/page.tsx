@@ -222,11 +222,11 @@ export default function ContactsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Users className="w-7 h-7 text-primary" />
             {t('contacts.title')}
           </h1>
-          <p className="text-muted-foreground">{t('contacts.subtitle')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
