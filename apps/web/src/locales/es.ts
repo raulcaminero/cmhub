@@ -55,7 +55,7 @@ export const es = {
     saveChanges: 'Guardar Cambios',
   },
   dashboard: {
-    title: 'Inicio',
+    title: 'Panel Principal',
     subtitle: 'Resumen financiero de',
     loadingDashboard: 'Cargando datos del dashboard...',
     invoicing: 'Facturación (Ingresos)',
