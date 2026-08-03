@@ -67,7 +67,7 @@ export const es = {
     itbisNet: 'ITBIS Neto (Estimado)',
     itbisToPay: 'Saldo a pagar estimado',
     itbisInFavor: 'Saldo a favor estimado',
-    chartTitle: 'Histórico de Ventas vs Gastos',
+    chartTitle: 'Histórico de Ventas y Gastos',
     chartDesc: 'Comparativo de los últimos 6 meses',
     legendIncome: 'Ventas / Ingresos',
     legendExpense: 'Gastos / Egresos',
