@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccountsView } from '@/components/features/accounting/accounts-view';
 import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
@@ -12,11 +13,27 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutation } from '@/services/companies.api';
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
-import { useChangePasswordMutation } from '@/services/auth.api';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon } from 'lucide-react';
+import { useChangePasswordMutation, useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 import { TeamMembersView } from '@/components/features/settings/team-members-view';
 import { ThemeSelector } from '@/components/theme-toggle';
+
+type SettingsTab = 'profile' | 'company' | 'my-companies' | 'team' | 'accounts' | 'preferences' | 'security';
+
+const VALID_TABS: SettingsTab[] = ['profile', 'company', 'my-companies', 'team', 'accounts', 'preferences', 'security'];
+
+/** Inner component that safely reads ?tab= param — must be inside Suspense */
+function TabSearchParamSync({ onTab }: { onTab: (tab: SettingsTab) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const tab = searchParams.get('tab') as SettingsTab | null;
+    if (tab && VALID_TABS.includes(tab)) {
+      onTab(tab);
+    }
+  }, [searchParams, onTab]);
+  return null;
+}
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -25,6 +42,15 @@ export default function SettingsPage() {
   const companyList = useAppSelector((state) => state.company.list);
 
   const [mounted, setMounted] = useState(false);
+
+  // Profile
+  const { data: profile } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const [profFirstName, setProfFirstName] = useState('');
+  const [profLastName, setProfLastName] = useState('');
+  const [profEmail, setProfEmail] = useState('');
+  const [profSuccess, setProfSuccess] = useState('');
+  const [profError, setProfError] = useState('');
 
   const { data: companies, isLoading: loadingCompanies } = useGetCompaniesQuery();
   const [updateCompany, { isLoading: isUpdatingCompany }] = useUpdateCompanyMutation();
@@ -66,7 +92,7 @@ export default function SettingsPage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'team' | 'accounts' | 'preferences' | 'security'>('company');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('company');
 
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
@@ -133,6 +159,17 @@ export default function SettingsPage() {
     setMounted(true);
   }, []);
 
+  // Read ?tab= URL param — handled by TabSearchParamSync inside Suspense
+
+  // Populate profile form fields
+  useEffect(() => {
+    if (profile) {
+      setProfFirstName(profile.firstName);
+      setProfLastName(profile.lastName);
+      setProfEmail(profile.email);
+    }
+  }, [profile]);
+
   // Populate active company details
   useEffect(() => {
     if (activeCompany) {
@@ -145,6 +182,20 @@ export default function SettingsPage() {
       setCompEmail(activeCompany.email || '');
     }
   }, [activeCompany]);
+
+  async function handleUpdateProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfSuccess('');
+    setProfError('');
+    try {
+      const body: UpdateProfileRequest = { firstName: profFirstName, lastName: profLastName, email: profEmail };
+      await updateProfile(body).unwrap();
+      setProfSuccess('Perfil actualizado correctamente.');
+      setTimeout(() => setProfSuccess(''), 3000);
+    } catch (err: any) {
+      setProfError(err.data?.message || 'Error al actualizar el perfil.');
+    }
+  }
 
   if (!mounted) {
     return (
@@ -231,6 +282,9 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <TabSearchParamSync onTab={setActiveTab} />
+      </Suspense>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
@@ -239,6 +293,14 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex border-b pb-4 gap-2 overflow-x-auto">
+        <Button
+          variant={activeTab === 'profile' ? 'default' : 'outline'}
+          onClick={() => setActiveTab('profile')}
+          className="gap-2 shrink-0"
+        >
+          <User className="w-4 h-4" />
+          Mi Perfil
+        </Button>
         <Button
           variant={activeTab === 'company' ? 'default' : 'outline'}
           onClick={() => setActiveTab('company')}
@@ -288,6 +350,77 @@ export default function SettingsPage() {
           Seguridad
         </Button>
       </div>
+
+      {activeTab === 'profile' && (
+        <div className="max-w-xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Mi Perfil
+              </CardTitle>
+              <CardDescription>Actualiza tu nombre, apellido y correo electrónico de acceso.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Avatar display */}
+              <div className="flex items-center gap-4 mb-6 p-4 bg-muted/40 rounded-lg border">
+                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold shrink-0">
+                  {profile ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p className="font-semibold text-base">{profile?.firstName} {profile?.lastName}</p>
+                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Miembro desde {profile ? new Date(profile.createdAt ?? Date.now()).toLocaleDateString('es-DO', { month: 'long', year: 'numeric' }) : '—'}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="prof-firstname">Nombre *</Label>
+                    <Input
+                      id="prof-firstname"
+                      value={profFirstName}
+                      onChange={(e) => setProfFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="prof-lastname">Apellido *</Label>
+                    <Input
+                      id="prof-lastname"
+                      value={profLastName}
+                      onChange={(e) => setProfLastName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="prof-email">Correo Electrónico *</Label>
+                  <Input
+                    id="prof-email"
+                    type="email"
+                    value={profEmail}
+                    onChange={(e) => setProfEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {profSuccess && <p className="text-xs text-emerald-600 font-semibold">{profSuccess}</p>}
+                {profError && <p className="text-xs text-destructive font-semibold">{profError}</p>}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Button type="submit" disabled={isUpdatingProfile} size="sm">
+                    {isUpdatingProfile ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...</> : 'Guardar Cambios'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Para cambiar la contraseña ve a la pestaña <strong>Seguridad</strong>.</p>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {activeTab === 'team' && (
         activeCompany ? (
@@ -786,8 +919,8 @@ export default function SettingsPage() {
               {passSuccess && <p className="text-xs text-emerald-600 font-bold">{passSuccess}</p>}
               {passError && <p className="text-xs text-red-600 font-bold">{passError}</p>}
 
-              <Button type="submit" disabled={isChangingPassword} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-1.5">
-                {isChangingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Actualizar Contraseña'}
+              <Button type="submit" disabled={isChangingPassword} size="sm" className="gap-1.5">
+                {isChangingPassword ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Actualizando...</> : 'Actualizar Contraseña'}
               </Button>
             </form>
           </CardContent>
