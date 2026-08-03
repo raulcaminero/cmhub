@@ -95,10 +95,11 @@ model Company {
   phone            String?
   email            String?
   lockDate         DateTime?         @db.Date
-  // Multi-country fields
+  // Multi-country & Module configuration fields
   country          String            @default("DO")   // ISO 3166-1 alpha-2: "DO", "US", "MX", "CO"...
   currency         String            @default("DOP")  // ISO 4217: "DOP", "USD", "MXN"...
   locale           String            @default("es-DO") // BCP 47 locale tag
+  enabledModules   String[]          @default(["DR_FISCAL"]) // Activated system modules: DR_FISCAL, US_ACCOUNTING, LATAM, INTERNATIONAL
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   userRoles        UserCompanyRole[]

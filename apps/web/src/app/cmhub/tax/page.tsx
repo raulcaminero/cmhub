@@ -178,15 +178,14 @@ export default function TaxPage() {
           <Globe className="w-8 h-8 text-muted-foreground" />
         </div>
         <div className="max-w-md">
-          <h2 className="text-2xl font-bold mb-2">Módulo de Impuestos DGII</h2>
+          <h2 className="text-2xl font-bold mb-2">Módulo de Impuestos DGII (RD)</h2>
           <p className="text-muted-foreground">
-            Esta sección está diseñada para empresas registradas en{' '}
-            <strong>República Dominicana</strong> bajo la normativa de la DGII
-            (ITBIS, IT-1, NCF, etc.).
+            Esta sección requiere el <strong>Módulo Fiscal RD</strong> activado
+            para la gestión de normativas de la DGII (ITBIS, IT-1, NCF, etc.).
           </p>
-          <p className="text-muted-foreground mt-3">
-            Para tu empresa, usa los <strong>Reportes Financieros</strong> estándar
-            disponibles en la sección de Reportes.
+          <p className="text-muted-foreground mt-3 text-sm">
+            Puedes activar el <strong>Módulo Fiscal RD</strong> o el <strong>Modo Internacional</strong> en la pantalla de{' '}
+            <strong>Configuración &gt; Módulos del Sistema</strong>.
           </p>
         </div>
       </div>

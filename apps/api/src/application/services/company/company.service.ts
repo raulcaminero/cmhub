@@ -37,6 +37,7 @@ export class CompanyService {
       country: dto.country ?? 'DO',
       currency: dto.currency ?? 'DOP',
       locale: dto.locale ?? 'es-DO',
+      enabledModules: dto.enabledModules ?? ['DR_FISCAL'],
       address: dto.address ?? null,
       phone: dto.phone ?? null,
       email: dto.email ?? null,
@@ -335,6 +336,7 @@ export class CompanyService {
     if (dto.country !== undefined) updateData.country = dto.country;
     if (dto.currency !== undefined) updateData.currency = dto.currency;
     if (dto.locale !== undefined) updateData.locale = dto.locale;
+    if (dto.enabledModules !== undefined) updateData.enabledModules = dto.enabledModules;
     if (dto.address !== undefined) updateData.address = dto.address;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.email !== undefined) updateData.email = dto.email;

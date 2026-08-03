@@ -16,6 +16,10 @@ const mapCompany = (company: PrismaCompany): CompanyEntity => ({
   taxRegime: company.taxRegime as TaxRegime,
   address: company.address,
   phone: company.phone,
+  country: company.country,
+  currency: company.currency,
+  locale: company.locale,
+  enabledModules: company.enabledModules,
 });
 
 @Injectable()

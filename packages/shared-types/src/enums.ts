@@ -38,3 +38,19 @@ export enum UserRole {
   CONTADOR = 'CONTADOR',
   VIEWER = 'VIEWER',
 }
+
+export enum SystemModule {
+  DR_FISCAL = 'DR_FISCAL',
+  US_ACCOUNTING = 'US_ACCOUNTING',
+  LATAM = 'LATAM',
+  INTERNATIONAL = 'INTERNATIONAL',
+}
+
+export const MODULE_PRESETS = {
+  DOMINICAN: [SystemModule.DR_FISCAL],
+  USA: [SystemModule.US_ACCOUNTING],
+  LATAM: [SystemModule.LATAM],
+  RD_AND_USA: [SystemModule.DR_FISCAL, SystemModule.US_ACCOUNTING],
+  INTERNATIONAL: [SystemModule.DR_FISCAL, SystemModule.US_ACCOUNTING, SystemModule.LATAM, SystemModule.INTERNATIONAL],
+};
+

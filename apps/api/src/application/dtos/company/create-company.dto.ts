@@ -41,6 +41,11 @@ export class CreateCompanyDto {
   @IsString()
   locale?: string;
 
+  @ApiPropertyOptional({ description: 'List of enabled system modules', example: ['DR_FISCAL'] })
+  @IsOptional()
+  @IsString({ each: true })
+  enabledModules?: string[];
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

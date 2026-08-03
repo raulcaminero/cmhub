@@ -14,10 +14,11 @@ export interface Company {
   address: string | null;
   phone: string | null;
   email: string | null;
-  // Multi-country fields
+  // Multi-country & Module configuration fields
   country: string;   // ISO 3166-1 alpha-2: "DO", "US", "MX", "CO"...
   currency: string;  // ISO 4217: "DOP", "USD", "MXN"...
   locale: string;    // BCP 47: "es-DO", "en-US", "es-MX"...
+  enabledModules?: string[];
   createdAt: string;
   updatedAt: string;
 }
