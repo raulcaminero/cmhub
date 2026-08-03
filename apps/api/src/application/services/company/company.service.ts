@@ -15,6 +15,8 @@ import { ACCOUNT_REPOSITORY } from '../accounting/accounting.service';
 
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
+import { TAX_RATE_SEEDS } from './tax-rate-seeds';
+
 export const COMPANY_REPOSITORY = 'COMPANY_REPOSITORY';
 
 @Injectable()
@@ -25,19 +27,66 @@ export class CompanyService {
     private readonly prisma: PrismaService,
   ) {}
 
+  private getModulesForCountry(country: string): string[] {
+    const map: Record<string, string[]> = {
+      DO: ['DR_FISCAL'],
+      US: ['US_ACCOUNTING'],
+      MX: ['LATAM'],
+      CO: ['LATAM'],
+      PE: ['LATAM'],
+      CL: ['LATAM'],
+      AR: ['LATAM'],
+    };
+    return map[country] ?? ['DR_FISCAL'];
+  }
+
+  private getDefaultCurrencyForCountry(country: string): string {
+    const map: Record<string, string> = {
+      DO: 'DOP',
+      US: 'USD',
+      MX: 'MXN',
+      CO: 'COP',
+      PE: 'PEN',
+      CL: 'CLP',
+      AR: 'ARS',
+      EC: 'USD',
+      PA: 'USD',
+      PR: 'USD',
+    };
+    return map[country] ?? 'USD';
+  }
+
+  private getDefaultLocaleForCountry(country: string): string {
+    const map: Record<string, string> = {
+      DO: 'es-DO',
+      US: 'en-US',
+      MX: 'es-MX',
+      CO: 'es-CO',
+      PE: 'es-PE',
+      CL: 'es-CL',
+      AR: 'es-AR',
+    };
+    return map[country] ?? 'es-DO';
+  }
+
   async create(dto: CreateCompanyDto, userId: string) {
     const existing = await this.companyRepository.findByRnc(dto.rnc);
     if (existing) throw new ConflictException('A company with this RNC already exists');
+
+    const country = dto.country ?? 'DO';
+    const currency = dto.currency ?? this.getDefaultCurrencyForCountry(country);
+    const locale = dto.locale ?? this.getDefaultLocaleForCountry(country);
+    const enabledModules = this.getModulesForCountry(country);
 
     const company = await this.companyRepository.create({
       name: dto.name,
       rnc: dto.rnc,
       tradeName: dto.tradeName ?? null,
       taxRegime: dto.taxRegime ?? TaxRegime.ORDINARIO,
-      country: dto.country ?? 'DO',
-      currency: dto.currency ?? 'DOP',
-      locale: dto.locale ?? 'es-DO',
-      enabledModules: dto.enabledModules ?? ['DR_FISCAL'],
+      country,
+      currency,
+      locale,
+      enabledModules,
       address: dto.address ?? null,
       phone: dto.phone ?? null,
       email: dto.email ?? null,
@@ -45,10 +94,29 @@ export class CompanyService {
 
     await this.companyRepository.addUserToCompany(company.id, userId, UserRole.ADMIN);
     
-    // Seed standard chart of accounts
+    // Seed standard chart of accounts & tax rates
     await this.seedStandardAccounts(company.id);
+    await this.seedTaxRates(company.id, country);
 
     return company;
+  }
+
+  private async seedTaxRates(companyId: string, country: string) {
+    const seeds = TAX_RATE_SEEDS[country] ?? TAX_RATE_SEEDS['DO'];
+    for (const seed of seeds) {
+      await this.prisma.taxRate.create({
+        data: {
+          companyId,
+          name: seed.name,
+          code: seed.code,
+          rate: seed.rate,
+          taxType: seed.taxType,
+          agency: seed.agency,
+          appliesTo: seed.appliesTo,
+          isDefault: seed.isDefault ?? false,
+        },
+      });
+    }
   }
 
   private async seedStandardAccounts(companyId: string) {

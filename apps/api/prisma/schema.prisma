@@ -116,6 +116,7 @@ model Company {
   products         Product[]
   quotations       Quotation[]
   auditLogs        AuditLog[]
+  taxRates         TaxRate[]
 }
 
 model UserCompanyRole {
@@ -505,5 +506,24 @@ model AuditLog {
   @@index([companyId, createdAt])
   @@index([userId, createdAt])
   @@index([entity, entityId])
+}
+
+model TaxRate {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String   // "ITBIS", "Sales Tax NY", "IVA", "GST"
+  code        String   // "ITBIS_18", "SALES_TAX_NY", "IVA_16"
+  rate        Decimal  @db.Decimal(5, 4) // 0.1800, 0.0885, 0.1600
+  taxType     String   // "VAT", "SALES_TAX", "RETENTION_ISR", "RETENTION_ITBIS"
+  agency      String   // "DGII", "IRS", "SAT", "DIAN"
+  appliesTo   String   // "SALE", "PURCHASE", "BOTH"
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([companyId, isActive])
 }
 

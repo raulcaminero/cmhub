@@ -593,221 +593,40 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                {/* System Modules Configuration & Presets */}
-                {/* TODO: Re-enable when multi-country accounting engine is ready.
-                    Currently this is a UI-only flag — the backend accounting logic
-                    (ITBIS, NCF, retentions) is always Dominican Republic style.
-                    USA requires a completely different tax model (Sales Tax, no VAT credit system).
-                    Tracked as: FEATURE_FLAGS.MODULES_UI
-                    @see packages/shared-types/src/enums.ts for SystemModule definitions */}
-                {false && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div>
-                    <h4 className="text-sm font-semibold flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-primary" />
-                      Módulos del Sistema & Presets de Configuración
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Activa los módulos específicos que necesita tu empresa o selecciona un preset predefinido.
-                    </p>
-                  </div>
-
-                  {/* Quick Presets */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                      Presets de Configuración Rápida
-                    </Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompCountry('DO');
-                          setCompCurrency('DOP');
-                          setCompModules(['DR_FISCAL']);
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all hover:border-primary flex flex-col justify-between gap-1 ${
-                          compModules.length === 1 && compModules.includes('DR_FISCAL') && compCountry === 'DO'
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'bg-card'
-                        }`}
-                      >
-                        <span className="text-sm font-bold flex items-center gap-1.5">🇩🇴 Solo RD</span>
-                        <span className="text-[10px] text-muted-foreground">NCF, DGII, 606/607, ITBIS</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompCountry('US');
-                          setCompCurrency('USD');
-                          setCompModules(['US_ACCOUNTING']);
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all hover:border-primary flex flex-col justify-between gap-1 ${
-                          compModules.length === 1 && compModules.includes('US_ACCOUNTING') && compCountry === 'US'
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'bg-card'
-                        }`}
-                      >
-                        <span className="text-sm font-bold flex items-center gap-1.5">🇺🇸 Solo USA</span>
-                        <span className="text-[10px] text-muted-foreground">USD, EIN, Contabilidad US</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompCountry('MX');
-                          setCompCurrency('MXN');
-                          setCompModules(['LATAM']);
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all hover:border-primary flex flex-col justify-between gap-1 ${
-                          compModules.length === 1 && compModules.includes('LATAM')
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'bg-card'
-                        }`}
-                      >
-                        <span className="text-sm font-bold flex items-center gap-1.5">🌎 LATAM</span>
-                        <span className="text-[10px] text-muted-foreground">Multimoneda, IVA General</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompCountry('DO');
-                          setCompCurrency('DOP');
-                          setCompModules(['DR_FISCAL', 'US_ACCOUNTING']);
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all hover:border-primary flex flex-col justify-between gap-1 ${
-                          compModules.includes('DR_FISCAL') && compModules.includes('US_ACCOUNTING') && !compModules.includes('INTERNATIONAL')
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'bg-card'
-                        }`}
-                      >
-                        <span className="text-sm font-bold flex items-center gap-1.5">🏢 RD + USA</span>
-                        <span className="text-[10px] text-muted-foreground">Operaciones RD y USA</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCompModules(['DR_FISCAL', 'US_ACCOUNTING', 'LATAM', 'INTERNATIONAL']);
-                        }}
-                        className={`p-2.5 rounded-lg border text-left transition-all hover:border-primary flex flex-col justify-between gap-1 ${
-                          compModules.includes('INTERNATIONAL')
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'bg-card'
-                        }`}
-                      >
-                        <span className="text-sm font-bold flex items-center gap-1.5">🌍 Global</span>
-                        <span className="text-[10px] text-muted-foreground">Todos los módulos activos</span>
-                      </button>
+                {/* Read-only Fiscal Module & Country Info */}
+                <div className="pt-4 border-t space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                    <Globe className="w-4 h-4 text-primary" />
+                    Configuración Fiscal & Módulo Activo
+                  </h4>
+                  <div className="p-3.5 rounded-lg border bg-muted/30 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <span className="text-muted-foreground block font-medium">País de Operación</span>
+                      <span className="font-semibold text-foreground text-sm flex items-center gap-1.5 mt-0.5">
+                        {activeCompany?.country === 'US' ? '🇺🇸 Estados Unidos' :
+                         activeCompany?.country === 'MX' ? '🇲🇽 México' :
+                         activeCompany?.country === 'CO' ? '🇨🇴 Colombia' : '🇩🇴 República Dominicana'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block font-medium">Moneda Principal</span>
+                      <span className="font-semibold text-foreground text-sm mt-0.5 block">
+                        {activeCompany?.currency || 'DOP'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block font-medium">Módulo Fiscal</span>
+                      <span className="font-semibold text-primary text-sm mt-0.5 block">
+                        {activeCompany?.enabledModules?.includes('US_ACCOUNTING') ? 'USA Accounting' :
+                         activeCompany?.enabledModules?.includes('LATAM') ? 'Latinoamérica' :
+                         'Módulo Fiscal RD (DGII)'}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Individual Module Toggles */}
-                  <div className="space-y-2 pt-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                      Módulos Habilitados
-                    </Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                        <input
-                          type="checkbox"
-                          id="mod-dr"
-                          checked={compModules.includes('DR_FISCAL')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setCompModules([...compModules.filter(m => m !== 'DR_FISCAL'), 'DR_FISCAL']);
-                            } else {
-                              setCompModules(compModules.filter(m => m !== 'DR_FISCAL'));
-                            }
-                          }}
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <div className="space-y-0.5">
-                          <Label htmlFor="mod-dr" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
-                            🇩🇴 Módulo Fiscal RD (DGII)
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Habilita NCF, retenciones de ITBIS/ISR, IT-1 y reportes 606/607/608.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                        <input
-                          type="checkbox"
-                          id="mod-us"
-                          checked={compModules.includes('US_ACCOUNTING')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setCompModules([...compModules.filter(m => m !== 'US_ACCOUNTING'), 'US_ACCOUNTING']);
-                            } else {
-                              setCompModules(compModules.filter(m => m !== 'US_ACCOUNTING'));
-                            }
-                          }}
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <div className="space-y-0.5">
-                          <Label htmlFor="mod-us" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
-                            🇺🇸 Módulo USA Accounting
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Habilita identificador EIN, formato de fecha MM/DD/YYYY y USD.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                        <input
-                          type="checkbox"
-                          id="mod-latam"
-                          checked={compModules.includes('LATAM')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setCompModules([...compModules.filter(m => m !== 'LATAM'), 'LATAM']);
-                            } else {
-                              setCompModules(compModules.filter(m => m !== 'LATAM'));
-                            }
-                          }}
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <div className="space-y-0.5">
-                          <Label htmlFor="mod-latam" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
-                            🌎 Módulo Latinoamérica
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Soporte multimoneda LATAM (MXN, COP, PEN, CLP) e IVA genérico.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                        <input
-                          type="checkbox"
-                          id="mod-intl"
-                          checked={compModules.includes('INTERNATIONAL')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setCompModules([...compModules.filter(m => m !== 'INTERNATIONAL'), 'INTERNATIONAL']);
-                            } else {
-                              setCompModules(compModules.filter(m => m !== 'INTERNATIONAL'));
-                            }
-                          }}
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <div className="space-y-0.5">
-                          <Label htmlFor="mod-intl" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
-                            🌍 Modo Internacional / Global
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Activa todas las funciones y elimina restricciones de módulo.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Nota: Los módulos fiscales y la moneda se asignan automáticamente al registrar la empresa según el país seleccionado.
+                  </p>
                 </div>
-                )}
 
                 {compSuccess && (
                   <p className="text-xs text-green-600 font-medium">{compSuccess}</p>
