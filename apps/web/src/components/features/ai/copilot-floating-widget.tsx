@@ -149,17 +149,17 @@ export function CopilotFloatingWidget() {
   return (
     <>
       {/* Floating Trigger Button (Bottom Right) */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 group">
         {!isOpen && (
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border shadow-lg text-xs font-semibold text-foreground animate-in fade-in slide-in-from-right-2 duration-300">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
+          <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0 pointer-events-none flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xl text-xs font-semibold whitespace-nowrap">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400 dark:text-indigo-600 animate-pulse" />
             <span>Asistente IA</span>
           </div>
         )}
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Abrir Asistente IA"
-          className={`w-13 h-13 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 outline-none ${
+          className={`rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 outline-none ${
             isOpen 
               ? 'bg-slate-800 text-white rotate-90 dark:bg-slate-700' 
               : 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white ring-4 ring-indigo-500/20'
