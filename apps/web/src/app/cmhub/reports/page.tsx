@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useCurrency, useIsDominicanCompany } from '@/hooks/use-company';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetFinancialsQuery, useGetIt1SummaryQuery } from '@/services/reports.api';
 import { useTranslation } from '@/lib/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,7 +43,7 @@ export default function ReportsPage() {
   const token = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
   const formatCurrency = useCurrency();
-  const isDominicanCompany = useIsDominicanCompany();
+  // TODO: When multi-country engine is ready, gate the Tax tab using useModules().showDgiiReports
 
   const [activeTab, setActiveTab] = useState<'tax' | 'financials' | 'ledger'>('financials');
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -147,8 +147,7 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex gap-2">
-          {isDominicanCompany && (
-            <Button
+          <Button
               variant={activeTab === 'tax' ? 'default' : 'outline'}
               onClick={() => setActiveTab('tax')}
               className="flex items-center gap-2"
@@ -156,7 +155,6 @@ export default function ReportsPage() {
               <BarChart2 className="w-4 h-4" />
               {t('reports.tabTax')}
             </Button>
-          )}
           <Button
             variant={activeTab === 'financials' ? 'default' : 'outline'}
             onClick={() => setActiveTab('financials')}
