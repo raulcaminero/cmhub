@@ -8,6 +8,9 @@ export interface CreateCompanyDto {
   rnc: string;
   taxRegime?: TaxRegime;
   tradeName?: string;
+  country?: string;    // ISO 3166-1 alpha-2
+  currency?: string;   // ISO 4217
+  locale?: string;     // BCP 47
   address?: string;
   phone?: string;
   email?: string;

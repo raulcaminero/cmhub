@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency, useIsDominicanCompany } from '@/hooks/use-company';
 import { useGetFinancialsQuery, useGetIt1SummaryQuery } from '@/services/reports.api';
 import { useTranslation } from '@/lib/use-translation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,8 +42,10 @@ export default function ReportsPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const token = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
+  const isDominicanCompany = useIsDominicanCompany();
 
-  const [activeTab, setActiveTab] = useState<'tax' | 'financials' | 'ledger'>('tax');
+  const [activeTab, setActiveTab] = useState<'tax' | 'financials' | 'ledger'>('financials');
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
   const [selectedMonth, setSelectedMonth] = useState(() => String(new Date().getMonth() + 1).padStart(2, '0'));
 
@@ -144,14 +147,16 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant={activeTab === 'tax' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('tax')}
-            className="flex items-center gap-2"
-          >
-            <BarChart2 className="w-4 h-4" />
-            {t('reports.tabTax')}
-          </Button>
+          {isDominicanCompany && (
+            <Button
+              variant={activeTab === 'tax' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('tax')}
+              className="flex items-center gap-2"
+            >
+              <BarChart2 className="w-4 h-4" />
+              {t('reports.tabTax')}
+            </Button>
+          )}
           <Button
             variant={activeTab === 'financials' ? 'default' : 'outline'}
             onClick={() => setActiveTab('financials')}
@@ -260,23 +265,23 @@ export default function ReportsPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm py-1 border-b">
                       <span>{t('reports.billedIncome')}</span>
-                      <span className="font-mono font-medium">RD$ {Number(it1.salesAmount).toFixed(2)}</span>
+                      <span className="font-mono font-medium">{formatCurrency(Number(it1.salesAmount))}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
                       <span>{t('reports.billedItbis')}</span>
-                      <span className="font-mono font-medium text-destructive">RD$ {Number(it1.salesItbis).toFixed(2)}</span>
+                      <span className="font-mono font-medium text-destructive">{formatCurrency(Number(it1.salesItbis))}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
                       <span>{t('reports.purchasesNet')}</span>
-                      <span className="font-mono font-medium">RD$ {Number(it1.purchasesAmount).toFixed(2)}</span>
+                      <span className="font-mono font-medium">{formatCurrency(Number(it1.purchasesAmount))}</span>
                     </div>
                     <div className="flex justify-between text-sm py-1 border-b">
                       <span>{t('reports.paidItbis')}</span>
-                      <span className="font-mono font-medium text-green-600">RD$ {Number(it1.purchasesItbis).toFixed(2)}</span>
+                      <span className="font-mono font-medium text-green-600">{formatCurrency(Number(it1.purchasesItbis))}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-base pt-2">
                       <span>{t('reports.totalItbisPay')}</span>
-                      <span className="font-mono text-primary">RD$ {Number(it1.itbisToPay).toFixed(2)}</span>
+                      <span className="font-mono text-primary">{formatCurrency(Number(it1.itbisToPay))}</span>
                     </div>
                   </div>
                 )}
@@ -376,7 +381,7 @@ export default function ReportsPage() {
                     return (
                       <div className="flex justify-between items-center p-3 rounded-lg border bg-primary/5 text-primary font-semibold text-lg">
                         <span>{t('reports.netIncome')}</span>
-                        <span className="font-mono">RD$ {netIncome.toFixed(2)}</span>
+                        <span className="font-mono">{formatCurrency(netIncome)}</span>
                       </div>
                     );
                   })()}

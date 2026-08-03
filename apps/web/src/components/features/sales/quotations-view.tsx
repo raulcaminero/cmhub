@@ -14,6 +14,7 @@ import {
 import InvoiceLineEditor, { EditableLine } from './invoice-line-editor';
 import { Plus, FileText, CheckCircle, ArrowRight, Loader2, Clock, Send, XCircle } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 
 interface QuotationsViewProps {
   companyId: string;
@@ -22,6 +23,7 @@ interface QuotationsViewProps {
 
 export default function QuotationsView({ companyId, onConvertQuotationToInvoice }: QuotationsViewProps) {
   const { t } = useTranslation();
+  const formatCurrency = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientRnc, setClientRnc] = useState('');
   const [clientName, setClientName] = useState('');
@@ -166,7 +168,7 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
                       <td className="py-2.5 px-4 font-medium text-slate-900">{quot.clientName}</td>
                       <td className="py-2.5 px-4 text-slate-500">{new Date(quot.createdAt).toLocaleDateString()}</td>
                       <td className="py-2.5 px-4 text-slate-500">{quot.validUntil ? new Date(quot.validUntil).toLocaleDateString() : '-'}</td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">RD$ {Number(quot.total).toFixed(2)}</td>
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">{formatCurrency(Number(quot.total))}</td>
                       <td className="py-2.5 px-4 text-center">{getStatusBadge(quot.status)}</td>
                       <td className="py-2.5 px-4 text-center space-x-1">
                         {quot.status !== 'CONVERTED' && (

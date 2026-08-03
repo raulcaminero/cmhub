@@ -14,9 +14,11 @@ import {
 } from '@/services/products.api';
 import { Plus, Search, Package, Edit, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 
 export default function CatalogView({ companyId }: { companyId: string }) {
   const { t } = useTranslation();
+  const formatCurrency = useCurrency();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -191,10 +193,10 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                         </span>
                       </td>
                       <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
-                        RD$ {Number(prod.price).toFixed(2)}
+                        {formatCurrency(Number(prod.price))}
                       </td>
                       <td className="py-2.5 px-4 text-right font-mono text-slate-600">
-                        {prod.cost ? `RD$ ${Number(prod.cost).toFixed(2)}` : '-'}
+                        {prod.cost ? formatCurrency(Number(prod.cost)) : '-'}
                       </td>
                       <td className="py-2.5 px-4">
                         {prod.isActive ? (
@@ -292,7 +294,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-xs font-semibold">Precio (RD$) *</Label>
+                  <Label className="text-xs font-semibold">Precio *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -304,7 +306,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold">Costo (RD$)</Label>
+                  <Label className="text-xs font-semibold">Costo</Label>
                   <Input
                     type="number"
                     step="0.01"

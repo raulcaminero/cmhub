@@ -34,6 +34,9 @@ export class CompanyService {
       rnc: dto.rnc,
       tradeName: dto.tradeName ?? null,
       taxRegime: dto.taxRegime ?? TaxRegime.ORDINARIO,
+      country: dto.country ?? 'DO',
+      currency: dto.currency ?? 'DOP',
+      locale: dto.locale ?? 'es-DO',
       address: dto.address ?? null,
       phone: dto.phone ?? null,
       email: dto.email ?? null,
@@ -329,6 +332,9 @@ export class CompanyService {
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.tradeName !== undefined) updateData.tradeName = dto.tradeName;
     if (dto.taxRegime !== undefined) updateData.taxRegime = dto.taxRegime;
+    if (dto.country !== undefined) updateData.country = dto.country;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.locale !== undefined) updateData.locale = dto.locale;
     if (dto.address !== undefined) updateData.address = dto.address;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.email !== undefined) updateData.email = dto.email;

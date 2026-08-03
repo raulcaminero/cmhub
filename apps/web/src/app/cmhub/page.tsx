@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
 import { useGetExpensesQuery } from '@/services/expenses.api';
 import { useTranslation } from '@/lib/use-translation';
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyId = activeCompany?.id;
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
 
   const getDashboardStartDate = () => {
     const d = new Date();
@@ -179,7 +181,7 @@ export default function DashboardPage() {
             <ArrowUpRight className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-card-foreground">{formatCurrency(totalInvoicesSum)}</div>
             <p className="text-xs text-muted-foreground">{t('dashboard.invoicingDesc')}</p>
           </CardContent>
         </Card>
@@ -190,7 +192,7 @@ export default function DashboardPage() {
             <ArrowDownRight className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-card-foreground">{formatCurrency(totalExpensesSum)}</div>
             <p className="text-xs text-muted-foreground">{t('dashboard.expensesDesc')}</p>
           </CardContent>
         </Card>
@@ -206,7 +208,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              RD$ {netCashFlow.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+              {formatCurrency(netCashFlow)}
             </div>
             <p className="text-xs text-muted-foreground">{t('dashboard.netFlowDesc')}</p>
           </CardContent>
@@ -219,7 +221,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-card-foreground">
-              RD$ {itbisBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+              {formatCurrency(itbisBalance)}
             </div>
             <p className="text-xs text-muted-foreground">
               {itbisBalance >= 0 ? t('dashboard.itbisToPay') : t('dashboard.itbisInFavor')}
@@ -260,7 +262,7 @@ export default function DashboardPage() {
                           className="w-4 bg-primary/80 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
-                            RD$ {m.income.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
+                            {formatCurrency(m.income, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
                         {/* Expense Bar */}
@@ -269,7 +271,7 @@ export default function DashboardPage() {
                           className="w-4 bg-slate-400 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
-                            RD$ {m.expense.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
+                            {formatCurrency(m.expense, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
                       </div>
@@ -381,7 +383,7 @@ export default function DashboardPage() {
                       {act.paymentMethod.replace('_', ' ')}
                     </TableCell>
                     <TableCell className={`text-right font-semibold ${act.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                      RD$ {act.amount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                      {formatCurrency(act.amount)}
                     </TableCell>
                   </TableRow>
                 ))}

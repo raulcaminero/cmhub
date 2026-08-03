@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Package } from 'lucide-react';
 import { useGetProductsQuery, Product } from '@/services/products.api';
+import { useCurrency } from '@/hooks/use-company';
 
 export interface EditableLine {
   id: string;
@@ -26,6 +27,7 @@ interface InvoiceLineEditorProps {
 
 export default function InvoiceLineEditor({ companyId, lines, onChange }: InvoiceLineEditorProps) {
   const { data: products } = useGetProductsQuery({ companyId });
+  const formatCurrency = useCurrency();
 
   const handleAddLine = () => {
     const newLine: EditableLine = {
@@ -141,7 +143,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                           <option value="">-- Seleccionar del Catálogo (Opcional) --</option>
                           {products.filter(p => p.isActive).map((p) => (
                             <option key={p.id} value={p.id}>
-                              [{p.code}] {p.name} - RD$ {Number(p.price).toFixed(2)}
+                              [{p.code}] {p.name} - {formatCurrency(Number(p.price))}
                             </option>
                           ))}
                         </select>
@@ -195,7 +197,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                       </select>
                     </td>
                     <td className="p-2 text-right font-mono align-top pt-3 font-semibold text-foreground">
-                      RD$ {lineTot.toFixed(2)}
+                      {formatCurrency(lineTot)}
                     </td>
                     <td className="p-2 text-center align-top pt-2">
                       <Button
@@ -224,15 +226,15 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
           <div className="flex gap-4 font-mono">
             <div>
               <span className="text-muted-foreground mr-1.5">Subtotal:</span>
-              <span className="font-semibold text-foreground">RD$ {totalSubtotal.toFixed(2)}</span>
+              <span className="font-semibold text-foreground">{formatCurrency(totalSubtotal)}</span>
             </div>
             <div>
               <span className="text-muted-foreground mr-1.5">ITBIS 18%:</span>
-              <span className="font-semibold text-foreground">RD$ {totalItbis.toFixed(2)}</span>
+              <span className="font-semibold text-foreground">{formatCurrency(totalItbis)}</span>
             </div>
             <div className="text-indigo-600 dark:text-indigo-300 font-bold bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
               <span className="mr-1.5">Total:</span>
-              <span>RD$ {grandTotal.toFixed(2)}</span>
+              <span>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
         </div>

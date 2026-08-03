@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
+import { useIsDominicanCompany } from '@/hooks/use-company';
 import {
   LayoutDashboard,
   BookOpen,
@@ -19,15 +20,19 @@ import { cn } from '@/lib/utils';
 export function Sidebar() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const isDominicanCompany = useIsDominicanCompany();
 
   const NAV_ITEMS = [
     { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
     { href: '/cmhub/sales', label: t('nav.sales'), icon: ShoppingCart },
     { href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen },
     { href: '/cmhub/contacts', label: t('nav.contacts'), icon: Users },
-    { href: '/cmhub/tax', label: t('nav.tax'), icon: Receipt },
+    // DR-specific modules: only shown for Dominican Republic companies
+    ...(isDominicanCompany ? [
+      { href: '/cmhub/tax', label: t('nav.tax'), icon: Receipt },
+      { href: '/cmhub/ncf', label: t('nav.ncf'), icon: FileText },
+    ] : []),
     { href: '/cmhub/reports', label: t('nav.reports'), icon: BarChart3 },
-    { href: '/cmhub/ncf', label: t('nav.ncf'), icon: FileText },
     { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
   ];
 

@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency, useIsDominicanCompany } from '@/hooks/use-company';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
-import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2 } from 'lucide-react';
+import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2, Globe } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 
 const currentYear = new Date().getFullYear();
@@ -40,6 +41,8 @@ export default function TaxPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
+  const isDominicanCompany = useIsDominicanCompany();
 
   // Period Selector States
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -167,6 +170,29 @@ export default function TaxPage() {
     return diffDays;
   };
 
+  // Country gate: Tax module is DR-specific
+  if (!isDominicanCompany) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+          <Globe className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <div className="max-w-md">
+          <h2 className="text-2xl font-bold mb-2">Módulo de Impuestos DGII</h2>
+          <p className="text-muted-foreground">
+            Esta sección está diseñada para empresas registradas en{' '}
+            <strong>República Dominicana</strong> bajo la normativa de la DGII
+            (ITBIS, IT-1, NCF, etc.).
+          </p>
+          <p className="text-muted-foreground mt-3">
+            Para tu empresa, usa los <strong>Reportes Financieros</strong> estándar
+            disponibles en la sección de Reportes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Period Selector */}
@@ -235,26 +261,26 @@ export default function TaxPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b pb-4">
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisDue')}</span>
-                        <span className="text-lg font-bold font-mono">RD$ {it1Summary?.salesItbis.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold font-mono">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisAdvanced')}</span>
-                        <span className="text-lg font-bold font-mono">RD$ {it1Summary?.purchasesItbis.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold font-mono">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/15 rounded-md">
                         <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">{t('tax.itbisNet')}</span>
-                        <span className="text-lg font-bold font-mono text-emerald-600">RD$ {it1Summary?.itbisToPay.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold font-mono text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossSales')}</span>
-                        <span className="font-semibold font-mono">RD$ {it1Summary?.salesAmount.toFixed(2) || '0.00'}</span>
+                        <span className="font-semibold font-mono">{formatCurrency(it1Summary?.salesAmount ?? 0)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossPurchases')}</span>
-                        <span className="font-semibold font-mono">RD$ {it1Summary?.purchasesAmount.toFixed(2) || '0.00'}</span>
+                        <span className="font-semibold font-mono">{formatCurrency(it1Summary?.purchasesAmount ?? 0)}</span>
                       </div>
                     </div>
 
@@ -433,15 +459,15 @@ export default function TaxPage() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between py-1 border-b">
                       <span className="text-muted-foreground">{t('tax.grossAmount')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcGross.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcGross)}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b">
                       <span className="text-muted-foreground">{t('tax.itbisBilled')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcItbis.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcItbis)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold">
                       <span>{t('tax.totalOriginal')}</span>
-                      <span className="font-mono">RD$ {(calcGross + calcItbis).toFixed(2)}</span>
+                      <span className="font-mono">{formatCurrency(calcGross + calcItbis)}</span>
                     </div>
                   </div>
 
@@ -449,19 +475,19 @@ export default function TaxPage() {
                   <div className="space-y-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-md border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between py-1 text-red-600">
                       <span>(-) {t('tax.retentionItbis')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcItbisRetained.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcItbisRetained)}</span>
                     </div>
                     <div className="flex justify-between py-1 text-red-600">
                       <span>(-) {t('tax.retentionIsr')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcIsrRetained.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcIsrRetained)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold text-emerald-600 border-t pt-2 mt-1">
                       <span>{t('tax.netToPay')}</span>
-                      <span className="font-mono text-sm">RD$ {calcNetToProvider.toFixed(2)}</span>
+                      <span className="font-mono text-sm">{formatCurrency(calcNetToProvider)}</span>
                     </div>
                     <div className="flex justify-between py-0.5 text-[10px] text-muted-foreground">
                       <span>{t('tax.totalToDgi')}</span>
-                      <span className="font-mono">RD$ {calcTotalToDgi.toFixed(2)}</span>
+                      <span className="font-mono">{formatCurrency(calcTotalToDgi)}</span>
                     </div>
                   </div>
                 </div>
@@ -504,9 +530,9 @@ export default function TaxPage() {
                             {filing.period.substring(4, 6)}/{filing.period.substring(0, 4)}
                           </td>
                           <td className="py-2 font-bold">{filing.taxType}</td>
-                          <td className="py-2 text-right font-mono">RD$ {Number(filing.salesAmount).toFixed(2)}</td>
-                          <td className="py-2 text-right font-mono">RD$ {Number(filing.purchasesAmount).toFixed(2)}</td>
-                          <td className="py-2 text-right font-mono text-emerald-600 font-semibold">RD$ {Number(filing.itbisToPay).toFixed(2)}</td>
+                          <td className="py-2 text-right font-mono">{formatCurrency(Number(filing.salesAmount))}</td>
+                          <td className="py-2 text-right font-mono">{formatCurrency(Number(filing.purchasesAmount))}</td>
+                          <td className="py-2 text-right font-mono text-emerald-600 font-semibold">{formatCurrency(Number(filing.itbisToPay))}</td>
                           <td className="py-2 text-muted-foreground">{new Date(filing.filedAt).toLocaleString()}</td>
                           <td className="py-2">
                             <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
