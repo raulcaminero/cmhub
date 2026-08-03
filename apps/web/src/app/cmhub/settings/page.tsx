@@ -318,63 +318,84 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex border-b pb-4 gap-2 overflow-x-auto">
-        <Button
-          variant={activeTab === 'profile' ? 'default' : 'outline'}
+      <div className="flex border-b border-border overflow-x-auto whitespace-nowrap scrollbar-none">
+        <button
           onClick={() => setActiveTab('profile')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'profile'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <User className="w-4 h-4" />
           Mi Perfil
-        </Button>
-        <Button
-          variant={activeTab === 'company' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('company')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'company'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <Building2 className="w-4 h-4" />
           {t('settings.activeCompanyTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'my-companies' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('my-companies')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'my-companies'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <Layers className="w-4 h-4" />
           {t('settings.myCompaniesTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'team' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('team')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'team'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <Users className="w-4 h-4" />
           Equipo y Accesos
-        </Button>
-        <Button
-          variant={activeTab === 'accounts' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('accounts')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'accounts'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <BookOpen className="w-4 h-4" />
           {t('settings.chartOfAccountsTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'preferences' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('preferences')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'preferences'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <Globe className="w-4 h-4" />
           {t('settings.preferences')}
-        </Button>
-        <Button
-          variant={activeTab === 'security' ? 'default' : 'outline'}
+        </button>
+        <button
           onClick={() => setActiveTab('security')}
-          className="gap-2 shrink-0"
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'security'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
           <KeyRound className="w-4 h-4" />
           Seguridad
-        </Button>
+        </button>
       </div>
 
       {activeTab === 'profile' && (
