@@ -69,7 +69,7 @@ export const en: Translations = {
     itbisNet: 'Net ITBIS (Estimated)',
     itbisToPay: 'Estimated balance due',
     itbisInFavor: 'Estimated balance in your favor',
-    chartTitle: 'Sales vs Expenses History',
+    chartTitle: 'Sales and Expenses History',
     chartDesc: 'Last 6 months comparison',
     legendIncome: 'Sales / Income',
     legendExpense: 'Expenses / Outflows',

@@ -179,9 +179,9 @@ export default function TaxPage() {
           <h1 className="text-xl font-bold tracking-tight">{t('tax.title')}</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('tax.subtitle')}</p>
         </div>
-        <div className="flex items-end gap-3 bg-card border rounded-lg p-3 shadow-sm self-start">
-          <div className="space-y-1">
-            <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground block">Año</Label>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground">Año:</Label>
             <select
               id="taxYearSelect"
               value={selectedYear}
@@ -193,8 +193,8 @@ export default function TaxPage() {
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="taxMonthSelect" className="text-xs font-semibold text-muted-foreground block">Mes</Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="taxMonthSelect" className="text-xs font-semibold text-muted-foreground">Mes:</Label>
             <select
               id="taxMonthSelect"
               value={selectedMonth}
