@@ -101,7 +101,7 @@ export default function AccountingPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold tracking-tight">{t('accounting.title')}</h1>
         <p className="text-xs text-muted-foreground mt-0.5">{t('accounting.subtitle')}</p>

@@ -304,7 +304,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Suspense fallback={null}>
         <TabSearchParamSync onTab={setActiveTab} />
       </Suspense>
