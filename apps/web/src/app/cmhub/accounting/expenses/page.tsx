@@ -371,7 +371,7 @@ export default function AccountingExpensesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Registro de Gastos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Registro de Gastos</h1>
           <p className="text-muted-foreground">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
         </div>
         <div className="flex items-center gap-2">

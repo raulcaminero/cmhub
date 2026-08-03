@@ -176,7 +176,7 @@ export default function TaxPage() {
       {/* Header with Period Selector */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('tax.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('tax.title')}</h1>
           <p className="text-muted-foreground">{t('tax.subtitle')}</p>
         </div>
         <div className="flex items-end gap-3 bg-card border rounded-lg p-3 shadow-sm self-start">
