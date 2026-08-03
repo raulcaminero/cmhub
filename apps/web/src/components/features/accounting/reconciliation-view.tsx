@@ -34,6 +34,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -46,6 +47,7 @@ import {
 export function ReconciliationView() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
   const [mounted, setMounted] = useState(false);
 
   // Selector bank accounts
@@ -310,7 +312,7 @@ export function ReconciliationView() {
                   Saldo Según Libros
                 </span>
                 <span className="text-xl font-bold font-mono text-purple-700 block mt-1">
-                  RD$ {report.booksBalance.toFixed(2)}
+                  {formatCurrency(report.booksBalance)}
                 </span>
               </CardContent>
             </Card>
@@ -321,7 +323,7 @@ export function ReconciliationView() {
                   Saldo Según Extracto Banco
                 </span>
                 <span className="text-xl font-bold font-mono text-indigo-700 block mt-1">
-                  RD$ {report.bankBalance.toFixed(2)}
+                  {formatCurrency(report.bankBalance)}
                 </span>
               </CardContent>
             </Card>
@@ -333,7 +335,7 @@ export function ReconciliationView() {
                     Diferencia
                   </span>
                   <span className={`text-xl font-bold font-mono block mt-1 ${Math.abs(report.difference) < 0.01 ? 'text-green-700' : 'text-amber-700'}`}>
-                    RD$ {report.difference.toFixed(2)}
+                    {formatCurrency(report.difference)}
                   </span>
                 </div>
                 {Math.abs(report.difference) < 0.01 ? (
@@ -378,7 +380,7 @@ export function ReconciliationView() {
                           {tx.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {tx.reference}</span>}
                         </TableCell>
                         <TableCell className={`text-right font-mono text-xs font-bold ${tx.amount > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                          RD$ {tx.amount.toFixed(2)}
+                          {formatCurrency(tx.amount)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -431,10 +433,10 @@ export function ReconciliationView() {
                           {line.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {line.reference}</span>}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs text-green-700">
-                          {line.debit > 0 ? `RD$ ${line.debit.toFixed(2)}` : '-'}
+                          {line.debit > 0 ? formatCurrency(line.debit) : '-'}
                         </TableCell>
                         <TableCell className="text-right font-mono text-xs text-red-700">
-                          {line.credit > 0 ? `RD$ ${line.credit.toFixed(2)}` : '-'}
+                          {line.credit > 0 ? formatCurrency(line.credit) : '-'}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -465,7 +467,7 @@ export function ReconciliationView() {
                     <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Banco:</span>
                     {selectedBankTx ? (
                       <span className="font-semibold font-mono text-indigo-700 bg-indigo-100/30 px-2 py-0.5 rounded">
-                        {selectedBankTx.description} (RD$ {selectedBankTx.amount.toFixed(2)})
+                        {selectedBankTx.description} ({formatCurrency(selectedBankTx.amount)})
                       </span>
                     ) : (
                       <span className="text-muted-foreground italic">Ninguno</span>
@@ -476,7 +478,7 @@ export function ReconciliationView() {
                     <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Libros:</span>
                     {selectedLedgerLine ? (
                       <span className="font-semibold font-mono text-purple-700 bg-purple-100/30 px-2 py-0.5 rounded">
-                        {selectedLedgerLine.entryDescription} (RD$ {(selectedLedgerLine.debit || selectedLedgerLine.credit).toFixed(2)})
+                        {selectedLedgerLine.entryDescription} ({formatCurrency(selectedLedgerLine.debit || selectedLedgerLine.credit)})
                       </span>
                     ) : (
                       <span className="text-muted-foreground italic">Ninguno</span>
@@ -560,7 +562,7 @@ export function ReconciliationView() {
                         {tx.reference && <span className="text-[10px] text-muted-foreground">Ref: {tx.reference}</span>}
                       </TableCell>
                       <TableCell className={`text-right font-mono text-xs font-bold ${tx.amount > 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        RD$ {tx.amount.toFixed(2)}
+                        {formatCurrency(tx.amount)}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         <p className="font-semibold text-foreground">{tx.journalEntryDescription || '-'}</p>

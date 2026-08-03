@@ -31,6 +31,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -43,6 +44,7 @@ import {
 export function PayrollView() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'employees' | 'payrolls'>('payrolls');
 
@@ -268,7 +270,7 @@ export function PayrollView() {
                         <TableCell className="font-mono text-sm">{emp.cedula}</TableCell>
                         <TableCell className="text-sm">{emp.jobTitle || '-'}</TableCell>
                         <TableCell className="text-right font-mono text-sm">
-                          RD$ {Number(emp.salary).toFixed(2)}
+                          {formatCurrency(Number(emp.salary))}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -330,19 +332,19 @@ export function PayrollView() {
                         <TableRow key={pay.id}>
                           <TableCell className="font-semibold text-sm">{formatPeriod(pay.period)}</TableCell>
                           <TableCell className="text-right font-mono text-sm">
-                            RD$ {Number(pay.grossSalary).toFixed(2)}
+                            {formatCurrency(Number(pay.grossSalary))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm text-amber-700">
-                            RD$ {tssEmp.toFixed(2)}
+                            {formatCurrency(tssEmp)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm text-purple-700">
-                            RD$ {tssPat.toFixed(2)}
+                            {formatCurrency(tssPat)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm text-red-600">
-                            RD$ {Number(pay.isrDeduction).toFixed(2)}
+                            {formatCurrency(Number(pay.isrDeduction))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm text-green-700 font-bold">
-                            RD$ {Number(pay.netSalary).toFixed(2)}
+                            {formatCurrency(Number(pay.netSalary))}
                           </TableCell>
                           <TableCell className="text-right flex justify-end gap-1">
                             <Button
@@ -421,7 +423,7 @@ export function PayrollView() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="emp-salary">Salario Bruto Mensual (RD$)</Label>
+                  <Label htmlFor="emp-salary">Salario Bruto Mensual</Label>
                   <Input
                     id="emp-salary"
                     type="number"
@@ -442,14 +444,14 @@ export function PayrollView() {
                   </span>
                   <div className="grid grid-cols-2 gap-2 font-mono">
                     <div className="text-muted-foreground">Desglose de Salud (SFS 3.04%):</div>
-                    <div className="text-right">RD$ {liveEstimates.sfsEmployee.toFixed(2)}</div>
+                    <div className="text-right">{formatCurrency(liveEstimates.sfsEmployee)}</div>
                     <div className="text-muted-foreground">Desglose de Pensión (AFP 2.87%):</div>
-                    <div className="text-right">RD$ {liveEstimates.afpEmployee.toFixed(2)}</div>
+                    <div className="text-right">{formatCurrency(liveEstimates.afpEmployee)}</div>
                     <div className="text-muted-foreground">Retención ISR (Escala Progresiva):</div>
-                    <div className="text-right text-red-600">RD$ {liveEstimates.isrDeduction.toFixed(2)}</div>
+                    <div className="text-right text-red-600">{formatCurrency(liveEstimates.isrDeduction)}</div>
                     <div className="text-muted-foreground border-t pt-1 font-semibold">Salario Neto Estimado:</div>
                     <div className="text-right border-t pt-1 font-bold text-green-700 text-sm">
-                      RD$ {liveEstimates.netSalary.toFixed(2)}
+                      {formatCurrency(liveEstimates.netSalary)}
                     </div>
                   </div>
                 </div>
@@ -572,19 +574,19 @@ export function PayrollView() {
                           <TableCell className="font-semibold text-xs">{item.employeeName}</TableCell>
                           <TableCell className="font-mono text-xs">{item.employeeCedula}</TableCell>
                           <TableCell className="text-right font-mono text-xs">
-                            RD$ {Number(item.grossSalary).toFixed(2)}
+                            {formatCurrency(Number(item.grossSalary))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-amber-700">
-                            RD$ {Number(item.sfsEmployee).toFixed(2)}
+                            {formatCurrency(Number(item.sfsEmployee))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-amber-700">
-                            RD$ {Number(item.afpEmployee).toFixed(2)}
+                            {formatCurrency(Number(item.afpEmployee))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-red-600">
-                            RD$ {Number(item.isrDeduction).toFixed(2)}
+                            {formatCurrency(Number(item.isrDeduction))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-green-700 font-bold">
-                            RD$ {Number(item.netSalary).toFixed(2)}
+                            {formatCurrency(Number(item.netSalary))}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -596,25 +598,25 @@ export function PayrollView() {
                   <div>
                     <span className="text-muted-foreground font-semibold">Salario Bruto Total:</span>
                     <p className="font-mono font-bold text-sm">
-                      RD$ {Number(payrollDetails.grossSalary).toFixed(2)}
+                      {formatCurrency(Number(payrollDetails.grossSalary))}
                     </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground font-semibold">TSS Retenido Total:</span>
                     <p className="font-mono font-bold text-sm text-amber-700">
-                      RD$ {(Number(payrollDetails.sfsEmployee) + Number(payrollDetails.afpEmployee)).toFixed(2)}
+                      {formatCurrency(Number(payrollDetails.sfsEmployee) + Number(payrollDetails.afpEmployee))}
                     </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground font-semibold">ISR Retenido Total:</span>
                     <p className="font-mono font-bold text-sm text-red-600">
-                      RD$ {Number(payrollDetails.isrDeduction).toFixed(2)}
+                      {formatCurrency(Number(payrollDetails.isrDeduction))}
                     </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground font-semibold">Neto Pagado Total:</span>
                     <p className="font-mono font-bold text-sm text-green-700">
-                      RD$ {Number(payrollDetails.netSalary).toFixed(2)}
+                      {formatCurrency(Number(payrollDetails.netSalary))}
                     </p>
                   </div>
                 </div>

@@ -138,6 +138,8 @@ export default function SettingsPage() {
   const [compTradeName, setCompTradeName] = useState('');
   const [compRnc, setCompRnc] = useState('');
   const [compTaxRegime, setCompTaxRegime] = useState('ORDINARIO');
+  const [compCountry, setCompCountry] = useState('DO');
+  const [compCurrency, setCompCurrency] = useState('DOP');
   const [compAddress, setCompAddress] = useState('');
   const [compPhone, setCompPhone] = useState('');
   const [compEmail, setCompEmail] = useState('');
@@ -149,6 +151,8 @@ export default function SettingsPage() {
   const [newTradeName, setNewTradeName] = useState('');
   const [newRnc, setNewRnc] = useState('');
   const [newTaxRegime, setNewTaxRegime] = useState('ORDINARIO');
+  const [newCountry, setNewCountry] = useState('DO');
+  const [newCurrency, setNewCurrency] = useState('DOP');
   const [newAddress, setNewAddress] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -177,6 +181,8 @@ export default function SettingsPage() {
       setCompTradeName(activeCompany.tradeName || '');
       setCompRnc(activeCompany.rnc || '');
       setCompTaxRegime(activeCompany.taxRegime || 'ORDINARIO');
+      setCompCountry(activeCompany.country || 'DO');
+      setCompCurrency(activeCompany.currency || 'DOP');
       setCompAddress(activeCompany.address || '');
       setCompPhone(activeCompany.phone || '');
       setCompEmail(activeCompany.email || '');
@@ -226,6 +232,16 @@ export default function SettingsPage() {
           tradeName: compTradeName || undefined,
           rnc: cleanRnc,
           taxRegime: compTaxRegime as TaxRegime,
+          country: compCountry,
+          currency: compCurrency,
+          locale: compCountry === 'US' ? 'en-US'
+            : compCountry === 'MX' ? 'es-MX'
+            : compCountry === 'CO' ? 'es-CO'
+            : compCountry === 'PE' ? 'es-PE'
+            : compCountry === 'CL' ? 'es-CL'
+            : compCountry === 'AR' ? 'es-AR'
+            : compCountry === 'DO' ? 'es-DO'
+            : 'es',
           address: compAddress || undefined,
           phone: compPhone || undefined,
           email: compEmail || undefined,
@@ -485,6 +501,58 @@ export default function SettingsPage() {
                     >
                       <option value="ORDINARIO">{t('settings.ordinaryRegime')}</option>
                       <option value="RST">{t('settings.rst')}</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-country">País</Label>
+                    <select
+                      id="edit-country"
+                      value={compCountry}
+                      onChange={(e) => {
+                        setCompCountry(e.target.value);
+                        // Auto-set default currency based on country
+                        const currencyMap: Record<string, string> = {
+                          DO: 'DOP', US: 'USD', MX: 'MXN', CO: 'COP',
+                          PE: 'PEN', CL: 'CLP', AR: 'ARS', EC: 'USD',
+                          GT: 'GTQ', HN: 'HNL', CR: 'CRC', PA: 'USD',
+                        };
+                        setCompCurrency(currencyMap[e.target.value] || 'USD');
+                      }}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="DO">🇩🇴 República Dominicana</option>
+                      <option value="US">🇺🇸 Estados Unidos</option>
+                      <option value="MX">🇲🇽 México</option>
+                      <option value="CO">🇨🇴 Colombia</option>
+                      <option value="PE">🇵🇪 Perú</option>
+                      <option value="CL">🇨🇱 Chile</option>
+                      <option value="AR">🇦🇷 Argentina</option>
+                      <option value="EC">🇪🇨 Ecuador</option>
+                      <option value="GT">🇬🇹 Guatemala</option>
+                      <option value="HN">🇭🇳 Honduras</option>
+                      <option value="CR">🇨🇷 Costa Rica</option>
+                      <option value="PA">🇵🇦 Panamá</option>
+                      <option value="PR">🇵🇷 Puerto Rico (USD)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-currency">Moneda</Label>
+                    <select
+                      id="edit-currency"
+                      value={compCurrency}
+                      onChange={(e) => setCompCurrency(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="DOP">DOP — Peso Dominicano (RD$)</option>
+                      <option value="USD">USD — Dólar Americano ($)</option>
+                      <option value="MXN">MXN — Peso Mexicano (MX$)</option>
+                      <option value="COP">COP — Peso Colombiano</option>
+                      <option value="PEN">PEN — Sol Peruano (S/)</option>
+                      <option value="CLP">CLP — Peso Chileno</option>
+                      <option value="ARS">ARS — Peso Argentino</option>
+                      <option value="GTQ">GTQ — Quetzal Guatemalteco</option>
+                      <option value="HNL">HNL — Lempira Hondureño</option>
+                      <option value="CRC">CRC — Colón Costarricense</option>
                     </select>
                   </div>
                   <div className="space-y-1">

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { useGetGeneralLedgerQuery } from '@/services/reports.api';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -22,11 +23,10 @@ interface Props {
   companyId: string;
 }
 
-const fmt = (n: number) =>
-  n.toLocaleString('es-DO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
 export function GeneralLedgerView({ companyId }: Props) {
   const { t } = useTranslation();
+  const formatCurrency = useCurrency();
+  const fmt = (n: number) => formatCurrency(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // ── Filters ──────────────────────────────────────────────────────────────
   const [selectedAccountId, setSelectedAccountId] = useState('');

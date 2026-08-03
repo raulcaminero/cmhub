@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, useLazyGetOcrStatusQuery, Expense } from '@/services/expenses.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
@@ -47,6 +48,7 @@ const PAYMENT_METHODS = [
 export default function AccountingExpensesPage() {
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -456,10 +458,10 @@ export default function AccountingExpensesPage() {
                         {typeLabel}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        RD$ {Number(exp.amount).toFixed(2)}
+                        {formatCurrency(Number(exp.amount))}
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        RD$ {Number(exp.itbis).toFixed(2)}
+                        {formatCurrency(Number(exp.itbis))}
                       </TableCell>
                       <TableCell className="text-xs">
                         {exp.isVoided ? (
@@ -721,7 +723,7 @@ export default function AccountingExpensesPage() {
               )}
 
               <div className="border p-4 rounded-md space-y-4 bg-muted/30">
-                <span className="text-xs font-semibold block border-b pb-1">Desglose de Montos (RD$)</span>
+                <span className="text-xs font-semibold block border-b pb-1">Desglose de Montos</span>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="gasto-total">Monto Total (Con ITBIS)</Label>
@@ -816,7 +818,7 @@ export default function AccountingExpensesPage() {
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
             <h3 className="text-lg font-semibold mb-2">Registrar Pago de Gasto</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Registra el pago del gasto a crédito de <strong>{expenseToPay.providerName}</strong> (NCF <strong>{expenseToPay.ncf}</strong>) por un monto de <strong>RD$ {(Number(expenseToPay.amount) - Number(expenseToPay.itbisRetained) - Number(expenseToPay.isrRetained)).toFixed(2)}</strong> (neto de retenciones).
+              Registra el pago del gasto a crédito de <strong>{expenseToPay.providerName}</strong> (NCF <strong>{expenseToPay.ncf}</strong>) por un monto de <strong>{formatCurrency(Number(expenseToPay.amount) - Number(expenseToPay.itbisRetained) - Number(expenseToPay.isrRetained))}</strong> (neto de retenciones).
             </p>
             <form onSubmit={handlePaySubmit} className="space-y-4">
               <div className="space-y-1">

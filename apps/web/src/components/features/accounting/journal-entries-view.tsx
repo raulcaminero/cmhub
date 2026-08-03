@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -34,6 +35,7 @@ interface EntryLineForm {
 export function JournalEntriesView() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
 
   const { data: entries, isLoading: isLoadingEntries } = useGetJournalEntriesQuery(
     { companyId: companyId! },
@@ -243,10 +245,10 @@ export function JournalEntriesView() {
                               {line.description || '-'}
                             </TableCell>
                             <TableCell className="py-2 text-sm text-right font-mono">
-                              {line.debit > 0 ? `RD$ ${Number(line.debit).toFixed(2)}` : '-'}
+                              {line.debit > 0 ? formatCurrency(Number(line.debit)) : '-'}
                             </TableCell>
                             <TableCell className="py-2 text-sm text-right font-mono">
-                              {line.credit > 0 ? `RD$ ${Number(line.credit).toFixed(2)}` : '-'}
+                              {line.credit > 0 ? formatCurrency(Number(line.credit)) : '-'}
                             </TableCell>
                           </TableRow>
                         );
@@ -383,14 +385,14 @@ export function JournalEntriesView() {
                     {t('entries.linesCount')} {lines.length}
                   </div>
                   <div className="flex gap-4 font-mono">
-                    <div>{t('entries.debitsTotal')} RD$ {totalDebits.toFixed(2)}</div>
-                    <div>{t('entries.creditsTotal')} RD$ {totalCredits.toFixed(2)}</div>
+                    <div>{t('entries.debitsTotal')} {formatCurrency(totalDebits)}</div>
+                    <div>{t('entries.creditsTotal')} {formatCurrency(totalCredits)}</div>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
                   <span className={isBalanced ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
-                    {isBalanced ? t('entries.balanced') : `${t('entries.unbalanced')} RD$ ${difference.toFixed(2)}`}
+                    {isBalanced ? t('entries.balanced') : `${t('entries.unbalanced')} ${formatCurrency(difference)}`}
                   </span>
                 </div>
               </div>

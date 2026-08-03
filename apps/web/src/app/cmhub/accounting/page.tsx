@@ -10,6 +10,7 @@ import { ReconciliationView } from '@/components/features/accounting/reconciliat
 import { Button } from '@/components/ui/button';
 import { FileText, Receipt, Users, Landmark } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { useGetFinancialsQuery } from '@/services/reports.api';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
@@ -20,6 +21,7 @@ export default function AccountingPage() {
   const [activeTab, setActiveTab] = useState<'entries' | 'invoices' | 'payroll' | 'reconciliation'>('entries');
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
 
   const { data: accounts } = useGetAccountsQuery(
     { companyId: companyId! },
@@ -92,10 +94,10 @@ export default function AccountingPage() {
   }
 
   const kpis = [
-    { title: t('accounting.totalAssets'), value: `RD$ ${totalActivos.toFixed(2)}`, description: t('accounting.totalAssetDesc') },
-    { title: t('accounting.totalLiabilities'), value: `RD$ ${totalPasivos.toFixed(2)}`, description: t('accounting.totalLiabilityDesc') },
-    { title: t('accounting.equity'), value: `RD$ ${totalPatrimonio.toFixed(2)}`, description: t('accounting.equityDesc') },
-    { title: t('accounting.monthlyIncome'), value: `RD$ ${totalIngresos.toFixed(2)}`, description: t('accounting.monthlyIncomeDesc') },
+    { title: t('accounting.totalAssets'), value: formatCurrency(totalActivos), description: t('accounting.totalAssetDesc') },
+    { title: t('accounting.totalLiabilities'), value: formatCurrency(totalPasivos), description: t('accounting.totalLiabilityDesc') },
+    { title: t('accounting.equity'), value: formatCurrency(totalPatrimonio), description: t('accounting.equityDesc') },
+    { title: t('accounting.monthlyIncome'), value: formatCurrency(totalIngresos), description: t('accounting.monthlyIncomeDesc') },
   ];
 
   return (

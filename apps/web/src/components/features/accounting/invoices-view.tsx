@@ -16,6 +16,7 @@ import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
 import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -48,6 +49,7 @@ interface InvoicesViewProps {
 export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExternalModal }: InvoicesViewProps = {}) {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -283,10 +285,10 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                       <div className="text-xs text-muted-foreground font-mono">{inv.clientRnc}</div>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      RD$ {Number(inv.amount).toFixed(2)}
+                      {formatCurrency(Number(inv.amount))}
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
-                      RD$ {Number(inv.itbis).toFixed(2)}
+                      {formatCurrency(Number(inv.itbis))}
                     </TableCell>
                     <TableCell className="text-xs">
                       {inv.isVoided ? (
@@ -481,7 +483,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
               <InvoiceLineEditor companyId={companyId} lines={lines} onChange={setLines} />
 
               <div className="border p-4 rounded-md space-y-3 bg-muted/20">
-                <span className="text-xs font-semibold block border-b pb-1">Monto Global Manual o Retenciones de Ley (RD$)</span>
+                <span className="text-xs font-semibold block border-b pb-1">Monto Global Manual o Retenciones de Ley</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="inv-total">Monto Total (Con ITBIS)</Label>
@@ -595,7 +597,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
             <h3 className="text-lg font-semibold mb-2">Registrar Cobro de Factura</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Registra el cobro de la factura a crédito <strong>NCF {invoiceToCollect.ncf}</strong> por un monto total de <strong>RD$ {Number(invoiceToCollect.amount).toFixed(2)}</strong>.
+              Registra el cobro de la factura a crédito <strong>NCF {invoiceToCollect.ncf}</strong> por un monto total de <strong>{formatCurrency(Number(invoiceToCollect.amount))}</strong>.
             </p>
             <form onSubmit={handleCollectSubmit} className="space-y-4">
               <div className="space-y-1">
