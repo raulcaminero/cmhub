@@ -33,7 +33,7 @@ export const es = {
     noCompanyDesc: 'Selecciona una empresa activa en la barra superior o registra una nueva empresa en Configuración para comenzar a ver las estadísticas del negocio.',
   },
   nav: {
-    dashboard: 'Dashboard',
+    dashboard: 'Panel Principal',
     sales: 'Ventas',
     accounting: 'Contabilidad',
     contacts: 'Contactos',
