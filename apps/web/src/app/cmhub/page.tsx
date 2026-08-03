@@ -163,7 +163,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
             <LayoutDashboard className="w-5 h-5 text-primary shrink-0" />
-            Dashboard
+            {t('nav.dashboard')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.subtitle')} {activeCompany?.name}</p>
         </div>
