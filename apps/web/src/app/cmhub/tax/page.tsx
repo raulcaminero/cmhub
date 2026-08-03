@@ -176,7 +176,10 @@ export default function TaxPage() {
       {/* Header with Period Selector */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('tax.title')}</h1>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Calculator className="w-5 h-5 text-primary shrink-0" />
+            {t('tax.title')}
+          </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('tax.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -239,26 +242,26 @@ export default function TaxPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b pb-4">
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisDue')}</span>
-                        <span className="text-lg font-bold font-mono">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
+                        <span className="text-xl font-bold">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisAdvanced')}</span>
-                        <span className="text-lg font-bold font-mono">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
+                        <span className="text-xl font-bold">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/15 rounded-md">
                         <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">{t('tax.itbisNet')}</span>
-                        <span className="text-lg font-bold font-mono text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
+                        <span className="text-xl font-bold text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossSales')}</span>
-                        <span className="font-semibold font-mono">{formatCurrency(it1Summary?.salesAmount ?? 0)}</span>
+                        <span className="font-semibold">{formatCurrency(it1Summary?.salesAmount ?? 0)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossPurchases')}</span>
-                        <span className="font-semibold font-mono">{formatCurrency(it1Summary?.purchasesAmount ?? 0)}</span>
+                        <span className="font-semibold">{formatCurrency(it1Summary?.purchasesAmount ?? 0)}</span>
                       </div>
                     </div>
 
