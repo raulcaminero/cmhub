@@ -16,12 +16,17 @@ export function useCurrency() {
   const currency = company?.currency ?? 'DOP';
 
   return (amount: number, opts?: { minimumFractionDigits?: number; maximumFractionDigits?: number }) => {
+    const val = Number.isFinite(amount) ? amount : 0;
+    const maxDigits = opts?.maximumFractionDigits ?? 2;
+    const reqMinDigits = opts?.minimumFractionDigits ?? 2;
+    const minDigits = Math.min(reqMinDigits, maxDigits);
+
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      minimumFractionDigits: opts?.minimumFractionDigits ?? 2,
-      maximumFractionDigits: opts?.maximumFractionDigits ?? 2,
-    }).format(amount);
+      minimumFractionDigits: minDigits,
+      maximumFractionDigits: maxDigits,
+    }).format(val);
   };
 }
 
