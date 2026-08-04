@@ -214,7 +214,7 @@ export default function TaxPage() {
 
       {!companyId ? (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3.5">
             <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
           </CardContent>
         </Card>
