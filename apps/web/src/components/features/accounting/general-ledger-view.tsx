@@ -204,7 +204,6 @@ export function GeneralLedgerView({ companyId }: Props) {
             {ledger && ledger.movements.length > 0 && !isLoading && (
               <Button
                 id="gl-export-csv-btn"
-                variant="outline"
                 size="sm"
                 onClick={handleExportCsv}
                 className="gap-2 shrink-0"

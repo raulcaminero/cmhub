@@ -306,11 +306,11 @@ export default function ReportsPage() {
       ) : (
         <div className="space-y-4">
           <div className="flex justify-end gap-3 print:hidden">
-            <Button variant="outline" onClick={handleDownloadFinancials} className="flex items-center gap-2">
+            <Button onClick={handleDownloadFinancials} className="flex items-center gap-2">
               <Download className="w-4 h-4" />
               Exportar a Excel (.csv)
             </Button>
-            <Button variant="outline" onClick={handlePrint} className="flex items-center gap-2">
+            <Button onClick={handlePrint} className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Imprimir / PDF
             </Button>
