@@ -166,7 +166,7 @@ export function JournalEntriesView() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-2.5">
           <CardTitle>{t('entries.title')}</CardTitle>
           <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
