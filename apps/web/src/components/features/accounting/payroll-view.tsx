@@ -235,8 +235,8 @@ export function PayrollView() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold">Empleados Registrados</h2>
-              <p className="text-xs text-muted-foreground">Gestiona tus empleados y salarios brutos.</p>
+              <h2 className="text-lg font-bold tracking-tight">Empleados Registrados</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Gestiona tus empleados y salarios brutos.</p>
             </div>
             <Button size="sm" className="gap-2" onClick={() => setIsEmpModalOpen(true)}>
               <Plus className="w-4 h-4" />
@@ -294,8 +294,8 @@ export function PayrollView() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">{t('payrollView.title')}</h2>
-              <p className="text-muted-foreground">{t('payrollView.subtitle')}</p>
+              <h2 className="text-lg font-bold tracking-tight">{t('payrollView.title')}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('payrollView.subtitle')}</p>
             </div>
             <Button size="sm" className="gap-2" onClick={() => setIsPayrollModalOpen(true)}>
               <Calculator className="w-4 h-4" />
