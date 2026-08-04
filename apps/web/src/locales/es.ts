@@ -303,7 +303,7 @@ export const es = {
   },
   tax: {
     title: 'Impuestos y Retenciones',
-    subtitle: 'Monitorea tus obligaciones fiscales con la DGII y descarga los archivos de envío (606, 607, 608, 609).',
+    subtitle: 'Monitorea tus obligaciones fiscales.',
     fiscalPeriod: 'Período Fiscal:',
     boardTab: 'Tablero Fiscal',
     copilotTab: 'Copiloto Inteligente',
