@@ -8,7 +8,7 @@ import { InvoicesView } from '@/components/features/accounting/invoices-view';
 import { PayrollView } from '@/components/features/accounting/payroll-view';
 import { ReconciliationView } from '@/components/features/accounting/reconciliation-view';
 import { Button } from '@/components/ui/button';
-import { FileText, Receipt, Users, Landmark, BookOpen } from 'lucide-react';
+import { FileText, Receipt, Users, Landmark, BookOpen, Plus } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
 import { useGetAccountsQuery } from '@/services/accounting.api';
@@ -102,12 +102,22 @@ export default function AccountingPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary shrink-0" />
-          {t('accounting.title')}
-        </h1>
-        <p className="text-xs text-muted-foreground mt-0.5">{t('accounting.subtitle')}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-primary shrink-0" />
+            {t('accounting.title')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('accounting.subtitle')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" asChild className="gap-2">
+            <Link href="/cmhub/accounting/expenses">
+              <Plus className="w-4 h-4" />
+              {t('accounting.registerExpense')}
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -124,58 +134,51 @@ export default function AccountingPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between border-b border-border gap-4 flex-wrap">
-        <div className="flex">
-          <button
-            onClick={() => setActiveTab('entries')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'entries'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            {t('accounting.journalEntriesTab')}
-          </button>
-          <button
-            onClick={() => setActiveTab('invoices')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'invoices'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Receipt className="w-4 h-4" />
-            {t('accounting.invoicesTab')}
-          </button>
-          <button
-            onClick={() => setActiveTab('payroll')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'payroll'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            {t('accounting.payrollTab')}
-          </button>
-          <button
-            onClick={() => setActiveTab('reconciliation')}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'reconciliation'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Landmark className="w-4 h-4" />
-            {t('accounting.reconciliationTab')}
-          </button>
-        </div>
-        <div className="flex gap-2 pb-1.5">
-          <Link href="/cmhub/accounting/expenses" className="rounded-md border px-3 py-1.5 text-xs font-semibold hover:bg-accent transition-colors flex items-center gap-1.5">
-            {t('accounting.registerExpense')}
-          </Link>
-        </div>
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab('entries')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'entries'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          {t('accounting.journalEntriesTab')}
+        </button>
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'invoices'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          {t('accounting.invoicesTab')}
+        </button>
+        <button
+          onClick={() => setActiveTab('payroll')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'payroll'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          {t('accounting.payrollTab')}
+        </button>
+        <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'reconciliation'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          {t('accounting.reconciliationTab')}
+        </button>
       </div>
 
       {activeTab === 'entries' ? (
