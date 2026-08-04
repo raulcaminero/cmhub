@@ -123,12 +123,12 @@ export default function AccountingPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((card) => (
           <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-xs font-medium text-muted-foreground">{card.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-              <p className="text-xs text-muted-foreground">{card.description}</p>
+              <div className="text-lg font-bold tracking-tight">{card.value}</div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{card.description}</p>
             </CardContent>
           </Card>
         ))}
