@@ -448,29 +448,29 @@ export default function AccountingExpensesPage() {
           <Button
             size="sm"
             variant="outline"
-            className="gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
             onClick={handleExportCsv}
             disabled={!expenses || expenses.length === 0}
           >
-            <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             Exportar CSV
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="gap-2 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-medium"
+            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
             onClick={() => setIsOcrOpen(true)}
           >
-            <Camera className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <Camera className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             Escanear Factura (OCR)
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="gap-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-medium"
+            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
             onClick={() => setIsExcelOpen(true)}
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             Importar Excel / CSV
           </Button>
           <Button size="sm" className="gap-2 font-semibold shadow-sm" onClick={() => setIsOpen(true)}>
