@@ -445,19 +445,35 @@ export default function AccountingExpensesPage() {
             <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
           </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={!expenses || expenses.length === 0}>
-            <Download className="w-4 h-4" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+            onClick={handleExportCsv}
+            disabled={!expenses || expenses.length === 0}
+          >
+            <Download className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             Exportar CSV
           </Button>
-          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsOcrOpen(true)}>
-            <Camera className="w-4 h-4" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/40 font-medium"
+            onClick={() => setIsOcrOpen(true)}
+          >
+            <Camera className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             Escanear Factura (OCR)
           </Button>
-          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
-            <FileSpreadsheet className="w-4 h-4" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-medium"
+            onClick={() => setIsExcelOpen(true)}
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             Importar Excel / CSV
           </Button>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
+          <Button size="sm" className="gap-2 font-semibold shadow-sm" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
             Registrar Gasto
           </Button>
