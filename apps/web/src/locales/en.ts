@@ -305,7 +305,7 @@ export const en: Translations = {
   },
   tax: {
     title: 'Tax & Withholdings',
-    subtitle: 'Monitor your DGII tax obligations and download submission files (606, 607, 608, 609).',
+    subtitle: 'Monitor your tax obligations.',
     fiscalPeriod: 'Fiscal Period:',
     boardTab: 'Tax Board',
     copilotTab: 'AI Copilot',
