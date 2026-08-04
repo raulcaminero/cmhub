@@ -28,7 +28,6 @@ export function Sidebar() {
     { href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen },
     { href: '/cmhub/contacts', label: t('nav.contacts'), icon: Users },
     ...(showTaxModule ? [{ href: '/cmhub/tax', label: t('nav.tax'), icon: Receipt }] : []),
-    ...(showNcfModule ? [{ href: '/cmhub/ncf', label: t('nav.ncf'), icon: FileText }] : []),
     { href: '/cmhub/reports', label: t('nav.reports'), icon: BarChart3 },
     { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
   ];
