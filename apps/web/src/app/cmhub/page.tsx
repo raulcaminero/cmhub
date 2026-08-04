@@ -188,30 +188,30 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.invoicing')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.invoicing')}</CardTitle>
             <ArrowUpRight className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{formatCurrency(totalInvoicesSum)}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.invoicingDesc')}</p>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(totalInvoicesSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.invoicingDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.expenses')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.expenses')}</CardTitle>
             <ArrowDownRight className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">{formatCurrency(totalExpensesSum)}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.expensesDesc')}</p>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(totalExpensesSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.expensesDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.netFlow')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.netFlow')}</CardTitle>
             {netCashFlow >= 0 ? (
               <TrendingUp className="w-4 h-4 text-emerald-500" />
             ) : (
@@ -219,23 +219,23 @@ export default function DashboardPage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
+            <div className="text-lg font-bold tracking-tight text-card-foreground">
               {formatCurrency(netCashFlow)}
             </div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.netFlowDesc')}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.netFlowDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.itbisNet')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.itbisNet')}</CardTitle>
             <Receipt className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-card-foreground">
+            <div className="text-lg font-bold tracking-tight text-card-foreground">
               {formatCurrency(itbisBalance)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {itbisBalance >= 0 ? t('dashboard.itbisToPay') : t('dashboard.itbisInFavor')}
             </p>
           </CardContent>
