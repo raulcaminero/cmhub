@@ -298,21 +298,19 @@ export default function ContactsPage() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            variant="outline"
-            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
+            className="gap-2 font-semibold shadow-sm"
             onClick={handleExportCsv}
             disabled={contacts.length === 0}
           >
-            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Download className="w-4 h-4" />
             {t('contacts.exportCsv')}
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
+            className="gap-2 font-semibold shadow-sm"
             onClick={() => setIsExcelOpen(true)}
           >
-            <FileSpreadsheet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <FileSpreadsheet className="w-4 h-4" />
             {t('contacts.importCsv')}
           </Button>
           <Button size="sm" className="gap-2 font-semibold shadow-sm" onClick={() => setIsOpen(true)}>

@@ -447,30 +447,27 @@ export default function AccountingExpensesPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             size="sm"
-            variant="outline"
-            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
+            className="gap-2 font-semibold shadow-sm"
             onClick={handleExportCsv}
             disabled={!expenses || expenses.length === 0}
           >
-            <Download className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Download className="w-4 h-4" />
             Exportar CSV
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
+            className="gap-2 font-semibold shadow-sm"
             onClick={() => setIsOcrOpen(true)}
           >
-            <Camera className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Camera className="w-4 h-4" />
             Escanear Factura (OCR)
           </Button>
           <Button
             size="sm"
-            variant="outline"
-            className="gap-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-medium"
+            className="gap-2 font-semibold shadow-sm"
             onClick={() => setIsExcelOpen(true)}
           >
-            <FileSpreadsheet className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <FileSpreadsheet className="w-4 h-4" />
             Importar Excel / CSV
           </Button>
           <Button size="sm" className="gap-2 font-semibold shadow-sm" onClick={() => setIsOpen(true)}>
