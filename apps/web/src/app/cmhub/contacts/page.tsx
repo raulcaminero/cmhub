@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload, Search, Download, UserCheck, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BackButton } from '@/components/ui/back-button';
 import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
@@ -284,14 +285,16 @@ export default function ContactsPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary shrink-0" />
-            {t('contacts.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>
-        </div>
+      <div>
+        <BackButton fallbackHref="/cmhub" className="mb-1" />
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary shrink-0" />
+              {t('contacts.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>
+          </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={contacts.length === 0}>
             <Download className="w-4 h-4" />
@@ -307,6 +310,7 @@ export default function ContactsPage() {
           </Button>
         </div>
       </div>
+    </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

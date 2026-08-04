@@ -8,6 +8,7 @@ export const es = {
     save: 'Guardar',
     saving: 'Guardando...',
     cancel: 'Cancelar',
+    back: 'Volver',
     close: 'Cerrar',
     actions: 'Acciones',
     status: 'Estado',

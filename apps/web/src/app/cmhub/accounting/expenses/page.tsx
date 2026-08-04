@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { BackButton } from '@/components/ui/back-button';
 import {
   Table,
   TableBody,
@@ -433,14 +434,16 @@ export default function AccountingExpensesPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-primary shrink-0" />
-            Registro de Gastos
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
-        </div>
+      <div>
+        <BackButton fallbackHref="/cmhub/accounting" className="mb-1" />
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-primary shrink-0" />
+              Registro de Gastos
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
+          </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={!expenses || expenses.length === 0}>
             <Download className="w-4 h-4" />
@@ -460,6 +463,7 @@ export default function AccountingExpensesPage() {
           </Button>
         </div>
       </div>
+    </div>
 
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

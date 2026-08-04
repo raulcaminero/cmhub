@@ -9,6 +9,7 @@ import QuotationsView from '@/components/features/sales/quotations-view';
 import { ShoppingCart, Package, FileText, Receipt } from 'lucide-react';
 import { Quotation } from '@/services/quotations.api';
 import { useTranslation } from '@/lib/use-translation';
+import { BackButton } from '@/components/ui/back-button';
 
 export default function SalesPage() {
   const { t } = useTranslation();
@@ -34,15 +35,18 @@ export default function SalesPage() {
   return (
     <div className="space-y-4">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-primary shrink-0" />
-            {t('sales.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {t('sales.subtitle')}
-          </p>
+      <div>
+        <BackButton fallbackHref="/cmhub" className="mb-1" />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-primary shrink-0" />
+              {t('sales.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('sales.subtitle')}
+            </p>
+          </div>
         </div>
       </div>
 
