@@ -131,30 +131,29 @@ export default function CatalogView({ companyId }: { companyId: string }) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Package className="w-5 h-5 text-indigo-600" />
-            {t('sales.catalogTitle')}
-          </CardTitle>
-          <CardDescription>
-            {t('sales.catalogDesc')}
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle>{t('sales.catalogTitle')}</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground mt-0.5">
+              {t('sales.catalogDesc')}
+            </CardDescription>
+          </div>
+          <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 shrink-0">
+            <Plus className="w-4 h-4" />
+            {t('sales.newProduct')}
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="relative w-full sm:w-72">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 placeholder={t('sales.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9 text-xs"
+                className="pl-9 text-xs"
               />
             </div>
-            <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="w-4 h-4" />
-              {t('sales.newProduct')}
-            </Button>
           </div>
           <div className="overflow-x-auto">
             {isLoading ? (

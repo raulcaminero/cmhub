@@ -92,7 +92,7 @@ export const en: Translations = {
     invoicesTab: 'Sales Invoices',
     catalogTab: 'Service Catalog',
     quotationsTab: 'Quotations / Estimates',
-    newProduct: 'New Product / Service',
+    newProduct: 'New Product',
     productName: 'Product/Service Name',
     price: 'Price',
     cost: 'Cost',
