@@ -149,32 +149,43 @@ export default function ReportsPage() {
           <p className="text-xs text-muted-foreground mt-0.5">{t('reports.subtitle')}</p>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-              variant={activeTab === 'tax' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('tax')}
-              className="flex items-center gap-2"
-            >
-              <BarChart2 className="w-4 h-4" />
-              {t('reports.tabTax')}
-            </Button>
-          <Button
-            variant={activeTab === 'financials' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('financials')}
-            className="flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            {t('reports.tabFinancials')}
-          </Button>
-          <Button
-            variant={activeTab === 'ledger' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('ledger')}
-            className="flex items-center gap-2"
-          >
-            <BookMarked className="w-4 h-4" />
-            {t('reports.tabLedger')}
-          </Button>
-        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab('tax')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'tax'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BarChart2 className="w-4 h-4" />
+          {t('reports.tabTax')}
+        </button>
+        <button
+          onClick={() => setActiveTab('financials')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'financials'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          {t('reports.tabFinancials')}
+        </button>
+        <button
+          onClick={() => setActiveTab('ledger')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'ledger'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BookMarked className="w-4 h-4" />
+          {t('reports.tabLedger')}
+        </button>
       </div>
 
       {activeTab === 'tax' ? (
