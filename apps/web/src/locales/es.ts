@@ -39,7 +39,7 @@ export const es = {
     contacts: 'Contactos',
     tax: 'Impuestos',
     reports: 'Reportes',
-    ncf: 'NCF',
+    ncf: 'Comp. Fiscales',
     settings: 'Configuración',
     companyManagement: 'Gestión Empresarial',
   },
@@ -387,7 +387,7 @@ export const es = {
     importButton: 'Importar Contactos',
   },
   ncf: {
-    title: 'NCF (Comprobantes Fiscales)',
+    title: 'Comprobantes Fiscales',
     subtitle: 'Administración de secuencias y rangos autorizados por la DGII.',
     tooltipTitle: '¿Qué es esta página?',
     tooltipText: 'Aquí administras las secuencias autorizadas por la DGII (B01, B02, etc.). Al registrar tus rangos, el sistema generará automáticamente el NCF de tus facturas de venta, evitándote la digitación manual.',
