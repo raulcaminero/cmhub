@@ -72,7 +72,7 @@ export default function ReportsPage() {
   if (!companyId) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-3.5">
           <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>

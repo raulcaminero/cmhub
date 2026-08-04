@@ -285,7 +285,7 @@ export default function AccountingExpensesPage() {
   if (!companyId) {
     return (
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-3.5">
           <p className="text-muted-foreground text-sm">Selecciona una empresa para ver los gastos.</p>
         </CardContent>
       </Card>
