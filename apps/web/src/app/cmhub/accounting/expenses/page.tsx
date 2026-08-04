@@ -378,12 +378,12 @@ export default function AccountingExpensesPage() {
           <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10" onClick={() => setIsOcrOpen(true)}>
-            <Camera className="w-4 h-4" />
+          <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => setIsOcrOpen(true)}>
+            <Camera className="w-4 h-4 text-primary" />
             Escanear Factura (OCR)
           </Button>
-          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
-            <FileSpreadsheet className="w-4 h-4" />
+          <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => setIsExcelOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4 text-primary" />
             Importar Excel / CSV
           </Button>
           <Button size="sm" className="gap-2 animate-pulse hover:animate-none" onClick={() => setIsOpen(true)}>
