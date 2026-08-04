@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import {
   useGetContactsQuery,
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload } from 'lucide-react';
+import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload, Search, Download, UserCheck, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
@@ -37,7 +37,7 @@ export default function ContactsPage() {
     BOTH: t('contacts.both'),
   };
 
-  const { data: contacts, isLoading } = useGetContactsQuery(
+  const { data: contacts = [], isLoading } = useGetContactsQuery(
     { companyId: companyId! },
     { skip: !companyId || !mounted },
   );
@@ -52,6 +52,9 @@ export default function ContactsPage() {
   const [csvText, setCsvText] = useState('');
   const [importError, setImportError] = useState('');
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilterTab, setActiveFilterTab] = useState<'ALL' | ContactType>('ALL');
+
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [rnc, setRnc] = useState('');
   const [name, setName] = useState('');
@@ -60,6 +63,160 @@ export default function ContactsPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calculate Metrics
+  const metrics = useMemo(() => {
+    const total = contacts.length;
+    const clients = contacts.filter((c) => c.type === 'CLIENT' || c.type === 'BOTH').length;
+    const providers = contacts.filter((c) => c.type === 'PROVIDER' || c.type === 'BOTH').length;
+    const verifiedRnc = contacts.filter((c) => {
+      const clean = c.rnc?.replace(/\D/g, '');
+      return clean?.length === 9 || clean?.length === 11;
+    }).length;
+    return { total, clients, providers, verifiedRnc };
+  }, [contacts]);
+
+  // Filtered Contacts List
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((c) => {
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.rnc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.email && c.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (c.phone && c.phone.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesTab =
+        activeFilterTab === 'ALL'
+          ? true
+          : activeFilterTab === 'BOTH'
+          ? c.type === 'BOTH'
+          : c.type === activeFilterTab || c.type === 'BOTH';
+
+      return matchesSearch && matchesTab;
+    });
+  }, [contacts, searchTerm, activeFilterTab]);
+
+  // Export to CSV
+  function handleExportCsv() {
+    if (!filteredContacts || filteredContacts.length === 0) return;
+
+    const headers = ['Nombre/Razon Social', 'RNC/Cedula', 'Tipo', 'Email', 'Telefono', 'Direccion'];
+    const rows = filteredContacts.map((c) => [
+      `"${c.name.replace(/"/g, '""')}"`,
+      `"${c.rnc}"`,
+      `"${TYPE_LABELS[c.type]}"`,
+      `"${c.email || ''}"`,
+      `"${c.phone || ''}"`,
+      `"${c.address || ''}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `contactos_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  if (!mounted) {
+    return null;
+  }
+
+  if (!companyId) {
+    return (
+      <Card>
+        <CardContent className="pt-3.5">
+          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function handleStartEdit(contact: Contact) {
+    setEditingContact(contact);
+    setRnc(contact.rnc);
+    setName(contact.name);
+    setType(contact.type);
+    setEmail(contact.email || '');
+    setPhone(contact.phone || '');
+    setAddress(contact.address || '');
+    setIsOpen(true);
+  }
+
+  function handleCloseModal() {
+    setIsOpen(false);
+    setEditingContact(null);
+    setRnc('');
+    setName('');
+    setType('CLIENT');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    setErrorMessage('');
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId) return;
+    setErrorMessage('');
+
+    const cleanRnc = rnc.replace(/\D/g, '');
+    if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
+      setErrorMessage('El RNC o Cédula debe tener 9 u 11 dígitos.');
+      return;
+    }
+
+    try {
+      if (editingContact) {
+        await updateContact({
+          companyId,
+          id: editingContact.id,
+          body: {
+            rnc: cleanRnc,
+            name,
+            type,
+            email: email || undefined,
+            phone: phone || undefined,
+            address: address || undefined,
+          },
+        }).unwrap();
+      } else {
+        await createContact({
+          companyId,
+          body: {
+            rnc: cleanRnc,
+            name,
+            type,
+            email: email || undefined,
+            phone: phone || undefined,
+            address: address || undefined,
+          },
+        }).unwrap();
+      }
+      
+      handleCloseModal();
+    } catch (err: any) {
+      setErrorMessage(err.data?.message || 'Error al guardar el contacto.');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!companyId) return;
+    if (confirm('¿Estás seguro de que deseas eliminar este contacto?')) {
+      try {
+        await deleteContact({ companyId, id }).unwrap();
+      } catch (err) {
+        alert('Error al eliminar el contacto.');
+      }
+    }
+  }
 
   async function handleCsvImport(e: React.FormEvent) {
     e.preventDefault();
@@ -121,105 +278,12 @@ export default function ContactsPage() {
     reader.readAsText(file);
   }
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  if (!companyId) {
-    return (
-      <Card>
-        <CardContent className="pt-3.5">
-          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  function handleStartEdit(contact: Contact) {
-    setEditingContact(contact);
-    setRnc(contact.rnc);
-    setName(contact.name);
-    setType(contact.type);
-    setEmail(contact.email || '');
-    setPhone(contact.phone || '');
-    setAddress(contact.address || '');
-    setIsOpen(true);
-  }
-
-  function handleCloseModal() {
-    setIsOpen(false);
-    setEditingContact(null);
-    setRnc('');
-    setName('');
-    setType('CLIENT');
-    setEmail('');
-    setPhone('');
-    setAddress('');
-    setErrorMessage('');
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!companyId) return;
-    setErrorMessage('');
-
-    const cleanRnc = rnc.replace(/\D/g, '');
-    if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
-      setErrorMessage('El RNC o Cédula debe tener 9 o 11 dígitos.');
-      return;
-    }
-
-    try {
-      if (editingContact) {
-        await updateContact({
-          companyId,
-          id: editingContact.id,
-          body: {
-            rnc: cleanRnc,
-            name,
-            type,
-            email: email || undefined,
-            phone: phone || undefined,
-            address: address || undefined,
-          },
-        }).unwrap();
-      } else {
-        await createContact({
-          companyId,
-          body: {
-            rnc: cleanRnc,
-            name,
-            type,
-            email: email || undefined,
-            phone: phone || undefined,
-            address: address || undefined,
-          },
-        }).unwrap();
-      }
-      
-      handleCloseModal();
-    } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al guardar el contacto.');
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!companyId) return;
-    if (confirm('¿Estás seguro de que deseas eliminar este contacto?')) {
-      try {
-        await deleteContact({ companyId, id }).unwrap();
-      } catch (err) {
-        alert('Error al eliminar el contacto.');
-      }
-    }
-  }
+  const cleanRncInput = rnc.replace(/\D/g, '');
+  const isRncValid = cleanRncInput.length === 9 || cleanRncInput.length === 11;
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -229,7 +293,11 @@ export default function ContactsPage() {
           <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-2" onClick={() => setIsExcelOpen(true)}>
+          <Button size="sm" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={contacts.length === 0}>
+            <Download className="w-4 h-4" />
+            {t('contacts.exportCsv')}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
             <FileSpreadsheet className="w-4 h-4" />
             {t('contacts.importCsv')}
           </Button>
@@ -240,16 +308,124 @@ export default function ContactsPage() {
         </div>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('contacts.totalContacts')}</CardTitle>
+            <Users className="w-4 h-4 text-indigo-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight">{metrics.total}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('contacts.totalContactsDesc')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('contacts.clientsCount')}</CardTitle>
+            <UserCheck className="w-4 h-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight">{metrics.clients}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('contacts.clientsCountDesc')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('contacts.providersCount')}</CardTitle>
+            <Building2 className="w-4 h-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight">{metrics.providers}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('contacts.providersCountDesc')}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('contacts.verifiedRnc')}</CardTitle>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight">{metrics.verifiedRnc}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('contacts.verifiedRncDesc')}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Directory Table & Filter Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2.5 px-4">
           <CardTitle>{t('contacts.cardTitle')}</CardTitle>
+          {/* Search & Tabs Controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t('contacts.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-8 text-xs"
+              />
+            </div>
+            {/* Filter Tabs */}
+            <div className="inline-flex items-center rounded-lg bg-muted p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setActiveFilterTab('ALL')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  activeFilterTab === 'ALL'
+                    ? 'bg-background text-foreground shadow-sm font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('contacts.allTab')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilterTab('CLIENT')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  activeFilterTab === 'CLIENT'
+                    ? 'bg-background text-foreground shadow-sm font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('contacts.client')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilterTab('PROVIDER')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  activeFilterTab === 'PROVIDER'
+                    ? 'bg-background text-foreground shadow-sm font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('contacts.provider')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveFilterTab('BOTH')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  activeFilterTab === 'BOTH'
+                    ? 'bg-background text-foreground shadow-sm font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t('contacts.both')}
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">{t('contacts.loading')}</p>
-          ) : !contacts || contacts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">{t('contacts.loading')}</p>
+          ) : !filteredContacts || filteredContacts.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              {t('contacts.noContacts')}
+              {contacts.length === 0 ? t('contacts.noContacts') : 'No se encontraron contactos con los filtros aplicados.'}
             </p>
           ) : (
             <Table>
@@ -264,18 +440,20 @@ export default function ContactsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contacts.map((contact) => (
+                {filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell className="font-medium text-sm">{contact.name}</TableCell>
                     <TableCell className="font-mono text-sm">{contact.rnc}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
-                        contact.type === 'CLIENT'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                          : contact.type === 'PROVIDER'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200'
-                          : 'bg-green-50 text-green-700 border-green-200'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
+                          contact.type === 'CLIENT'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800'
+                            : contact.type === 'PROVIDER'
+                            ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800'
+                            : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800'
+                        }`}
+                      >
                         {TYPE_LABELS[contact.type]}
                       </span>
                     </TableCell>
@@ -315,16 +493,35 @@ export default function ContactsPage() {
               {editingContact ? t('contacts.editContact') : t('contacts.registerContact')}
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              {editingContact
-                ? t('contacts.editSubtitle')
-                : t('contacts.registerSubtitle')}
+              {editingContact ? t('contacts.editSubtitle') : t('contacts.registerSubtitle')}
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="cont-rnc">{t('contacts.rncLabel')}</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="contact-rnc">{t('contacts.rncLabel')}</Label>
+                  {rnc && (
+                    <span
+                      className={`text-[10px] font-medium inline-flex items-center gap-1 ${
+                        isRncValid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {isRncValid ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3" />
+                          {cleanRncInput.length === 9 ? 'RNC (9 dígs)' : 'Cédula (11 dígs)'}
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-3 h-3" />
+                          Requiere 9 u 11 dígitos
+                        </>
+                      )}
+                    </span>
+                  )}
+                </div>
                 <Input
-                  id="cont-rnc"
-                  placeholder="Ej. 131234567"
+                  id="contact-rnc"
+                  placeholder="Ej. 101010101 o 00100000000"
                   value={rnc}
                   onChange={(e) => setRnc(e.target.value)}
                   required
@@ -332,10 +529,10 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-name">{t('contacts.nameLabel')}</Label>
+                <Label htmlFor="contact-name">{t('contacts.nameLabel')}</Label>
                 <Input
-                  id="cont-name"
-                  placeholder="Ej. Distribuidora del Norte SRL"
+                  id="contact-name"
+                  placeholder="Ej. Empresa SRL o Juan Pérez"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -343,9 +540,9 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-type">{t('contacts.relationLabel')}</Label>
+                <Label htmlFor="contact-type">{t('contacts.relationLabel')}</Label>
                 <select
-                  id="cont-type"
+                  id="contact-type"
                   value={type}
                   onChange={(e) => setType(e.target.value as ContactType)}
                   className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -357,39 +554,37 @@ export default function ContactsPage() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-email">{t('contacts.emailLabel')}</Label>
+                <Label htmlFor="contact-email">{t('contacts.emailLabel')}</Label>
                 <Input
-                  id="cont-email"
+                  id="contact-email"
                   type="email"
-                  placeholder="Ej. correo@empresa.com"
+                  placeholder="ejemplo@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-phone">{t('contacts.phoneLabel')}</Label>
+                <Label htmlFor="contact-phone">{t('contacts.phoneLabel')}</Label>
                 <Input
-                  id="cont-phone"
-                  placeholder="Ej. 809-555-1234"
+                  id="contact-phone"
+                  placeholder="809-555-0199"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="cont-address">{t('contacts.addressLabel')}</Label>
+                <Label htmlFor="contact-address">{t('contacts.addressLabel')}</Label>
                 <Input
-                  id="cont-address"
-                  placeholder="Ej. Av. Winston Churchill #12"
+                  id="contact-address"
+                  placeholder="Calle Principal #12, Sto. Dgo."
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                 />
               </div>
 
-              {errorMessage && (
-                <p className="text-xs text-destructive font-medium">{errorMessage}</p>
-              )}
+              {errorMessage && <p className="text-xs text-destructive font-medium">{errorMessage}</p>}
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button
@@ -404,7 +599,7 @@ export default function ContactsPage() {
                 <Button type="submit" size="sm" disabled={isCreating || isUpdating}>
                   {isCreating || isUpdating ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                       {t('common.saving')}
                     </>
                   ) : (
@@ -420,37 +615,29 @@ export default function ContactsPage() {
       {/* Modal Importar Contactos desde Excel/CSV */}
       {isExcelOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative my-8">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
             <h3 className="text-lg font-semibold mb-2">{t('contacts.importTitle')}</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {t('contacts.importSubtitle')}
-            </p>
-            
+            <p className="text-xs text-muted-foreground mb-4">{t('contacts.importSubtitle')}</p>
+
             <form onSubmit={handleCsvImport} className="space-y-4">
               <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
-                <Label htmlFor="csv-contacts-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
                   {t('contacts.uploadCsv')}
                 </Label>
                 <span className="text-[10px] text-muted-foreground">{t('contacts.dragCsv')}</span>
-                <Input
-                  id="csv-contacts-file"
-                  type="file"
-                  accept=".csv"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                <Input id="csv-file" type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
               </div>
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="csv-contacts-text">{t('contacts.csvPreview')}</Label>
-                  <span className="text-[10px] text-muted-foreground font-mono">Formato: Nombre,RNC,Tipo,Telefono,Correo</span>
+                  <Label htmlFor="csv-text">{t('contacts.csvPreview')}</Label>
+                  <span className="text-[10px] text-muted-foreground font-mono">Formato: Nombre,RNC,Tipo,Tel,Email</span>
                 </div>
                 <textarea
-                  id="csv-contacts-text"
+                  id="csv-text"
                   rows={6}
-                  placeholder="Ejemplo:&#10;Nombre,RNC,Tipo,Telefono,Correo&#10;Distribuidora Dominicana,131234567,PROVIDER,809-555-0199,ventas@dist.do&#10;Juan Perez,00122233344,CLIENT,829-555-0211,juan@mail.com"
+                  placeholder="Ejemplo:&#10;Nombre,RNC,Tipo,Tel,Email&#10;Empresa SRL,101010101,CLIENT,8095550199,info@empresa.com"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
@@ -458,13 +645,11 @@ export default function ContactsPage() {
                 />
               </div>
 
-              {importError && (
-                <p className="text-xs text-destructive font-medium">{importError}</p>
-              )}
+              {importError && <p className="text-xs text-destructive font-medium">{importError}</p>}
 
               <div className="flex justify-between items-center pt-2">
-                <a 
-                  href="data:text/csv;charset=utf-8,Nombre,RNC,Tipo,Telefono,Correo%0ADistribuidora Dominicana,131234567,PROVIDER,809-555-0199,ventas@dist.do%0AJuan Perez,00122233344,CLIENT,829-555-0211,juan@mail.com" 
+                <a
+                  href="data:text/csv;charset=utf-8,Nombre,RNC,Tipo,Tel,Email%0AEmpresa%20SRL,101010101,CLIENT,8095550199,info@empresa.com"
                   download="plantilla_contactos.csv"
                   className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
                 >
@@ -487,7 +672,7 @@ export default function ContactsPage() {
                   <Button type="submit" size="sm" disabled={isImporting}>
                     {isImporting ? (
                       <>
-                        <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                         {t('contacts.importing')}
                       </>
                     ) : (
