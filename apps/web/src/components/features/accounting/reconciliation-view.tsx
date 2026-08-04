@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import {
@@ -16,7 +16,7 @@ import {
   BankTransaction,
   LedgerLine,
 } from '@/services/bank-reconciliation.api';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ import {
   Link2,
   Camera,
   Loader2,
+  Search,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
@@ -85,6 +86,19 @@ export function ReconciliationView() {
   const [unmatch] = useUnmatchReconciliationMutation();
 
   const [isPollingOcr, setIsPollingOcr] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredUnmatchedBank = useMemo(() => {
+    if (!report?.unreconciledBankTransactions) return [];
+    if (!searchTerm.trim()) return report.unreconciledBankTransactions;
+    const term = searchTerm.toLowerCase();
+    return report.unreconciledBankTransactions.filter(
+      (tx: BankTransaction) =>
+        tx.description.toLowerCase().includes(term) ||
+        tx.amount.toString().includes(term) ||
+        tx.date.toLowerCase().includes(term)
+    );
+  }, [report?.unreconciledBankTransactions, searchTerm]);
 
   // Import Dialog
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -305,44 +319,62 @@ export function ReconciliationView() {
       ) : report ? (
         <div className="space-y-6">
           {/* Summary KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
-              <CardContent className="pt-6">
-                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Saldo Según Libros
-                </span>
-                <span className="text-xl font-bold font-mono text-purple-700 block mt-1">
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Saldo Según Libros</CardTitle>
+                <Info className="w-4 h-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-lg font-bold tracking-tight font-mono text-purple-700 dark:text-purple-400">
                   {formatCurrency(report.booksBalance)}
-                </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Balance contable en sistema</p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
-                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
-                  Saldo Según Extracto Banco
-                </span>
-                <span className="text-xl font-bold font-mono text-indigo-700 block mt-1">
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Saldo Extracto Banco</CardTitle>
+                <RefreshCw className="w-4 h-4 text-indigo-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-lg font-bold tracking-tight font-mono text-indigo-700 dark:text-indigo-400">
                   {formatCurrency(report.bankBalance)}
-                </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Balance importado del banco</p>
               </CardContent>
             </Card>
 
-            <Card className={Math.abs(report.difference) < 0.01 ? 'border-green-300 bg-green-50/10' : 'border-amber-300 bg-amber-50/10'}>
-              <CardContent className="pt-6 flex justify-between items-start">
-                <div>
-                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
-                    Diferencia
-                  </span>
-                  <span className={`text-xl font-bold font-mono block mt-1 ${Math.abs(report.difference) < 0.01 ? 'text-green-700' : 'text-amber-700'}`}>
-                    {formatCurrency(report.difference)}
-                  </span>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Conciliadas</CardTitle>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-lg font-bold tracking-tight font-mono text-emerald-600 dark:text-emerald-400">
+                  {report.reconciledBankTransactions?.length || 0}
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Transacciones pareadas</p>
+              </CardContent>
+            </Card>
+
+            <Card className={Math.abs(report.difference) < 0.01 ? 'border-green-300 dark:border-green-800' : 'border-amber-300 dark:border-amber-800'}>
+              <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+                <CardTitle className="text-xs font-medium text-muted-foreground">Diferencia</CardTitle>
                 {Math.abs(report.difference) < 0.01 ? (
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
                 ) : (
-                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
                 )}
+              </CardHeader>
+              <CardContent>
+                <div className={`text-lg font-bold tracking-tight font-mono ${Math.abs(report.difference) < 0.01 ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                  {formatCurrency(report.difference)}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {Math.abs(report.difference) < 0.01 ? 'Cuadrado perfecto' : 'Requiere revisión'}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -351,10 +383,19 @@ export function ReconciliationView() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bank statement panel */}
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <h3 className="text-md font-semibold flex items-center gap-2">
                   🏦 Extracto Bancario ({report.unreconciledBankCount} pendientes)
                 </h3>
+                <div className="relative w-full sm:w-56">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar en extracto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-8 text-xs"
+                  />
+                </div>
               </div>
               <div className="border rounded-md max-h-[400px] overflow-y-auto bg-card">
                 <Table>
@@ -366,7 +407,7 @@ export function ReconciliationView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {report.unreconciledBankTransactions.slice(0, 50).map((tx) => (
+                    {filteredUnmatchedBank.slice(0, 50).map((tx: BankTransaction) => (
                       <TableRow
                         key={tx.id}
                         onClick={() => setSelectedBankTx(selectedBankTx?.id === tx.id ? null : tx)}

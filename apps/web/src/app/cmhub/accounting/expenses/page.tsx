@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
 import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, useLazyGetOcrStatusQuery, Expense } from '@/services/expenses.api';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -272,6 +272,69 @@ export default function AccountingExpensesPage() {
     }
   }
 
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const metrics = useMemo(() => {
+    if (!expenses) return { totalSum: 0, itbisSum: 0, pendingPayable: 0, count: 0 };
+    let totalSum = 0;
+    let itbisSum = 0;
+    let pendingPayable = 0;
+    let count = 0;
+
+    for (const exp of expenses) {
+      if (exp.isVoided) continue;
+      count++;
+      totalSum += Number(exp.amount || 0);
+      itbisSum += Number(exp.itbis || 0);
+      if (exp.paymentMethod === '04' && !exp.paymentDate) {
+        pendingPayable += Number(exp.amount || 0);
+      }
+    }
+
+    return { totalSum, itbisSum, pendingPayable, count };
+  }, [expenses]);
+
+  const filteredExpenses = useMemo(() => {
+    if (!expenses) return [];
+    if (!searchTerm.trim()) return expenses;
+    const term = searchTerm.toLowerCase();
+    return expenses.filter((exp) => {
+      return (
+        exp.providerName?.toLowerCase().includes(term) ||
+        exp.providerRnc?.toLowerCase().includes(term) ||
+        exp.ncf?.toLowerCase().includes(term) ||
+        exp.expenseType?.toLowerCase().includes(term)
+      );
+    });
+  }, [expenses, searchTerm]);
+
+  function handleExportCsv() {
+    if (!filteredExpenses || filteredExpenses.length === 0) return;
+
+    const headers = ['Fecha', 'Proveedor', 'RNC', 'NCF', 'Tipo Gasto', 'Monto Total', 'ITBIS', 'Metodo Pago', 'Estado'];
+    const rows = filteredExpenses.map((exp) => [
+      `"${new Date(exp.date).toLocaleDateString()}"`,
+      `"${exp.providerName.replace(/"/g, '""')}"`,
+      `"${exp.providerRnc}"`,
+      `"${exp.ncf}"`,
+      `"${exp.expenseType}"`,
+      `"${exp.amount}"`,
+      `"${exp.itbis}"`,
+      `"${exp.paymentMethod}"`,
+      `"${exp.isVoided ? 'ANULADA' : 'REGISTRADA'}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `gastos_606_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   const bankAccounts = accounts?.filter((a) => a.code.startsWith('1101') || a.name.toLowerCase().includes('banco') || a.name.toLowerCase().includes('caja')) || [];
 
   useEffect(() => {
@@ -369,6 +432,7 @@ export default function AccountingExpensesPage() {
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -377,26 +441,86 @@ export default function AccountingExpensesPage() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Registra compras de proveedores con NCF y clasifícalos para el reporte 606.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-2" onClick={() => setIsOcrOpen(true)}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={!expenses || expenses.length === 0}>
+            <Download className="w-4 h-4" />
+            Exportar CSV
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsOcrOpen(true)}>
             <Camera className="w-4 h-4" />
             Escanear Factura (OCR)
           </Button>
-          <Button size="sm" className="gap-2" onClick={() => setIsExcelOpen(true)}>
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
             <FileSpreadsheet className="w-4 h-4" />
             Importar Excel / CSV
           </Button>
-          <Button size="sm" className="gap-2 animate-pulse hover:animate-none" onClick={() => setIsOpen(true)}>
+          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
             <Plus className="w-4 h-4" />
             Registrar Gasto
           </Button>
         </div>
       </div>
 
+      {/* KPI Summary Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Gastos (Mes)</CardTitle>
+            <TrendingDown className="w-4 h-4 text-rose-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.totalSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{metrics.count} compras/gastos registrados</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">ITBIS Adelantado (606)</CardTitle>
+            <Receipt className="w-4 h-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.itbisSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Crédito fiscal generado</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Cuentas por Pagar</CardTitle>
+            <CreditCard className="w-4 h-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.pendingPayable)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Compras a crédito pendientes</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Compras Inventario (09)</CardTitle>
+            <ShoppingBag className="w-4 h-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{metrics.count > 0 ? expenses.filter(e => e.expenseType === '09' && !e.isVoided).length : 0}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Ítems de costo de ventas</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2.5 px-4">
           <CardTitle>Historial de Compras y Gastos (606)</CardTitle>
-          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+          <div className="flex items-center gap-3 flex-wrap sm:justify-end">
+            <div className="relative w-full sm:w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por proveedor, RNC, NCF..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-8 text-xs"
+              />
+            </div>
             <div className="flex items-center gap-1">
               <span className="text-xs text-muted-foreground">Desde:</span>
               <Input
@@ -425,9 +549,11 @@ export default function AccountingExpensesPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando gastos...</p>
-          ) : !expenses || expenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No hay gastos registrados en esta empresa.</p>
+            <p className="text-sm text-muted-foreground py-4">Cargando gastos...</p>
+          ) : !filteredExpenses || filteredExpenses.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">
+              {expenses.length === 0 ? 'No hay gastos registrados en esta empresa.' : 'No se encontraron gastos con el filtro aplicado.'}
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -443,7 +569,7 @@ export default function AccountingExpensesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((exp) => {
+                {filteredExpenses.map((exp) => {
                   const typeLabel = EXPENSE_TYPES.find((t) => t.code === exp.expenseType)?.label || exp.expenseType;
                   const payLabel = PAYMENT_METHODS.find((p) => p.code === exp.paymentMethod)?.label || exp.paymentMethod;
                   
