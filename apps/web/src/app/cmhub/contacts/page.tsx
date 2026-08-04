@@ -229,8 +229,8 @@ export default function ContactsPage() {
           <p className="text-xs text-muted-foreground mt-0.5">{t('contacts.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => setIsExcelOpen(true)}>
-            <FileSpreadsheet className="w-4 h-4 text-primary" />
+          <Button size="sm" className="gap-2" onClick={() => setIsExcelOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4" />
             {t('contacts.importCsv')}
           </Button>
           <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
