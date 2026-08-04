@@ -135,7 +135,7 @@ export const es = {
     saveQuotation: 'Emitir Cotización',
   },
   invoicesView: {
-    title: 'Facturación / Ventas',
+    title: 'Facturación y Ventas',
     newInvoice: 'Nueva Factura',
     loading: 'Cargando facturas...',
     noInvoices: 'No hay facturas registradas en este rango de fechas.',
@@ -197,7 +197,7 @@ export const es = {
     title: 'Contabilidad',
     subtitle: 'Gestión contable y financiera de la empresa',
     journalEntriesTab: 'Asientos de Diario',
-    invoicesTab: 'Facturación / Ventas',
+    invoicesTab: 'Facturación y Ventas',
     payrollTab: 'Nómina / TSS',
     reconciliationTab: 'Conciliación Bancaria',
     registerExpense: 'Registrar Gastos',
