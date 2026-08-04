@@ -10,6 +10,7 @@ export const en: Translations = {
     save: 'Save',
     saving: 'Saving...',
     cancel: 'Cancel',
+    back: 'Back',
     close: 'Close',
     actions: 'Actions',
     status: 'Status',

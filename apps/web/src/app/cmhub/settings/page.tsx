@@ -19,6 +19,7 @@ import { TaxRegime } from '@cmhub/shared-types';
 import { TeamMembersView } from '@/components/features/settings/team-members-view';
 import { NcfSequencesView } from '@/components/features/settings/ncf-sequences-view';
 import { ThemeSelector } from '@/components/theme-toggle';
+import { BackButton } from '@/components/ui/back-button';
 
 type SettingsTab = 'profile' | 'company' | 'my-companies' | 'ncf' | 'team' | 'accounts' | 'preferences' | 'security';
 
@@ -309,13 +310,16 @@ export default function SettingsPage() {
       <Suspense fallback={null}>
         <TabSearchParamSync onTab={setActiveTab} />
       </Suspense>
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <SettingsIcon className="w-5 h-5 text-primary shrink-0" />
-            {t('settings.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
+      <div>
+        <BackButton fallbackHref="/cmhub" className="mb-1" />
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <SettingsIcon className="w-5 h-5 text-primary shrink-0" />
+              {t('settings.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
+          </div>
         </div>
       </div>
 

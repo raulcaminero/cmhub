@@ -9,6 +9,7 @@ import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
 import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2 } from 'lucide-react';
+import { BackButton } from '@/components/ui/back-button';
 import { useTranslation } from '@/lib/use-translation';
 
 const currentYear = new Date().getFullYear();
@@ -174,14 +175,16 @@ export default function TaxPage() {
   return (
     <div className="space-y-4">
       {/* Header with Period Selector */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-primary shrink-0" />
-            {t('tax.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('tax.subtitle')}</p>
-        </div>
+      <div>
+        <BackButton fallbackHref="/cmhub" className="mb-1" />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary shrink-0" />
+              {t('tax.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('tax.subtitle')}</p>
+          </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground">Año:</Label>
@@ -210,6 +213,7 @@ export default function TaxPage() {
             </select>
           </div>
         </div>
+      </div>
       </div>
 
       {!companyId ? (

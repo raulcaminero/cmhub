@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FileText, Download, BarChart2, Calendar, BookMarked, BarChart3 } from 'lucide-react';
+import { BackButton } from '@/components/ui/back-button';
 import {
   Table,
   TableBody,
@@ -140,15 +141,17 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary shrink-0" />
-            {t('reports.title')}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('reports.subtitle')}</p>
+      <div>
+        <BackButton fallbackHref="/cmhub" className="mb-1" />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary shrink-0" />
+              {t('reports.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('reports.subtitle')}</p>
+          </div>
         </div>
-
       </div>
 
       {/* Navigation Tabs */}
