@@ -242,15 +242,15 @@ export default function TaxPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b pb-4">
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisDue')}</span>
-                        <span className="text-xl font-bold">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
+                        <span className="text-lg font-bold tracking-tight">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisAdvanced')}</span>
-                        <span className="text-xl font-bold">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
+                        <span className="text-lg font-bold tracking-tight">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/15 rounded-md">
                         <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">{t('tax.itbisNet')}</span>
-                        <span className="text-xl font-bold text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
+                        <span className="text-lg font-bold tracking-tight text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
                       </div>
                     </div>
 
