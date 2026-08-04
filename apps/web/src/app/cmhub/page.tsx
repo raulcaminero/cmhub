@@ -165,16 +165,24 @@ export default function DashboardPage() {
             <LayoutDashboard className="w-5 h-5 text-primary shrink-0" />
             {t('nav.dashboard')}
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.subtitle')} {activeCompany?.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {activeCompany ? `${t('dashboard.subtitle')} ${activeCompany.name}` : 'Resumen financiero y operativo.'}
+          </p>
         </div>
         
-        <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">
-          <Building2 className="w-5 h-5 text-primary" />
-          <div>
-            <p className="text-sm font-semibold leading-none">{activeCompany?.name}</p>
-            <p className="text-xs text-muted-foreground">RNC: {activeCompany?.rnc}</p>
+        {activeCompany && (
+          <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">
+            <Building2 className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold leading-none">{activeCompany.name}</p>
+              {activeCompany.rnc && (
+                <p className="text-xs text-muted-foreground">
+                  {activeCompany.country === 'US' ? 'EIN' : activeCompany.country === 'MX' ? 'RFC' : 'RNC'}: {activeCompany.rnc}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* KPI Cards */}
