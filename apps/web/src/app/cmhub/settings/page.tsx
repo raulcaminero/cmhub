@@ -14,14 +14,15 @@ import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutatio
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
 import { useChangePasswordMutation, useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User, Settings as SettingsIcon } from 'lucide-react';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User, Settings as SettingsIcon, FileText } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
 import { TeamMembersView } from '@/components/features/settings/team-members-view';
+import { NcfSequencesView } from '@/components/features/settings/ncf-sequences-view';
 import { ThemeSelector } from '@/components/theme-toggle';
 
-type SettingsTab = 'profile' | 'company' | 'my-companies' | 'team' | 'accounts' | 'preferences' | 'security';
+type SettingsTab = 'profile' | 'company' | 'my-companies' | 'ncf' | 'team' | 'accounts' | 'preferences' | 'security';
 
-const VALID_TABS: SettingsTab[] = ['profile', 'company', 'my-companies', 'team', 'accounts', 'preferences', 'security'];
+const VALID_TABS: SettingsTab[] = ['profile', 'company', 'my-companies', 'ncf', 'team', 'accounts', 'preferences', 'security'];
 
 /** Inner component that safely reads ?tab= param — must be inside Suspense */
 function TabSearchParamSync({ onTab }: { onTab: (tab: SettingsTab) => void }) {
@@ -353,6 +354,17 @@ export default function SettingsPage() {
           {t('settings.myCompaniesTab')}
         </button>
         <button
+          onClick={() => setActiveTab('ncf')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'ncf'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          {t('nav.ncf')}
+        </button>
+        <button
           onClick={() => setActiveTab('team')}
           className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 shrink-0 ${
             activeTab === 'team'
@@ -468,6 +480,8 @@ export default function SettingsPage() {
           </Card>
         </div>
       )}
+
+      {activeTab === 'ncf' && <NcfSequencesView />}
 
       {activeTab === 'team' && (
         activeCompany ? (
