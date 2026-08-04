@@ -138,7 +138,7 @@ export const en: Translations = {
   },
   invoicesView: {
     title: 'Invoicing / Sales',
-    newInvoice: 'New Invoice (NCF)',
+    newInvoice: 'New Invoice',
     loading: 'Loading invoices...',
     noInvoices: 'No invoices recorded in this date range.',
     invoiceNo: 'Invoice No. / NCF',

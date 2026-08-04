@@ -136,7 +136,7 @@ export const es = {
   },
   invoicesView: {
     title: 'Facturación / Ventas',
-    newInvoice: 'Nueva Factura (NCF)',
+    newInvoice: 'Nueva Factura',
     loading: 'Cargando facturas...',
     noInvoices: 'No hay facturas registradas en este rango de fechas.',
     invoiceNo: 'N° Factura / NCF',
