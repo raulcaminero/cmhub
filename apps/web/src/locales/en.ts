@@ -41,7 +41,7 @@ export const en: Translations = {
     contacts: 'Contacts',
     tax: 'Tax & Compliance',
     reports: 'Reports',
-    ncf: 'NCF Sequences',
+    ncf: 'Fiscal Receipts',
     settings: 'Settings',
     companyManagement: 'Business Management',
   },
@@ -389,7 +389,7 @@ export const en: Translations = {
     importButton: 'Import Contacts',
   },
   ncf: {
-    title: 'NCF (Tax Vouchers)',
+    title: 'Fiscal Receipts',
     subtitle: 'Management of DGII authorized sequence ranges.',
     tooltipTitle: 'What is this page?',
     tooltipText: 'Here you manage authorized DGII sequences (B01, B02, etc.). Registering your ranges lets the system automatically generate NCF numbers on sales invoices, saving manual typing.',
