@@ -90,7 +90,7 @@ export const es = {
     invoicesTab: 'Facturas de Venta',
     catalogTab: 'Catálogo de Servicios',
     quotationsTab: 'Cotizaciones / Presupuestos',
-    newProduct: 'Nuevo Producto / Servicio',
+    newProduct: 'Nuevo Producto',
     productName: 'Nombre del Producto/Servicio',
     price: 'Precio',
     cost: 'Costo',
