@@ -1,32 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JournalEntriesView } from '@/components/features/accounting/journal-entries-view';
 import { InvoicesView } from '@/components/features/accounting/invoices-view';
+import { ExpensesView } from '@/components/features/accounting/expenses-view';
 import { PayrollView } from '@/components/features/accounting/payroll-view';
 import { ReconciliationView } from '@/components/features/accounting/reconciliation-view';
-import { Button } from '@/components/ui/button';
-import { FileText, Receipt, Users, Landmark, BookOpen, Plus } from 'lucide-react';
+import { FileText, Receipt, Users, Landmark, BookOpen, CreditCard } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
-import { useGetAccountsQuery } from '@/services/accounting.api';
 import { useGetFinancialsQuery } from '@/services/reports.api';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
 import { useTranslation } from '@/lib/use-translation';
 
+import { useTabMemory } from '@/hooks/use-tab-memory';
+
+type AccountingTab = 'entries' | 'invoices' | 'expenses' | 'payroll' | 'reconciliation';
+const VALID_TABS: AccountingTab[] = ['entries', 'invoices', 'expenses', 'payroll', 'reconciliation'];
+
 export default function AccountingPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'entries' | 'invoices' | 'payroll' | 'reconciliation'>('entries');
+  const { activeTab, changeTab } = useTabMemory<AccountingTab>('entries', VALID_TABS);
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
   const formatCurrency = useCurrency();
-
-  const { data: accounts } = useGetAccountsQuery(
-    { companyId: companyId! },
-    { skip: !companyId || !mounted },
-  );
 
   const { data: financials } = useGetFinancialsQuery(
     { companyId: companyId! },
@@ -38,13 +36,11 @@ export default function AccountingPage() {
     d.setDate(1);
     return d.toISOString().split('T')[0];
   };
-  const startMonth = getStartOfCurrentMonth();
 
-  const { data: invoicesData } = useGetInvoicesQuery(
-    { companyId: companyId!, startDate: startMonth, limit: 1000 },
+  const { data: monthlyInvoices } = useGetInvoicesQuery(
+    { companyId: companyId!, startDate: getStartOfCurrentMonth() },
     { skip: !companyId || !mounted },
   );
-  const invoices = invoicesData?.data || [];
 
   useEffect(() => {
     setMounted(true);
@@ -67,9 +63,8 @@ export default function AccountingPage() {
   let totalActivos = 0;
   let totalPasivos = 0;
   let totalPatrimonio = 0;
-  let totalIngresos = 0;
 
-  if (financials) {
+  if (financials?.balanceSheet) {
     financials.balanceSheet.forEach((acc) => {
       if (acc.type === 'ASSET') {
         totalActivos += acc.balance;
@@ -81,21 +76,13 @@ export default function AccountingPage() {
     });
   }
 
-  if (invoices) {
-    const now = new Date();
-    invoices.forEach((inv) => {
-      if (!inv.isVoided) {
-        const invDate = new Date(inv.date);
-        if (invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear()) {
-          totalIngresos += Number(inv.amount);
-        }
-      }
-    });
-  }
+  const totalIngresos = (monthlyInvoices?.data || [])
+    .filter((inv) => !inv.isVoided)
+    .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
   const kpis = [
-    { title: t('accounting.totalAssets'), value: formatCurrency(totalActivos), description: t('accounting.totalAssetDesc') },
-    { title: t('accounting.totalLiabilities'), value: formatCurrency(totalPasivos), description: t('accounting.totalLiabilityDesc') },
+    { title: t('accounting.totalAssets'), value: formatCurrency(totalActivos), description: t('accounting.totalAssetsDesc') },
+    { title: t('accounting.totalLiabilities'), value: formatCurrency(totalPasivos), description: t('accounting.totalLiabilitiesDesc') },
     { title: t('accounting.equity'), value: formatCurrency(totalPatrimonio), description: t('accounting.equityDesc') },
     { title: t('accounting.monthlyIncome'), value: formatCurrency(totalIngresos), description: t('accounting.monthlyIncomeDesc') },
   ];
@@ -109,14 +96,6 @@ export default function AccountingPage() {
             {t('accounting.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('accounting.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" asChild className="gap-2">
-            <Link href="/cmhub/accounting/expenses">
-              <Plus className="w-4 h-4" />
-              {t('accounting.registerExpense')}
-            </Link>
-          </Button>
         </div>
       </div>
 
@@ -134,10 +113,10 @@ export default function AccountingPage() {
         ))}
       </div>
 
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border overflow-x-auto">
         <button
-          onClick={() => setActiveTab('entries')}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          onClick={() => changeTab('entries')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'entries'
               ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -147,8 +126,8 @@ export default function AccountingPage() {
           {t('accounting.journalEntriesTab')}
         </button>
         <button
-          onClick={() => setActiveTab('invoices')}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          onClick={() => changeTab('invoices')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'invoices'
               ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -158,8 +137,19 @@ export default function AccountingPage() {
           {t('accounting.invoicesTab')}
         </button>
         <button
-          onClick={() => setActiveTab('payroll')}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          onClick={() => changeTab('expenses')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'expenses'
+              ? 'border-primary text-primary font-bold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <CreditCard className="w-4 h-4" />
+          Gastos y Compras (606)
+        </button>
+        <button
+          onClick={() => changeTab('payroll')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'payroll'
               ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -169,8 +159,8 @@ export default function AccountingPage() {
           {t('accounting.payrollTab')}
         </button>
         <button
-          onClick={() => setActiveTab('reconciliation')}
-          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          onClick={() => changeTab('reconciliation')}
+          className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'reconciliation'
               ? 'border-primary text-primary font-bold'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -185,6 +175,8 @@ export default function AccountingPage() {
         <JournalEntriesView />
       ) : activeTab === 'invoices' ? (
         <InvoicesView />
+      ) : activeTab === 'expenses' ? (
+        <ExpensesView />
       ) : activeTab === 'payroll' ? (
         <PayrollView />
       ) : (

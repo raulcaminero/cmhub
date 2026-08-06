@@ -18,13 +18,21 @@ import { useCurrency } from '@/hooks/use-company';
 
 interface QuotationsViewProps {
   companyId: string;
+  externalOpenModal?: boolean;
+  onCloseExternalModal?: () => void;
   onConvertQuotationToInvoice?: (quotation: Quotation) => void;
 }
 
-export default function QuotationsView({ companyId, onConvertQuotationToInvoice }: QuotationsViewProps) {
+export default function QuotationsView({ companyId, externalOpenModal, onCloseExternalModal, onConvertQuotationToInvoice }: QuotationsViewProps) {
   const { t } = useTranslation();
   const formatCurrency = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (externalOpenModal) {
+      setIsModalOpen(true);
+    }
+  }, [externalOpenModal]);
   const [clientRnc, setClientRnc] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -122,25 +130,20 @@ export default function QuotationsView({ companyId, onConvertQuotationToInvoice 
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            {t('sales.quotationsTitle')}
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {t('sales.quotationsDesc')}
-          </p>
-        </div>
-        <Button onClick={handleOpenModal} className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 font-medium">
+    <div className="space-y-3">
+      {/* Action Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          {t('sales.quotationsDesc')}
+        </p>
+        <Button onClick={handleOpenModal} size="sm" className="gap-2 font-semibold shadow-2xs shrink-0">
           <Plus className="w-4 h-4" />
           {t('sales.newQuotation')}
         </Button>
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-5 sm:p-6 space-y-4">
           {isLoading ? (
             <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">{t('common.loading')}</div>
           ) : !quotations || quotations.length === 0 ? (

@@ -13,6 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -108,128 +115,134 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-2.5">
           <div>
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
               Equipo y Control de Accesos
             </CardTitle>
-            <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
+            <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
               Gestiona los miembros de tu empresa y sus niveles de acceso (RBAC).
             </CardDescription>
           </div>
           <Button
+            size="sm"
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="h-8 text-xs gap-1.5 font-semibold shadow-2xs"
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-3.5 h-3.5" />
             Agregar Miembro
           </Button>
         </CardHeader>
 
         <CardContent className="space-y-4">
           {successMsg && (
-            <div className="flex items-center gap-2 p-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg dark:bg-emerald-950/40 dark:text-emerald-300">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-2.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg dark:bg-emerald-950/40 dark:text-emerald-300">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               {successMsg}
             </div>
           )}
 
           {errorMsg && (
-            <div className="flex items-center gap-2 p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg dark:bg-rose-950/40 dark:text-rose-300">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 p-2.5 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg dark:bg-rose-950/40 dark:text-rose-300">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               {errorMsg}
             </div>
           )}
 
           {showAddForm && (
-            <form onSubmit={handleAddUser} className="p-4 border rounded-xl bg-slate-50 dark:bg-slate-900/60 space-y-4">
-              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-indigo-600" />
+            <form onSubmit={handleAddUser} className="p-3.5 border rounded-xl bg-slate-50 dark:bg-slate-900/60 space-y-3">
+              <h4 className="font-bold text-xs text-foreground flex items-center gap-2">
+                <UserPlus className="w-3.5 h-3.5 text-primary" />
                 Invitar / Agregar Nuevo Miembro
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="userEmail">Correo Electrónico del Usuario</Label>
+                  <Label htmlFor="userEmail" className="text-[11px] font-semibold text-muted-foreground">Correo Electrónico del Usuario</Label>
                   <Input
                     id="userEmail"
                     type="email"
                     placeholder="ejemplo@empresa.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="h-8 text-xs"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="userRole">Nivel de Acceso (Rol)</Label>
-                  <select
-                    id="userRole"
-                    className="w-full h-10 px-3 py-2 text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as any)}
-                  >
-                    <option value="CONTADOR">CONTADOR — Crear/Anular Invoices, Gastos y Asientos</option>
-                    <option value="ADMIN">ADMINISTRADOR — Control Total (Empresa, NCFs, Usuarios)</option>
-                    <option value="VIEWER">AUXILIAR / LECTOR — Solo lectura de reportes y facturas</option>
-                  </select>
+                  <Label htmlFor="userRole" className="text-[11px] font-semibold text-muted-foreground">Nivel de Acceso (Rol)</Label>
+                  <Select value={role} onValueChange={(val) => setRole(val as any)}>
+                    <SelectTrigger id="userRole" className="w-full h-8 text-xs font-medium">
+                      <SelectValue placeholder="Seleccionar rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CONTADOR" className="text-xs">CONTADOR — Crear/Anular Invoices, Gastos y Asientos</SelectItem>
+                      <SelectItem value="ADMIN" className="text-xs">ADMINISTRADOR — Control Total (Empresa, NCFs, Usuarios)</SelectItem>
+                      <SelectItem value="VIEWER" className="text-xs">AUXILIAR / LECTOR — Solo lectura de reportes y facturas</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setShowAddForm(false)}>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button type="button" variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setShowAddForm(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isAdding} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar y Asignar Rol'}
+                <Button type="submit" disabled={isAdding} size="sm" className="h-8 text-xs font-semibold shadow-2xs">
+                  {isAdding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirmar y Asignar Rol'}
                 </Button>
               </div>
             </form>
           )}
 
           {isLoading ? (
-            <div className="p-8 text-center text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+            <div className="p-8 text-center text-muted-foreground text-xs">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
               Cargando miembros del equipo...
             </div>
           ) : !users || users.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-6">No hay otros miembros registrados en esta empresa.</p>
+            <p className="text-xs text-muted-foreground text-center py-6">No hay otros miembros registrados en esta empresa.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Usuario</TableHead>
-                  <TableHead>Correo Electrónico</TableHead>
-                  <TableHead>Nivel de Acceso</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead className="text-[11px] font-bold">Usuario</TableHead>
+                  <TableHead className="text-[11px] font-bold">Correo Electrónico</TableHead>
+                  <TableHead className="text-[11px] font-bold">Nivel de Acceso</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
                   <TableRow key={u.userId}>
-                    <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                    <TableCell className="font-medium text-xs text-foreground">
                       {u.firstName} {u.lastName}
                     </TableCell>
-                    <TableCell className="text-slate-600 dark:text-slate-400 font-mono text-xs">
+                    <TableCell className="text-muted-foreground font-mono text-[11px]">
                       {u.email}
                     </TableCell>
                     <TableCell>
-                      <select
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer ${getRoleBadgeClass(u.role)}`}
+                      <Select
                         value={u.role}
-                        onChange={(e) => handleRoleChange(u.userId, e.target.value as any)}
+                        onValueChange={(val) => handleRoleChange(u.userId, val as any)}
                         disabled={isUpdating}
                       >
-                        <option value="ADMIN">ADMINISTRADOR</option>
-                        <option value="CONTADOR">CONTADOR</option>
-                        <option value="VIEWER">AUXILIAR / LECTOR</option>
-                      </select>
+                        <SelectTrigger className={`h-7 text-[11px] font-semibold px-2.5 rounded-md border ${getRoleBadgeClass(u.role)}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ADMIN" className="text-xs">ADMINISTRADOR</SelectItem>
+                          <SelectItem value="CONTADOR" className="text-xs">CONTADOR</SelectItem>
+                          <SelectItem value="VIEWER" className="text-xs">AUXILIAR / LECTOR</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                        className="h-7 w-7 p-0 text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                         onClick={() => handleRemoveUser(u.userId, u.email)}
                         disabled={isRemoving}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </TableCell>
                   </TableRow>

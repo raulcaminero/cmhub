@@ -8,6 +8,14 @@ import { useCurrency } from '@/hooks/use-company';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -109,8 +117,8 @@ export function GeneralLedgerView({ companyId }: Props) {
       {/* ── Filter panel ── */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BookMarked className="w-4 h-4 text-indigo-600" />
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <BookMarked className="w-4 h-4 text-primary shrink-0" />
             {t('ledger.title')}
           </CardTitle>
         </CardHeader>
@@ -118,51 +126,55 @@ export function GeneralLedgerView({ companyId }: Props) {
           <form
             id="gl-filter-form"
             onSubmit={handleQuery}
-            className="flex flex-wrap items-end gap-4"
+            className="flex flex-wrap items-end gap-3"
             aria-label={t('ledger.title')}
           >
             {/* Account selector */}
-            <div className="flex-1 min-w-[220px] space-y-1.5">
-              <Label htmlFor="gl-account-select">{t('ledger.selectAccount')}</Label>
-              <select
-                id="gl-account-select"
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            <div className="flex-1 min-w-[200px] space-y-1">
+              <Label htmlFor="gl-account-select" className="text-[11px] font-semibold text-muted-foreground">{t('ledger.selectAccount')}</Label>
+              <Select
                 value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                required
-                aria-required="true"
+                onValueChange={(val) => setSelectedAccountId(val)}
                 disabled={isLoadingAccounts}
               >
-                <option value="">
-                  {isLoadingAccounts ? t('common.loading') : t('ledger.selectAccountPlaceholder')}
-                </option>
-                {sortedAccounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    [{acc.code}] {acc.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="gl-account-select" className="w-full h-8 text-xs">
+                  <SelectValue
+                    placeholder={
+                      isLoadingAccounts
+                        ? t('common.loading')
+                        : t('ledger.selectAccountPlaceholder')
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                      [{acc.code}] {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Start date */}
-            <div className="space-y-1.5">
-              <Label htmlFor="gl-start-date">{t('ledger.fromDate')}</Label>
-              <input
+            <div className="space-y-1">
+              <Label htmlFor="gl-start-date" className="text-[11px] font-semibold text-muted-foreground">{t('ledger.fromDate')}</Label>
+              <Input
                 id="gl-start-date"
                 type="date"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="h-8 text-xs font-medium w-32 shadow-2xs cursor-pointer"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
 
             {/* End date */}
-            <div className="space-y-1.5">
-              <Label htmlFor="gl-end-date">{t('ledger.toDate')}</Label>
-              <input
+            <div className="space-y-1">
+              <Label htmlFor="gl-end-date" className="text-[11px] font-semibold text-muted-foreground">{t('ledger.toDate')}</Label>
+              <Input
                 id="gl-end-date"
                 type="date"
-                className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="h-8 text-xs font-medium w-32 shadow-2xs cursor-pointer"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -171,13 +183,14 @@ export function GeneralLedgerView({ companyId }: Props) {
             <Button
               id="gl-query-btn"
               type="submit"
+              size="sm"
               disabled={!selectedAccountId || isLoading}
-              className="gap-2"
+              className="h-8 text-xs gap-1.5 font-semibold shadow-2xs"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Search className="w-4 h-4" />
+                <Search className="w-3.5 h-3.5" />
               )}
               {t('common.query')}
             </Button>

@@ -9,8 +9,14 @@ import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
 import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2 } from 'lucide-react';
-import { BackButton } from '@/components/ui/back-button';
 import { useTranslation } from '@/lib/use-translation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
@@ -176,7 +182,6 @@ export default function TaxPage() {
     <div className="space-y-4">
       {/* Header with Period Selector */}
       <div>
-        <BackButton fallbackHref="/cmhub" className="mb-1" />
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -188,29 +193,29 @@ export default function TaxPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground">Año:</Label>
-            <select
-              id="taxYearSelect"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none"
-            >
-              {YEARS.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val)}>
+              <SelectTrigger id="taxYearSelect" className="h-9 w-28 text-xs font-medium">
+                <SelectValue placeholder="Año" />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-1.5">
             <Label htmlFor="taxMonthSelect" className="text-xs font-semibold text-muted-foreground">Mes:</Label>
-            <select
-              id="taxMonthSelect"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background text-foreground px-3 text-xs focus-visible:outline-none font-medium"
-            >
-              {MONTHS.map((m) => (
-                <option key={m.code} value={m.code}>{m.name}</option>
-              ))}
-            </select>
+            <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val)}>
+              <SelectTrigger id="taxMonthSelect" className="h-9 w-36 text-xs font-medium">
+                <SelectValue placeholder="Mes" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m) => (
+                  <SelectItem key={m.code} value={m.code}>{m.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

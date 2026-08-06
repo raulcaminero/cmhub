@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation, Invoice } from '@/services/invoices.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
@@ -11,7 +11,7 @@ import { validarDocFiscal } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Printer, Loader2 } from 'lucide-react';
+import { Plus, Printer, Loader2, Receipt } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
 import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
@@ -45,6 +45,8 @@ interface InvoicesViewProps {
   quotationToConvert?: any;
   onCloseExternalModal?: () => void;
 }
+
+import Link from 'next/link';
 
 export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExternalModal }: InvoicesViewProps = {}) {
   const { t } = useTranslation();
@@ -98,6 +100,12 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   const [isOpen, setIsOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+
+  useEffect(() => {
+    if (externalOpenModal) {
+      setIsOpen(true);
+    }
+  }, [externalOpenModal]);
 
   const [collectModalOpen, setCollectModalOpen] = useState(false);
   const [invoiceToCollect, setInvoiceToCollect] = useState<Invoice | null>(null);
@@ -243,16 +251,22 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2.5 px-4">
-          <CardTitle>{t('invoicesView.title')}</CardTitle>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
+    <div className="space-y-3">
+      {/* Action Toolbar with Description */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Registro de facturas con comprobante fiscal NCF emitidos a clientes.
+        </p>
+        <Button size="sm" asChild className="gap-2 font-semibold shadow-2xs shrink-0">
+          <Link href={"/cmhub/sales/invoices/new" as any}>
             <Plus className="w-4 h-4" />
             {t('invoicesView.newInvoice')}
-          </Button>
-        </CardHeader>
-        <CardContent>
+          </Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-5 sm:p-6 space-y-4">
 
           {isLoading ? (
             <p className="text-sm text-muted-foreground">{t('invoicesView.loading')}</p>

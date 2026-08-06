@@ -29,6 +29,8 @@ import {
   Loader2,
   Eye,
   Calendar,
+  Download,
+  Printer,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
@@ -43,7 +45,8 @@ import {
 
 export function PayrollView() {
   const { t } = useTranslation();
-  const companyId = useAppSelector((state) => state.company.active?.id);
+  const activeCompany = useAppSelector((state) => state.company.active);
+  const companyId = activeCompany?.id;
   const formatCurrency = useCurrency();
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'employees' | 'payrolls'>('payrolls');
@@ -98,6 +101,8 @@ export function PayrollView() {
 
   // Detailed view of a payroll
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  // Payslips (Volantes de Pago) view modal
+  const [isPayslipOpen, setIsPayslipOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -196,6 +201,37 @@ export function PayrollView() {
     }
   }
 
+  // TSS SUIR TXT File Export
+  const handleDownloadTSS = (pay: Payroll) => {
+    const items = pay.items || [];
+    if (items.length === 0) {
+      alert('Esta nómina no tiene ítems de empleados para exportar.');
+      return;
+    }
+
+    // Format per TSS SUIR specifications: Cédula (11 dígitos sin guiones), Sueldo Bruto (2 decimales), Tipo de Ingreso N (Normal)
+    const lines = items.map((item) => {
+      const cleanCedula = item.employeeCedula.replace(/\D/g, '').padStart(11, '0');
+      const gross = Number(item.grossSalary).toFixed(2);
+      return `${cleanCedula},${gross},N`;
+    });
+
+    const content = lines.join('\r\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `TSS_SUIR_Nomina_${pay.period}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handlePrintPayslips = () => {
+    window.print();
+  };
+
   const formatPeriod = (p: string) => {
     if (p.length !== 6) return p;
     const y = p.substring(0, 4);
@@ -208,7 +244,13 @@ export function PayrollView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Header Description Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Administra empleados, salarios brutos e historial de nóminas procesadas.
+        </p>
+      </div>
       {/* Sub tabs */}
       <div className="flex gap-2 border-b pb-2">
         <Button
@@ -347,9 +389,11 @@ export function PayrollView() {
                             {formatCurrency(Number(pay.netSalary))}
                           </TableCell>
                           <TableCell className="text-right flex justify-end gap-1">
+                            {/* Ver Desglose */}
                             <Button
                               variant="ghost"
                               size="icon"
+                              title="Ver Desglose"
                               onClick={() => {
                                 setSelectedPayrollId(pay.id);
                                 setIsDetailOpen(true);
@@ -358,9 +402,41 @@ export function PayrollView() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
+                            {/* Exportar TXT TSS SUIR */}
                             <Button
                               variant="ghost"
                               size="icon"
+                              title="Exportar TXT TSS (SUIR)"
+                              onClick={() => {
+                                setSelectedPayrollId(pay.id);
+                                if (payrollDetails && payrollDetails.id === pay.id) {
+                                  handleDownloadTSS(payrollDetails);
+                                } else {
+                                  handleDownloadTSS(pay);
+                                }
+                              }}
+                              className="h-8 w-8 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            {/* Volantes de Pago */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Volantes de Pago"
+                              onClick={() => {
+                                setSelectedPayrollId(pay.id);
+                                setIsPayslipOpen(true);
+                              }}
+                              className="h-8 w-8 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                            {/* Eliminar */}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Eliminar Nómina"
                               onClick={() => handleDeletePayroll(pay.id)}
                               className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             >
@@ -541,13 +617,38 @@ export function PayrollView() {
       {isDetailOpen && selectedPayrollId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-4xl shadow-xl border relative my-8">
-            <h3 className="text-lg font-semibold mb-2">
-              Desglose de Nómina
-              {payrollDetails && ` - ${formatPeriod(payrollDetails.period)}`}
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Visualiza el desglose detallado de deducciones (TSS e ISR) por empleado.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b pb-3">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  Desglose de Nómina
+                  {payrollDetails && ` - ${formatPeriod(payrollDetails.period)}`}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Visualiza el desglose detallado de deducciones (TSS e ISR) por empleado.
+                </p>
+              </div>
+              {payrollDetails && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleDownloadTSS(payrollDetails)}
+                    className="gap-2 text-xs font-semibold"
+                  >
+                    <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    TXT TSS (SUIR)
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setIsPayslipOpen(true)}
+                    className="gap-2 text-xs font-semibold"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    Volantes de Pago
+                  </Button>
+                </div>
+              )}
+            </div>
 
             {loadingDetails ? (
               <p className="text-sm text-muted-foreground">Cargando desglose de nómina...</p>
@@ -626,6 +727,7 @@ export function PayrollView() {
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 size="sm"
+                variant="outline"
                 onClick={() => {
                   setIsDetailOpen(false);
                   setSelectedPayrollId(null);
@@ -637,6 +739,155 @@ export function PayrollView() {
           </div>
         </div>
       )}
+
+      {/* Modal Volantes de Pago (Payslips) Imprimibles */}
+      {isPayslipOpen && selectedPayrollId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-3xl shadow-2xl border relative my-8">
+            <div className="flex items-center justify-between border-b pb-3 mb-4 print:hidden">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-primary" />
+                  Volantes de Pago de Nómina
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Comprobantes individuales de pago para los empleados.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handlePrintPayslips} className="gap-2">
+                  <Printer className="w-4 h-4" />
+                  Imprimir / Guardar PDF
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsPayslipOpen(false)}
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+
+            {/* Container to Print */}
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1 print:max-h-none print:overflow-visible">
+              {loadingDetails ? (
+                <p className="text-sm text-muted-foreground py-6">Cargando comprobantes...</p>
+              ) : !payrollDetails || !payrollDetails.items || payrollDetails.items.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-6 text-center">No se encontraron empleados en esta nómina.</p>
+              ) : (
+                payrollDetails.items.map((item: any, idx: number) => {
+                  const totalDeductions = Number(item.sfsEmployee) + Number(item.afpEmployee) + Number(item.isrDeduction);
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="border rounded-xl p-6 bg-background space-y-4 shadow-2xs print:border-black print:break-inside-avoid print:my-4"
+                    >
+                      {/* Payslip Header */}
+                      <div className="flex justify-between items-start border-b pb-3">
+                        <div>
+                          <h4 className="font-bold text-base text-foreground uppercase tracking-wide">
+                            {activeCompany?.name || 'EMPRESA DEMO S.R.L.'}
+                          </h4>
+                          {activeCompany?.rnc && (
+                            <p className="text-xs text-muted-foreground font-mono">RNC: {activeCompany.rnc}</p>
+                          )}
+                          <p className="text-xs font-semibold text-primary mt-1">COMPROBANTE DE PAGO DE NÓMINA</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold px-2.5 py-1 bg-primary/10 text-primary rounded-md inline-block">
+                            Período: {formatPeriod(payrollDetails.period)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Employee Information */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-muted/20 p-3 rounded-lg border">
+                        <div>
+                          <span className="text-muted-foreground block font-medium">Empleado:</span>
+                          <span className="font-bold text-foreground">{item.employeeName}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block font-medium">Cédula:</span>
+                          <span className="font-mono font-semibold">{item.employeeCedula}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block font-medium">Cargo:</span>
+                          <span className="font-medium">{item.employeeJobTitle || 'Empleado'}</span>
+                        </div>
+                      </div>
+
+                      {/* Financial Breakdown Table */}
+                      <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-muted/40">
+                            <TableRow>
+                              <TableHead className="text-xs font-bold text-foreground">CONCEPTO / DESCRIPCIÓN</TableHead>
+                              <TableHead className="text-right text-xs font-bold text-foreground">HABERES (RD$)</TableHead>
+                              <TableHead className="text-right text-xs font-bold text-foreground">DEDUCCIONES (RD$)</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody className="text-xs">
+                            <TableRow>
+                              <TableCell className="font-medium">Salario Bruto Mensual</TableCell>
+                              <TableCell className="text-right font-mono font-semibold">{formatCurrency(Number(item.grossSalary))}</TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">-</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="text-muted-foreground">SFS - Seguro Familiar de Salud (3.04%)</TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">-</TableCell>
+                              <TableCell className="text-right font-mono text-amber-700">{formatCurrency(Number(item.sfsEmployee))}</TableCell>
+                            </TableRow>
+                            <TableRow>
+                              <TableCell className="text-muted-foreground">AFP - Fondo de Pensiones (2.87%)</TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">-</TableCell>
+                              <TableCell className="text-right font-mono text-amber-700">{formatCurrency(Number(item.afpEmployee))}</TableCell>
+                            </TableRow>
+                            {Number(item.isrDeduction) > 0 && (
+                              <TableRow>
+                                <TableCell className="text-muted-foreground">ISR - Impuesto Sobre la Renta (IR-3)</TableCell>
+                                <TableCell className="text-right font-mono text-muted-foreground">-</TableCell>
+                                <TableCell className="text-right font-mono text-rose-600">{formatCurrency(Number(item.isrDeduction))}</TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {/* Totals Summary */}
+                      <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 rounded-lg text-xs">
+                        <div>
+                          <span className="text-muted-foreground font-medium block">Total Deducciones:</span>
+                          <span className="font-mono font-semibold text-rose-600">{formatCurrency(totalDeductions)}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-emerald-800 dark:text-emerald-300 font-bold block uppercase text-xxs tracking-wider">SALARIO NETO RECIBIDO</span>
+                          <span className="text-base font-bold font-mono text-emerald-700 dark:text-emerald-400">
+                            {formatCurrency(Number(item.netSalary))}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Signature Lines */}
+                      <div className="pt-6 grid grid-cols-2 gap-8 text-center text-xxs text-muted-foreground border-t">
+                        <div>
+                          <div className="border-b border-muted-foreground/30 w-3/4 mx-auto mb-1"></div>
+                          <span>Firma del Empleado (Recibí Conforme)</span>
+                        </div>
+                        <div>
+                          <div className="border-b border-muted-foreground/30 w-3/4 mx-auto mb-1"></div>
+                          <span>Firma Autorizada / Sello Empresa</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

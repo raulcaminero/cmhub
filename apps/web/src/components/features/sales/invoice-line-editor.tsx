@@ -7,6 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Package } from 'lucide-react';
 import { useGetProductsQuery, Product } from '@/services/products.api';
 import { useCurrency } from '@/hooks/use-company';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export interface EditableLine {
   id: string;
@@ -101,10 +108,9 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
         </Label>
         <Button
           type="button"
-          variant="outline"
           size="sm"
           onClick={handleAddLine}
-          className="text-xs h-8 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 gap-1"
+          className="text-xs h-8 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-2xs gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" />
           Agregar Línea
@@ -135,18 +141,22 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                   <tr key={line.id} className="hover:bg-muted/50">
                     <td className="p-2 space-y-1">
                       {products && products.length > 0 && (
-                        <select
-                          value={line.productId || ''}
-                          onChange={(e) => handleLineChange(line.id, 'productId', e.target.value)}
-                          className="w-full text-[11px] h-7 rounded border border-input bg-background text-foreground px-1.5 focus:outline-none focus:border-indigo-500"
+                        <Select
+                          value={line.productId || 'none'}
+                          onValueChange={(val) => handleLineChange(line.id, 'productId', val === 'none' ? '' : val)}
                         >
-                          <option value="">-- Seleccionar del Catálogo (Opcional) --</option>
-                          {products.filter(p => p.isActive).map((p) => (
-                            <option key={p.id} value={p.id}>
-                              [{p.code}] {p.name} - {formatCurrency(Number(p.price))}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full text-[11px] h-7 px-2">
+                            <SelectValue placeholder="-- Seleccionar del Catálogo (Opcional) --" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-- Seleccionar del Catálogo (Opcional) --</SelectItem>
+                            {products.filter(p => p.isActive).map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                [{p.code}] {p.name} - {formatCurrency(Number(p.price))}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                       <Input
                         value={line.description}

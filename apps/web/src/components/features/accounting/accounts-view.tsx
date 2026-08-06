@@ -8,9 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, BookOpen } from 'lucide-react';
 import { AccountType } from '@cmhub/shared-types';
 import { useTranslation } from '@/lib/use-translation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function AccountsView() {
   const { t } = useTranslation();
@@ -34,7 +41,7 @@ export function AccountsView() {
     return (
       <Card>
         <CardContent className="pt-6">
-          <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
+          <p className="text-muted-foreground text-xs">{t('common.selectCompany')}</p>
         </CardContent>
       </Card>
     );
@@ -69,15 +76,21 @@ export function AccountsView() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2.5 px-4">
-        <CardTitle>{t('accounts.title')}</CardTitle>
-        <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-          <Plus className="w-4 h-4" />
+        <div>
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary shrink-0" />
+            {t('accounts.title')}
+          </CardTitle>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{t('accounts.subtitle')}</p>
+        </div>
+        <Button size="sm" className="h-8 text-xs gap-1.5 font-semibold shadow-2xs" onClick={() => setIsOpen(true)}>
+          <Plus className="w-3.5 h-3.5" />
           {t('accounts.newAccount')}
         </Button>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">{t('accounts.loading')}</p>
+          <p className="text-xs text-muted-foreground">{t('accounts.loading')}</p>
         ) : (
           <AccountsTable accounts={accounts ?? []} />
         )}
@@ -85,65 +98,67 @@ export function AccountsView() {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">{t('accounts.createTitle')}</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+          <div className="bg-card text-card-foreground p-5 rounded-lg w-full max-w-md shadow-xl border relative">
+            <h4 className="text-sm font-bold flex items-center gap-2 mb-1">{t('accounts.createTitle')}</h4>
+            <p className="text-[11px] text-muted-foreground mb-3">
               {t('accounts.createSubtitle')}
             </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="acc-code">{t('accounts.accountCode')}</Label>
+                <Label htmlFor="acc-code" className="text-[11px] font-semibold text-muted-foreground">{t('accounts.accountCode')}</Label>
                 <Input
                   id="acc-code"
                   placeholder="Ej. 110101 (Debe ser único)"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
+                  className="h-8 text-xs"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-name">{t('accounts.accountName')}</Label>
+                <Label htmlFor="acc-name" className="text-[11px] font-semibold text-muted-foreground">{t('accounts.accountName')}</Label>
                 <Input
                   id="acc-name"
                   placeholder="Ej. Caja General"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="h-8 text-xs"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-type">{t('accounts.accountType')}</Label>
-                <select
-                  id="acc-type"
-                  value={type}
-                  onChange={(e) => setType(e.target.value as AccountType)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value={AccountType.ASSET}>{t('accounts.asset')}</option>
-                  <option value={AccountType.LIABILITY}>{t('accounts.liability')}</option>
-                  <option value={AccountType.EQUITY}>{t('accounts.equity')}</option>
-                  <option value={AccountType.REVENUE}>{t('accounts.revenue')}</option>
-                  <option value={AccountType.EXPENSE}>{t('accounts.expense')}</option>
-                </select>
+                <Label htmlFor="acc-type" className="text-[11px] font-semibold text-muted-foreground">{t('accounts.accountType')}</Label>
+                <Select value={type} onValueChange={(val) => setType(val as AccountType)}>
+                  <SelectTrigger id="acc-type" className="w-full h-8 text-xs font-medium">
+                    <SelectValue placeholder={t('accounts.accountType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={AccountType.ASSET} className="text-xs">{t('accounts.asset')}</SelectItem>
+                    <SelectItem value={AccountType.LIABILITY} className="text-xs">{t('accounts.liability')}</SelectItem>
+                    <SelectItem value={AccountType.EQUITY} className="text-xs">{t('accounts.equity')}</SelectItem>
+                    <SelectItem value={AccountType.REVENUE} className="text-xs">{t('accounts.revenue')}</SelectItem>
+                    <SelectItem value={AccountType.EXPENSE} className="text-xs">{t('accounts.expense')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="acc-parent">{t('accounts.parentAccount')}</Label>
-                <select
-                  id="acc-parent"
-                  value={parentId}
-                  onChange={(e) => setParentId(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">{t('accounts.noParent')}</option>
-                  {accounts?.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.code} - {acc.name}
-                    </option>
-                  ))}
-                </select>
+                <Label htmlFor="acc-parent" className="text-[11px] font-semibold text-muted-foreground">{t('accounts.parentAccount')}</Label>
+                <Select value={parentId || 'NONE'} onValueChange={(val) => setParentId(val === 'NONE' ? '' : val)}>
+                  <SelectTrigger id="acc-parent" className="w-full h-8 text-xs font-medium">
+                    <SelectValue placeholder={t('accounts.noParent')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE" className="text-xs">{t('accounts.noParent')}</SelectItem>
+                    {accounts?.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                        {acc.code} - {acc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {errorMessage && (
@@ -155,6 +170,7 @@ export function AccountsView() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-semibold"
                   onClick={() => {
                     setIsOpen(false);
                     setErrorMessage('');
@@ -163,10 +179,10 @@ export function AccountsView() {
                 >
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating}>
+                <Button type="submit" size="sm" disabled={isCreating} className="h-8 text-xs font-semibold shadow-2xs">
                   {isCreating ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                       {t('accounts.creating')}
                     </>
                   ) : (

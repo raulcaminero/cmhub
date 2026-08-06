@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload, Search, Download, UserCheck, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { BackButton } from '@/components/ui/back-button';
 import { useTranslation } from '@/lib/use-translation';
 import {
   Table,
@@ -286,7 +285,6 @@ export default function ContactsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <BackButton fallbackHref="/cmhub" className="mb-1" />
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">

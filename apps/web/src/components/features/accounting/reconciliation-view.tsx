@@ -33,7 +33,16 @@ import {
   Camera,
   Loader2,
   Search,
+  Landmark,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
 import {
@@ -251,11 +260,18 @@ export function ReconciliationView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Header Description Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Concilia los extractos bancarios con tus registros contables.
+        </p>
+      </div>
+
       {/* Account selector and imports */}
-      <div className="flex flex-wrap gap-4 items-center justify-between bg-card p-4 rounded-lg border">
+      <div className="flex flex-wrap gap-4 items-center justify-between bg-card p-4 rounded-xl border border-border/70 shadow-2xs">
         <div className="flex items-center gap-3 min-w-[280px]">
-          <Label htmlFor="rec-account" className="font-semibold text-sm whitespace-nowrap">
+          <Label htmlFor="rec-account" className="font-semibold text-xs whitespace-nowrap">
             Cuenta Bancaria:
           </Label>
           {bankAccounts.length === 0 ? (
@@ -263,54 +279,63 @@ export function ReconciliationView() {
               No hay cuentas de banco (1101) creadas.
             </span>
           ) : (
-            <select
-              id="rec-account"
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-            >
-              {bankAccounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.code} - {a.name}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedAccountId} onValueChange={(val) => setSelectedAccountId(val)}>
+              <SelectTrigger id="rec-account" className="h-9 min-w-[240px] text-xs">
+                <SelectValue placeholder="Seleccionar cuenta bancaria" />
+              </SelectTrigger>
+              <SelectContent>
+                {bankAccounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.code} - {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-2 border-primary text-primary hover:bg-primary/10"
-            onClick={() => setIsOcrOpen(true)}
-            disabled={!selectedAccountId}
-          >
-            <Camera className="w-4 h-4" />
-            Escanear Estado (OCR)
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-2"
-            onClick={() => setIsImportOpen(true)}
-            disabled={!selectedAccountId}
-          >
-            <Upload className="w-4 h-4" />
-            Importar Extracto
-          </Button>
-          <Button
-            size="sm"
-            className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all"
-            onClick={handleAutoMatch}
-            disabled={!selectedAccountId || isMatching}
-          >
-            <Sparkles className="w-4 h-4 animate-pulse" />
-            Conciliación Inteligente
-          </Button>
-          <Button size="sm" variant="ghost" className="h-9 w-9 p-0" onClick={refetch}>
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+        <div className="flex gap-2 items-center">
+          <Tooltip content="Escanear estado de cuenta con IA">
+            <Button
+              size="sm"
+              className="gap-2 text-xs font-semibold shadow-xs"
+              onClick={() => setIsOcrOpen(true)}
+              disabled={!selectedAccountId}
+            >
+              <Camera className="w-4 h-4" />
+              Escanear Estado (OCR)
+            </Button>
+          </Tooltip>
+
+          <Tooltip content="Importar archivo CSV o Excel">
+            <Button
+              size="sm"
+              className="gap-2 text-xs font-semibold shadow-xs"
+              onClick={() => setIsImportOpen(true)}
+              disabled={!selectedAccountId}
+            >
+              <Upload className="w-4 h-4" />
+              Importar Extracto
+            </Button>
+          </Tooltip>
+
+          <Tooltip content="Emparejar transacciones con IA">
+            <Button
+              size="sm"
+              className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all text-white"
+              onClick={handleAutoMatch}
+              disabled={!selectedAccountId || isMatching}
+            >
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              Conciliación Inteligente
+            </Button>
+          </Tooltip>
+
+          <Tooltip content="Actualizar movimientos y saldos" align="end">
+            <Button size="sm" variant="ghost" className="h-9 w-9 p-0" onClick={refetch}>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
