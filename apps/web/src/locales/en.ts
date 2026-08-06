@@ -417,7 +417,7 @@ export const en: Translations = {
     expiringSoonDesc: 'Expiration <30 days',
     loadPresets: 'Load Initial DGII Presets',
     loadPresetsConfirm: 'Do you want to automatically create default initial sequence ranges (B01, B02, E31, E32)?',
-    searchPlaceholder: 'Search by prefix or voucher type...',
+    searchPlaceholder: 'Search by prefix or type',
     allTab: 'All',
     physicalTab: 'Physical (B01-B16)',
     electronicTab: 'Electronic (E31-E45)',
@@ -445,6 +445,7 @@ export const en: Translations = {
   },
   accounts: {
     title: 'Chart of Accounts',
+    subtitle: 'Hierarchical chart of accounts structure for recording transactions and financial statements.',
     newAccount: 'New Account',
     loading: 'Loading accounts...',
     createTitle: 'Create new GL Account',

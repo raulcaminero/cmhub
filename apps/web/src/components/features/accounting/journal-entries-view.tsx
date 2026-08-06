@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, FileText } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
 import {
@@ -164,16 +164,20 @@ export function JournalEntriesView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Action Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Registro de la contabilidad general de la empresa.
+        </p>
+        <Button size="sm" className="gap-2 font-semibold shadow-2xs shrink-0" onClick={() => setIsOpen(true)}>
+          <Plus className="w-4 h-4" />
+          {t('entries.newEntry')}
+        </Button>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2.5 px-4">
-          <CardTitle>{t('entries.title')}</CardTitle>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-            <Plus className="w-4 h-4" />
-            {t('entries.newEntry')}
-          </Button>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 sm:p-6 space-y-4">
           {isLoadingEntries ? (
             <p className="text-sm text-muted-foreground">{t('entries.loading')}</p>
           ) : !entries || entries.length === 0 ? (

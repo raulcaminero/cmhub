@@ -7,9 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Search, Zap, CheckCircle2, AlertTriangle, Clock, Layers } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Search, Zap, CheckCircle2, AlertTriangle, Clock, Layers, FileText } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { useTranslation } from '@/lib/use-translation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -106,10 +114,9 @@ export function NcfSequencesView() {
     });
   }, [sequences, searchTerm, filterType]);
 
-  // Load 1-Click Initial Presets
+  // Load 1-Click Initial Presets manually if requested
   async function handleLoadPresets() {
     if (!companyId) return;
-    if (!confirm(t('ncf.loadPresetsConfirm'))) return;
 
     setIsPresetLoading(true);
     const twoYearsLater = new Date();
@@ -288,43 +295,38 @@ export function NcfSequencesView() {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2.5 px-4">
           <div>
-            <CardTitle>{t('ncf.cardTitle')}</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">{t('ncf.subtitle')}</p>
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary shrink-0" />
+              {t('ncf.cardTitle')}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('ncf.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {sequences.length === 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-2 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
-                onClick={handleLoadPresets}
-                disabled={isPresetLoading}
-              >
-                {isPresetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-indigo-500 fill-indigo-500" />}
-                {t('ncf.loadPresets')}
+            <Tooltip content="Importar secuencias NCF desde archivo Excel" align="end">
+              <Button size="sm" className="gap-2 font-semibold shadow-2xs" onClick={() => setIsExcelOpen(true)}>
+                <FileSpreadsheet className="w-4 h-4" />
+                {t('contacts.importCsv')}
               </Button>
-            )}
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => setIsExcelOpen(true)}>
-              <FileSpreadsheet className="w-4 h-4" />
-              {t('contacts.importCsv')}
-            </Button>
-            <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-              <Plus className="w-4 h-4" />
-              {t('ncf.registerSequence')}
-            </Button>
+            </Tooltip>
+            <Tooltip content="Registrar nueva secuencia autorizada de NCF" align="end">
+              <Button size="sm" className="gap-2 font-semibold shadow-2xs" onClick={() => setIsOpen(true)}>
+                <Plus className="w-4 h-4" />
+                {t('ncf.registerSequence')}
+              </Button>
+            </Tooltip>
           </div>
         </CardHeader>
 
         {/* Filter Controls Bar */}
         <div className="px-4 pb-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b">
           {/* Search Input */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative w-full sm:w-56">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('ncf.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-8 text-xs"
+              className="pl-8 h-8 text-xs"
             />
           </div>
           {/* Category Filter Tabs */}
@@ -369,25 +371,39 @@ export function NcfSequencesView() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground py-4">{t('ncf.loading')}</p>
           ) : !filteredSequences || filteredSequences.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground mb-3">{t('ncf.noSequences')}</p>
+            <div className="text-center py-10 max-w-md mx-auto space-y-4">
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-base font-semibold tracking-tight">No hay secuencias NCF configuradas</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Si tu empresa es nueva en la DGII, puedes cargar la plantilla inicial predeterminada. Si ya cuentas con rangos autorizados, impórtalos o regístralos manualmente.
+                </p>
+              </div>
               {sequences.length === 0 && (
-                <Button size="sm" variant="outline" className="gap-2" onClick={handleLoadPresets} disabled={isPresetLoading}>
-                  <Zap className="w-4 h-4 text-indigo-500 fill-indigo-500" />
-                  {t('ncf.loadPresets')}
-                </Button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+                  <Button size="sm" className="gap-2 font-semibold shadow-2xs w-full sm:w-auto" onClick={handleLoadPresets} disabled={isPresetLoading}>
+                    {isPresetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 fill-current" />}
+                    Cargar Plantilla Inicial (B01, B02, E31, E32)
+                  </Button>
+                  <Button size="sm" variant="outline" className="gap-2 font-semibold shadow-2xs w-full sm:w-auto" onClick={() => setIsExcelOpen(true)}>
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Importar Excel
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('ncf.voucherType')}</TableHead>
-                  <TableHead>{t('ncf.prefix')}</TableHead>
-                  <TableHead className="w-56">{t('ncf.consumptionHeader')}</TableHead>
-                  <TableHead className="text-right">{t('ncf.nextSequence')}</TableHead>
-                  <TableHead>{t('ncf.expiration')}</TableHead>
-                  <TableHead>{t('common.status')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('ncf.voucherType')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('ncf.prefix')}</TableHead>
+                  <TableHead className="text-[11px] font-bold w-56">{t('ncf.consumptionHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('ncf.nextSequence')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('ncf.expiration')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.status')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -403,10 +419,10 @@ export function NcfSequencesView() {
 
                   return (
                     <TableRow key={seq.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-[11px]">
                         {NCF_TYPE_LABELS[seq.type] || seq.type}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{seq.prefix}</TableCell>
+                      <TableCell className="font-mono text-[11px]">{seq.prefix}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-[11px] font-mono">
@@ -427,20 +443,20 @@ export function NcfSequencesView() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">
+                      <TableCell className="text-right font-mono text-[11px] font-semibold">
                         {nextNum <= seq.max ? `${seq.prefix}${paddedNext}` : t('ncf.exhausted')}
                       </TableCell>
-                      <TableCell className={isExpired ? 'text-destructive font-medium text-xs' : 'text-xs'}>
+                      <TableCell className={isExpired ? 'text-destructive font-semibold text-[11px]' : 'text-[11px]'}>
                         {new Date(seq.expiresAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                             seq.isActive && !isExpired
                               ? isLow
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/20 dark:text-amber-400'
-                                : 'bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/20 dark:text-green-400'
-                              : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/20 dark:text-red-400'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-400'
                           }`}
                         >
                           {seq.isActive && !isExpired
@@ -472,18 +488,18 @@ export function NcfSequencesView() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
                 <Label htmlFor="ncf-type">{t('ncf.ncfType')}</Label>
-                <select
-                  id="ncf-type"
-                  value={type}
-                  onChange={(e) => handleTypeChange(e.target.value as NcfType)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {Object.values(NcfType).map((t) => (
-                    <option key={t} value={t}>
-                      {NCF_TYPE_LABELS[t] || t}
-                    </option>
-                  ))}
-                </select>
+                <Select value={type} onValueChange={(val) => handleTypeChange(val as NcfType)}>
+                  <SelectTrigger id="ncf-type" className="w-full h-9 text-xs font-medium">
+                    <SelectValue placeholder={t('ncf.ncfType')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(NcfType).map((tVal) => (
+                      <SelectItem key={tVal} value={tVal}>
+                        {NCF_TYPE_LABELS[tVal] || tVal}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1">

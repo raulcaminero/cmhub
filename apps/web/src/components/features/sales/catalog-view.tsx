@@ -16,6 +16,8 @@ import { Plus, Search, Package, Edit, CheckCircle, XCircle, Loader2 } from 'luci
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
 
+import { Tooltip } from '@/components/ui/tooltip';
+
 export default function CatalogView({ companyId }: { companyId: string }) {
   const { t } = useTranslation();
   const formatCurrency = useCurrency();
@@ -129,31 +131,28 @@ export default function CatalogView({ companyId }: { companyId: string }) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Action Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          {t('sales.catalogDesc')}
+        </p>
+        <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 font-semibold shadow-2xs shrink-0">
+          <Plus className="w-4 h-4" />
+          {t('sales.newProduct')}
+        </Button>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle>{t('sales.catalogTitle')}</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              {t('sales.catalogDesc')}
-            </CardDescription>
-          </div>
-          <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 shrink-0">
-            <Plus className="w-4 h-4" />
-            {t('sales.newProduct')}
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input
-                placeholder={t('sales.searchPlaceholder')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 text-xs"
-              />
-            </div>
+        <CardContent className="p-5 sm:p-6 space-y-4">
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t('sales.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 text-xs h-9 shadow-2xs font-medium"
+            />
           </div>
           <div className="overflow-x-auto">
             {isLoading ? (
@@ -209,14 +208,16 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                         )}
                       </td>
                       <td className="py-2.5 px-4 text-right space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEditModal(prod)}
-                          className="h-7 w-7 p-0 text-slate-500 hover:text-indigo-600"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Button>
+                        <Tooltip content="Editar producto o servicio" align="end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEditModal(prod)}
+                            className="h-7 w-7 p-0 text-slate-500 hover:text-indigo-600"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                        </Tooltip>
                         <Button
                           variant="ghost"
                           size="sm"

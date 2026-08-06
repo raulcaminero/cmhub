@@ -415,7 +415,7 @@ export const es = {
     expiringSoonDesc: 'Vencimiento <30 días',
     loadPresets: 'Cargar Rangos Iniciales DGII',
     loadPresetsConfirm: '¿Deseas generar automáticamente los rangos iniciales por defecto (B01, B02, E31, E32)?',
-    searchPlaceholder: 'Buscar por prefijo o tipo de comprobante...',
+    searchPlaceholder: 'Buscar por prefijo o tipo',
     allTab: 'Todos',
     physicalTab: 'Físicos (B01-B16)',
     electronicTab: 'Electrónicos (E31-E45)',
@@ -443,6 +443,7 @@ export const es = {
   },
   accounts: {
     title: 'Plan de Cuentas',
+    subtitle: 'Estructura jerárquica de cuentas contables para registrar transacciones y estados financieros.',
     newAccount: 'Nueva Cuenta',
     loading: 'Cargando cuentas...',
     createTitle: 'Crear nueva cuenta contable',

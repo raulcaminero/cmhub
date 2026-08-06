@@ -45,7 +45,7 @@ export function ThemeSelector() {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
       {options.map((opt) => {
         const Icon = opt.icon;
         const isSelected = theme === opt.id;
@@ -54,24 +54,24 @@ export function ThemeSelector() {
             key={opt.id}
             type="button"
             onClick={() => setTheme(opt.id)}
-            className={`p-4 border rounded-xl text-left transition-all flex flex-col justify-between space-y-3 cursor-pointer ${
+            className={`p-3.5 border rounded-xl text-left transition-all flex flex-col justify-between space-y-2.5 cursor-pointer ${
               isSelected
-                ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 ring-2 ring-indigo-500/20'
+                ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                 : 'border-border bg-card hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
             <div className="flex items-center justify-between w-full">
               <div
-                className={`p-2 rounded-lg ${
-                  isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                className={`p-1.5 rounded-lg ${
+                  isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                 }`}
               >
                 <Icon className="w-4 h-4" />
               </div>
-              {isSelected && <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">✓ Activo</span>}
+              {isSelected && <span className="text-[11px] font-bold text-primary">✓ Activo</span>}
             </div>
             <div>
-              <p className="font-semibold text-xs text-foreground">{opt.label}</p>
+              <p className="font-bold text-xs text-foreground">{opt.label}</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">{opt.desc}</p>
             </div>
           </button>
