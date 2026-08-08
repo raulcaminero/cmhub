@@ -14,6 +14,7 @@ import { UserRole } from '@prisma/client';
 import { ACCOUNT_REPOSITORY } from '../accounting/accounting.service';
 
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
+import { AuditLogService } from '../audit/audit-log.service';
 
 import { TAX_RATE_SEEDS } from './tax-rate-seeds';
 
@@ -25,6 +26,7 @@ export class CompanyService {
     @Inject(COMPANY_REPOSITORY) private readonly companyRepository: ICompanyRepository,
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   private getModulesForCountry(country: string): string[] {
@@ -521,6 +523,15 @@ export class CompanyService {
           select: { id: true, email: true, firstName: true, lastName: true },
         },
       },
+    });
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId: targetUserId,
+      action: 'UPDATE_ROLE',
+      entity: 'UserCompanyRole',
+      entityId: targetUserId,
+      details: { previousRole: existing.role, newRole },
     });
 
     return {
