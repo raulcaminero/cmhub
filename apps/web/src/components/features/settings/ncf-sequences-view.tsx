@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Search, Zap, CheckCircle2, AlertTriangle, Clock, Layers, FileText } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Search, Zap, CheckCircle2, AlertTriangle, Clock, Layers, FileText, X } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { useTranslation } from '@/lib/use-translation';
 import {
@@ -479,22 +479,36 @@ export function NcfSequencesView() {
 
       {/* Modal Nueva Secuencia */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">{t('ncf.registerTitle')}</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                setErrorMessage('');
+              }}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Plus className="w-4 h-4 text-primary shrink-0" />
+              {t('ncf.registerTitle')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               {t('ncf.registerSubtitle')}
             </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="ncf-type">{t('ncf.ncfType')}</Label>
+                <Label htmlFor="ncf-type" className="text-xs font-semibold text-muted-foreground">{t('ncf.ncfType')} *</Label>
                 <Select value={type} onValueChange={(val) => handleTypeChange(val as NcfType)}>
                   <SelectTrigger id="ncf-type" className="w-full h-9 text-xs font-medium">
                     <SelectValue placeholder={t('ncf.ncfType')} />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.values(NcfType).map((tVal) => (
-                      <SelectItem key={tVal} value={tVal}>
+                      <SelectItem key={tVal} value={tVal} className="text-xs">
                         {NCF_TYPE_LABELS[tVal] || tVal}
                       </SelectItem>
                     ))}
@@ -503,49 +517,54 @@ export function NcfSequencesView() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-prefix">{t('ncf.prefixLabel')}</Label>
+                <Label htmlFor="ncf-prefix" className="text-xs font-semibold text-muted-foreground">{t('ncf.prefixLabel')} *</Label>
                 <Input
                   id="ncf-prefix"
                   placeholder="Ej. B01 o E31"
                   value={prefix}
                   onChange={(e) => setPrefix(e.target.value)}
+                  className="h-9 text-xs font-mono"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-max">{t('ncf.maxLabel')}</Label>
+                <Label htmlFor="ncf-max" className="text-xs font-semibold text-muted-foreground">{t('ncf.maxLabel')} *</Label>
                 <Input
                   id="ncf-max"
                   type="number"
                   placeholder="Ej. 100"
                   value={max}
                   onChange={(e) => setMax(Number(e.target.value))}
+                  className="h-9 text-xs font-mono"
                   required
                   min={1}
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="ncf-expiry">{t('ncf.expiryLabel')}</Label>
+                <Label htmlFor="ncf-expiry" className="text-xs font-semibold text-muted-foreground">{t('ncf.expiryLabel')} *</Label>
                 <Input
                   id="ncf-expiry"
                   type="date"
+                  aria-label={t('ncf.expiryLabel')}
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
               {errorMessage && (
-                <p className="text-xs text-destructive font-medium">{errorMessage}</p>
+                <p className="text-xs text-destructive font-semibold mt-2">{errorMessage}</p>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-medium"
                   onClick={() => {
                     setIsOpen(false);
                     setErrorMessage('');
@@ -554,10 +573,10 @@ export function NcfSequencesView() {
                 >
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating}>
+                <Button type="submit" size="sm" disabled={isCreating} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreating ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       {t('common.saving')}
                     </>
                   ) : (
@@ -572,17 +591,32 @@ export function NcfSequencesView() {
 
       {/* Modal Importar NCF desde Excel/CSV */}
       {isExcelOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">{t('ncf.importTitle')}</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsExcelOpen(false);
+                setCsvText('');
+                setImportError('');
+              }}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+              {t('ncf.importTitle')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               {t('ncf.importSubtitle')}
             </p>
             
-            <form onSubmit={handleCsvImport} className="space-y-4">
+            <form onSubmit={handleCsvImport} className="space-y-3">
               <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
-                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-xs">
                   {t('contacts.uploadCsv')}
                 </Label>
                 <span className="text-[10px] text-muted-foreground">{t('contacts.dragCsv')}</span>
@@ -597,14 +631,14 @@ export function NcfSequencesView() {
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="csv-text">{t('contacts.csvPreview')}</Label>
+                  <Label htmlFor="csv-text" className="text-xs font-semibold text-muted-foreground">{t('contacts.csvPreview')}</Label>
                   <span className="text-[10px] text-muted-foreground font-mono">Formato: Tipo,Prefijo,Max,Vencimiento</span>
                 </div>
                 <textarea
                   id="csv-text"
-                  rows={6}
+                  rows={5}
                   placeholder="Ejemplo:&#10;Tipo,Prefijo,Max,Vencimiento&#10;B01,B01,100,2026-12-31&#10;B02,B02,500,2026-12-31"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
                   required
@@ -612,10 +646,10 @@ export function NcfSequencesView() {
               </div>
 
               {importError && (
-                <p className="text-xs text-destructive font-medium">{importError}</p>
+                <p className="text-xs text-destructive font-semibold mt-2">{importError}</p>
               )}
 
-              <div className="flex justify-between items-center pt-2">
+              <div className="flex justify-between items-center pt-3 border-t mt-4">
                 <a 
                   href="data:text/csv;charset=utf-8,Tipo,Prefijo,Max,Vencimiento%0AB01,B01,100,2026-12-31%0AB02,B02,500,2026-12-31" 
                   download="plantilla_ncf.csv"
@@ -628,6 +662,7 @@ export function NcfSequencesView() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-8 text-xs font-medium"
                     onClick={() => {
                       setIsExcelOpen(false);
                       setCsvText('');
@@ -637,10 +672,10 @@ export function NcfSequencesView() {
                   >
                     {t('common.cancel')}
                   </Button>
-                  <Button type="submit" size="sm" disabled={isImporting}>
+                  <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isImporting ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         {t('contacts.importing')}
                       </>
                     ) : (

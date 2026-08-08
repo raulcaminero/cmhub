@@ -15,8 +15,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload, Search, Download, UserCheck, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Loader2, Users, FileSpreadsheet, Upload, Search, Download, UserCheck, Building2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -296,23 +303,23 @@ export default function ContactsPage() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            className="gap-2 font-semibold shadow-sm"
+            className="h-8 text-xs gap-1.5 font-semibold shadow-2xs"
             onClick={handleExportCsv}
             disabled={contacts.length === 0}
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             {t('contacts.exportCsv')}
           </Button>
           <Button
             size="sm"
-            className="gap-2 font-semibold shadow-sm"
+            className="h-8 text-xs gap-1.5 font-semibold shadow-2xs"
             onClick={() => setIsExcelOpen(true)}
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-3.5 h-3.5" />
             {t('contacts.importCsv')}
           </Button>
-          <Button size="sm" className="gap-2 font-semibold shadow-sm" onClick={() => setIsOpen(true)}>
-            <Plus className="w-4 h-4" />
+          <Button size="sm" className="h-8 text-xs gap-1.5 font-semibold shadow-2xs" onClick={() => setIsOpen(true)}>
+            <Plus className="w-3.5 h-3.5" />
             {t('contacts.registerContact')}
           </Button>
         </div>
@@ -369,17 +376,20 @@ export default function ContactsPage() {
       {/* Main Directory Table & Filter Card */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-2.5 px-4">
-          <CardTitle>{t('contacts.cardTitle')}</CardTitle>
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary shrink-0" />
+            {t('contacts.cardTitle')}
+          </CardTitle>
           {/* Search & Tabs Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative w-full sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={t('contacts.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-8 text-xs"
+                className="pl-8 h-8 text-xs"
               />
             </div>
             {/* Filter Tabs */}
@@ -433,31 +443,31 @@ export default function ContactsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground py-4">{t('contacts.loading')}</p>
+            <p className="text-xs text-muted-foreground py-4">{t('contacts.loading')}</p>
           ) : !filteredContacts || filteredContacts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
+            <p className="text-xs text-muted-foreground text-center py-6">
               {contacts.length === 0 ? t('contacts.noContacts') : 'No se encontraron contactos con los filtros aplicados.'}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('contacts.nameHeader')}</TableHead>
-                  <TableHead>{t('contacts.rncHeader')}</TableHead>
-                  <TableHead>{t('contacts.typeHeader')}</TableHead>
-                  <TableHead>{t('contacts.emailHeader')}</TableHead>
-                  <TableHead>{t('contacts.phoneHeader')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('contacts.nameHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('contacts.rncHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('contacts.typeHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('contacts.emailHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('contacts.phoneHeader')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
-                    <TableCell className="font-medium text-sm">{contact.name}</TableCell>
-                    <TableCell className="font-mono text-sm">{contact.rnc}</TableCell>
+                    <TableCell className="font-medium text-[11px] text-foreground">{contact.name}</TableCell>
+                    <TableCell className="font-mono text-[11px] text-muted-foreground">{contact.rnc}</TableCell>
                     <TableCell>
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold border ${
                           contact.type === 'CLIENT'
                             ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800'
                             : contact.type === 'PROVIDER'
@@ -468,24 +478,24 @@ export default function ContactsPage() {
                         {TYPE_LABELS[contact.type]}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm">{contact.email || '-'}</TableCell>
-                    <TableCell className="text-sm">{contact.phone || '-'}</TableCell>
+                    <TableCell className="text-[11px] text-muted-foreground">{contact.email || '-'}</TableCell>
+                    <TableCell className="text-[11px] text-muted-foreground">{contact.phone || '-'}</TableCell>
                     <TableCell className="text-right flex justify-end gap-1">
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleStartEdit(contact)}
-                        className="h-8 w-8 text-muted-foreground hover:bg-accent"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:bg-accent"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleDelete(contact.id)}
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -498,18 +508,27 @@ export default function ContactsPage() {
 
       {/* Modal Registrar/Editar Contacto */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary shrink-0" />
               {editingContact ? t('contacts.editContact') : t('contacts.registerContact')}
             </h3>
-            <p className="text-xs text-muted-foreground mb-4">
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               {editingContact ? t('contacts.editSubtitle') : t('contacts.registerSubtitle')}
             </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="contact-rnc">{t('contacts.rncLabel')}</Label>
+                  <Label htmlFor="contact-rnc" className="text-xs font-semibold text-muted-foreground">{t('contacts.rncLabel')} *</Label>
                   {rnc && (
                     <span
                       className={`text-[10px] font-medium inline-flex items-center gap-1 ${
@@ -535,82 +554,88 @@ export default function ContactsPage() {
                   placeholder="Ej. 101010101 o 00100000000"
                   value={rnc}
                   onChange={(e) => setRnc(e.target.value)}
+                  className="h-9 text-xs font-mono"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="contact-name">{t('contacts.nameLabel')}</Label>
+                <Label htmlFor="contact-name" className="text-xs font-semibold text-muted-foreground">{t('contacts.nameLabel')} *</Label>
                 <Input
                   id="contact-name"
                   placeholder="Ej. Empresa SRL o Juan Pérez"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="contact-type">{t('contacts.relationLabel')}</Label>
-                <select
-                  id="contact-type"
-                  value={type}
-                  onChange={(e) => setType(e.target.value as ContactType)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="CLIENT">{t('contacts.client')}</option>
-                  <option value="PROVIDER">{t('contacts.provider')}</option>
-                  <option value="BOTH">{t('contacts.both')}</option>
-                </select>
+                <Label htmlFor="contact-type" className="text-xs font-semibold text-muted-foreground">{t('contacts.relationLabel')}</Label>
+                <Select value={type} onValueChange={(val) => setType(val as ContactType)}>
+                  <SelectTrigger id="contact-type" className="w-full h-9 text-xs font-medium">
+                    <SelectValue placeholder={t('contacts.relationLabel')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CLIENT" className="text-xs">{t('contacts.client')}</SelectItem>
+                    <SelectItem value="PROVIDER" className="text-xs">{t('contacts.provider')}</SelectItem>
+                    <SelectItem value="BOTH" className="text-xs">{t('contacts.both')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="contact-email">{t('contacts.emailLabel')}</Label>
+                <Label htmlFor="contact-email" className="text-xs font-semibold text-muted-foreground">{t('contacts.emailLabel')}</Label>
                 <Input
                   id="contact-email"
                   type="email"
                   placeholder="ejemplo@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-9 text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="contact-phone">{t('contacts.phoneLabel')}</Label>
+                <Label htmlFor="contact-phone" className="text-xs font-semibold text-muted-foreground">{t('contacts.phoneLabel')}</Label>
                 <Input
                   id="contact-phone"
                   placeholder="809-555-0199"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  className="h-9 text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="contact-address">{t('contacts.addressLabel')}</Label>
+                <Label htmlFor="contact-address" className="text-xs font-semibold text-muted-foreground">{t('contacts.addressLabel')}</Label>
                 <Input
                   id="contact-address"
                   placeholder="Calle Principal #12, Sto. Dgo."
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  className="h-9 text-xs"
                 />
               </div>
 
-              {errorMessage && <p className="text-xs text-destructive font-medium">{errorMessage}</p>}
+              {errorMessage && <p className="text-xs text-destructive font-semibold mt-2">{errorMessage}</p>}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-medium"
                   onClick={handleCloseModal}
                   disabled={isCreating || isUpdating}
                 >
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating || isUpdating}>
+                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreating || isUpdating ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       {t('common.saving')}
                     </>
                   ) : (
@@ -624,16 +649,32 @@ export default function ContactsPage() {
       )}
 
       {/* Modal Importar Contactos desde Excel/CSV */}
+      {/* Modal Importar Contactos desde Excel/CSV */}
       {isExcelOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">{t('contacts.importTitle')}</h3>
-            <p className="text-xs text-muted-foreground mb-4">{t('contacts.importSubtitle')}</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsExcelOpen(false);
+                setCsvText('');
+                setImportError('');
+              }}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+              {t('contacts.importTitle')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">{t('contacts.importSubtitle')}</p>
 
-            <form onSubmit={handleCsvImport} className="space-y-4">
+            <form onSubmit={handleCsvImport} className="space-y-3">
               <div className="border border-dashed border-muted rounded-lg p-4 bg-muted/20 text-center flex flex-col items-center gap-2">
                 <Upload className="w-8 h-8 text-muted-foreground" />
-                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                <Label htmlFor="csv-file" className="cursor-pointer font-semibold hover:underline text-primary text-xs">
                   {t('contacts.uploadCsv')}
                 </Label>
                 <span className="text-[10px] text-muted-foreground">{t('contacts.dragCsv')}</span>
@@ -642,23 +683,23 @@ export default function ContactsPage() {
 
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="csv-text">{t('contacts.csvPreview')}</Label>
+                  <Label htmlFor="csv-text" className="text-xs font-semibold text-muted-foreground">{t('contacts.csvPreview')}</Label>
                   <span className="text-[10px] text-muted-foreground font-mono">Formato: Nombre,RNC,Tipo,Tel,Email</span>
                 </div>
                 <textarea
                   id="csv-text"
-                  rows={6}
+                  rows={5}
                   placeholder="Ejemplo:&#10;Nombre,RNC,Tipo,Tel,Email&#10;Empresa SRL,101010101,CLIENT,8095550199,info@empresa.com"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
                   required
                 />
               </div>
 
-              {importError && <p className="text-xs text-destructive font-medium">{importError}</p>}
+              {importError && <p className="text-xs text-destructive font-semibold mt-2">{importError}</p>}
 
-              <div className="flex justify-between items-center pt-2">
+              <div className="flex justify-between items-center pt-3 border-t mt-4">
                 <a
                   href="data:text/csv;charset=utf-8,Nombre,RNC,Tipo,Tel,Email%0AEmpresa%20SRL,101010101,CLIENT,8095550199,info@empresa.com"
                   download="plantilla_contactos.csv"
@@ -671,6 +712,7 @@ export default function ContactsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-8 text-xs font-medium"
                     onClick={() => {
                       setIsExcelOpen(false);
                       setCsvText('');
@@ -680,10 +722,10 @@ export default function ContactsPage() {
                   >
                     {t('common.cancel')}
                   </Button>
-                  <Button type="submit" size="sm" disabled={isImporting}>
+                  <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isImporting ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         {t('contacts.importing')}
                       </>
                     ) : (

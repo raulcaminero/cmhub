@@ -30,7 +30,7 @@ export default function RegisterPage() {
     const result = await register({ email, firstName, lastName, password });
     if ('data' in result && result.data && 'accessToken' in result.data) {
       dispatch(setCredentials(result.data as any));
-      router.push('/cmhub');
+      router.push('/cmhub' as any);
     }
   }
 
@@ -121,7 +121,7 @@ export default function RegisterPage() {
           </Button>
           <div className="text-center text-xs text-muted-foreground pt-2">
             {t('auth.alreadyHaveAccount')}{' '}
-            <Link href="/login" className="text-indigo-600 hover:underline font-semibold">
+            <Link href={'/login' as any} className="text-indigo-600 hover:underline font-semibold">
               {t('auth.signInLink')}
             </Link>
           </div>

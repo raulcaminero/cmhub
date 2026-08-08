@@ -148,7 +148,7 @@ export function CompanySwitcher() {
             <button
               onClick={() => {
                 setIsOpen(false);
-                router.push('/cmhub/settings?tab=my-companies');
+                router.push('/cmhub/settings?tab=my-companies' as any);
               }}
               className="w-full text-left px-3 py-2 text-xs font-semibold flex items-center gap-2 hover:bg-muted text-primary rounded-lg transition-colors"
             >

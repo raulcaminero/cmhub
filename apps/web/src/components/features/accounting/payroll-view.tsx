@@ -31,6 +31,7 @@ import {
   Calendar,
   Download,
   Printer,
+  X,
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
@@ -42,6 +43,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+const MONTHS = [
+  { code: '01', name: 'Enero' },
+  { code: '02', name: 'Febrero' },
+  { code: '03', name: 'Marzo' },
+  { code: '04', name: 'Abril' },
+  { code: '05', name: 'Mayo' },
+  { code: '06', name: 'Junio' },
+  { code: '07', name: 'Julio' },
+  { code: '08', name: 'Agosto' },
+  { code: '09', name: 'Septiembre' },
+  { code: '10', name: 'Octubre' },
+  { code: '11', name: 'Noviembre' },
+  { code: '12', name: 'Diciembre' },
+];
 
 export function PayrollView() {
   const { t } = useTranslation();
@@ -93,10 +118,8 @@ export function PayrollView() {
 
   // Process payroll state
   const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
-  const [period, setPeriod] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState(() => String(new Date().getMonth() + 1).padStart(2, '0'));
   const [payrollError, setPayrollError] = useState('');
 
   // Detailed view of a payroll
@@ -173,16 +196,11 @@ export function PayrollView() {
     e.preventDefault();
     if (!companyId) return;
     setPayrollError('');
-    const [year, month] = period.split('-');
-    if (!year || !month) {
-      setPayrollError('Formato de período inválido.');
-      return;
-    }
 
     try {
       await createPayroll({
         companyId,
-        body: { period: `${year}${month}` },
+        body: { period: `${selectedYear}${selectedMonth}` },
       }).unwrap();
       setIsPayrollModalOpen(false);
     } catch (err: any) {
@@ -298,30 +316,30 @@ export function PayrollView() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Cédula</TableHead>
-                      <TableHead>Cargo</TableHead>
-                      <TableHead className="text-right">Salario Mensual</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
+                      <TableHead className="text-[11px] font-bold">Nombre</TableHead>
+                      <TableHead className="text-[11px] font-bold">Cédula</TableHead>
+                      <TableHead className="text-[11px] font-bold">Cargo</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Salario Mensual</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {employees.map((emp) => (
                       <TableRow key={emp.id}>
-                        <TableCell className="font-semibold text-sm">{emp.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{emp.cedula}</TableCell>
-                        <TableCell className="text-sm">{emp.jobTitle || '-'}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
+                        <TableCell className="font-medium text-[11px] text-foreground">{emp.name}</TableCell>
+                        <TableCell className="font-mono text-[11px] text-muted-foreground">{emp.cedula}</TableCell>
+                        <TableCell className="text-[11px] text-muted-foreground">{emp.jobTitle || '-'}</TableCell>
+                        <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
                           {formatCurrency(Number(emp.salary))}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             onClick={() => handleDeleteEmployee(emp.id)}
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -336,11 +354,11 @@ export function PayrollView() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-bold tracking-tight">{t('payrollView.title')}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('payrollView.subtitle')}</p>
+              <h2 className="text-sm font-bold tracking-tight">{t('payrollView.title')}</h2>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t('payrollView.subtitle')}</p>
             </div>
-            <Button size="sm" className="gap-2" onClick={() => setIsPayrollModalOpen(true)}>
-              <Calculator className="w-4 h-4" />
+            <Button size="sm" className="h-8 text-xs gap-1.5 font-semibold shadow-2xs" onClick={() => setIsPayrollModalOpen(true)}>
+              <Calculator className="w-3.5 h-3.5" />
               {t('payrollView.processPayroll')}
             </Button>
           </div>
@@ -348,22 +366,22 @@ export function PayrollView() {
           <Card>
             <CardContent className="pt-6">
               {loadingPayrolls ? (
-                <p className="text-sm text-muted-foreground">Cargando historial...</p>
+                <p className="text-xs text-muted-foreground">Cargando historial...</p>
               ) : !payrolls || payrolls.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">
+                <p className="text-xs text-muted-foreground text-center py-6">
                   No hay nóminas procesadas aún en esta empresa.
                 </p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Período</TableHead>
-                      <TableHead className="text-right">Salario Bruto</TableHead>
-                      <TableHead className="text-right">TSS Empleados</TableHead>
-                      <TableHead className="text-right">TSS Patronal</TableHead>
-                      <TableHead className="text-right">Retenciones ISR</TableHead>
-                      <TableHead className="text-right">Neto Pagado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
+                      <TableHead className="text-[11px] font-bold">Período</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Salario Bruto</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">TSS Empleados</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">TSS Patronal</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Retenciones ISR</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Neto Pagado</TableHead>
+                      <TableHead className="text-[11px] font-bold text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -372,20 +390,20 @@ export function PayrollView() {
                       const tssPat = pay.sfsEmployer + pay.afpEmployer + pay.arlEmployer;
                       return (
                         <TableRow key={pay.id}>
-                          <TableCell className="font-semibold text-sm">{formatPeriod(pay.period)}</TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="font-semibold text-[11px]">{formatPeriod(pay.period)}</TableCell>
+                          <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
                             {formatCurrency(Number(pay.grossSalary))}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-amber-700">
+                          <TableCell className="text-right font-mono text-[11px] text-amber-700 dark:text-amber-400">
                             {formatCurrency(tssEmp)}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-purple-700">
+                          <TableCell className="text-right font-mono text-[11px] text-purple-700 dark:text-purple-400">
                             {formatCurrency(tssPat)}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-red-600">
+                          <TableCell className="text-right font-mono text-[11px] text-rose-600 dark:text-rose-400">
                             {formatCurrency(Number(pay.isrDeduction))}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm text-green-700 font-bold">
+                          <TableCell className="text-right font-mono text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">
                             {formatCurrency(Number(pay.netSalary))}
                           </TableCell>
                           <TableCell className="text-right flex justify-end gap-1">
@@ -456,50 +474,64 @@ export function PayrollView() {
 
       {/* Modal Registrar Empleado */}
       {isEmpModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Registrar Empleado</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsEmpModalOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary shrink-0" />
+              Registrar Empleado
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Ingresa los datos del empleado y su sueldo base mensual.
             </p>
-            <form onSubmit={handleCreateEmployee} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleCreateEmployee} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="emp-cedula">Cédula de Identidad</Label>
+                  <Label htmlFor="emp-cedula" className="text-xs font-semibold text-muted-foreground">Cédula de Identidad *</Label>
                   <Input
                     id="emp-cedula"
                     placeholder="Ej. 00112345678"
                     value={cedula}
                     onChange={(e) => setCedula(e.target.value)}
+                    className="h-9 text-xs font-mono"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="emp-name">Nombre Completo</Label>
+                  <Label htmlFor="emp-name" className="text-xs font-semibold text-muted-foreground">Nombre Completo *</Label>
                   <Input
                     id="emp-name"
                     placeholder="Ej. Juan Pérez"
                     value={empName}
                     onChange={(e) => setEmpName(e.target.value)}
+                    className="h-9 text-xs"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="emp-title">Cargo / Puesto (Opcional)</Label>
+                  <Label htmlFor="emp-title" className="text-xs font-semibold text-muted-foreground">Cargo / Puesto (Opcional)</Label>
                   <Input
                     id="emp-title"
                     placeholder="Ej. Gerente de Ventas"
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
+                    className="h-9 text-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="emp-salary">Salario Bruto Mensual</Label>
+                  <Label htmlFor="emp-salary" className="text-xs font-semibold text-muted-foreground">Salario Bruto Mensual *</Label>
                   <Input
                     id="emp-salary"
                     type="number"
@@ -507,6 +539,7 @@ export function PayrollView() {
                     placeholder="Ej. 45000"
                     value={salary || ''}
                     onChange={(e) => setSalary(Number(e.target.value))}
+                    className="h-9 text-xs font-mono"
                     required
                   />
                 </div>
@@ -534,23 +567,24 @@ export function PayrollView() {
               )}
 
               {empError && (
-                <p className="text-xs text-destructive font-medium">{empError}</p>
+                <p className="text-xs text-destructive font-semibold mt-2">{empError}</p>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-medium"
                   onClick={() => setIsEmpModalOpen(false)}
                   disabled={isCreatingEmp}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreatingEmp}>
+                <Button type="submit" size="sm" disabled={isCreatingEmp} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreatingEmp ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       Guardando...
                     </>
                   ) : (
@@ -565,42 +599,76 @@ export function PayrollView() {
 
       {/* Modal Procesar Nómina */}
       {isPayrollModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Procesar Nómina</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsPayrollModalOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-primary shrink-0" />
+              Procesar Nómina
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Selecciona el mes y año para liquidar salarios y generar aportes TSS automáticamente.
             </p>
-            <form onSubmit={handleProcessPayroll} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="payroll-period">Período de Liquidación</Label>
-                <Input
-                  id="payroll-period"
-                  type="month"
-                  value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
-                  required
-                />
+            <form onSubmit={handleProcessPayroll} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="payroll-year" className="text-xs font-semibold text-muted-foreground">Año *</Label>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger id="payroll-year" className="w-full h-9 text-xs font-medium">
+                      <SelectValue placeholder="Año" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEARS.map((y) => (
+                        <SelectItem key={y} value={y} className="text-xs font-medium">
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="payroll-month" className="text-xs font-semibold text-muted-foreground">Mes *</Label>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger id="payroll-month" className="w-full h-9 text-xs font-medium">
+                      <SelectValue placeholder="Mes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MONTHS.map((m) => (
+                        <SelectItem key={m.code} value={m.code} className="text-xs font-medium">
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {payrollError && (
-                <p className="text-xs text-destructive font-medium">{payrollError}</p>
+                <p className="text-xs text-destructive font-semibold mt-2">{payrollError}</p>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-medium"
                   onClick={() => setIsPayrollModalOpen(false)}
                   disabled={isCreatingPayroll}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreatingPayroll}>
+                <Button type="submit" size="sm" disabled={isCreatingPayroll} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreatingPayroll ? (
                     <>
-                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       Procesando...
                     </>
                   ) : (
@@ -615,11 +683,23 @@ export function PayrollView() {
 
       {/* Modal Detalle de Nómina */}
       {isDetailOpen && selectedPayrollId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-4xl shadow-xl border relative my-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b pb-3">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-4xl shadow-2xl border relative my-8">
+            <button
+              type="button"
+              onClick={() => {
+                setIsDetailOpen(false);
+                setSelectedPayrollId(null);
+              }}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b pb-3 pr-6">
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
                   Desglose de Nómina
                   {payrollDetails && ` - ${formatPeriod(payrollDetails.period)}`}
                 </h3>
@@ -633,7 +713,7 @@ export function PayrollView() {
                     size="sm"
                     variant="outline"
                     onClick={() => handleDownloadTSS(payrollDetails)}
-                    className="gap-2 text-xs font-semibold"
+                    className="gap-2 text-xs font-medium h-8"
                   >
                     <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                     TXT TSS (SUIR)
@@ -641,7 +721,7 @@ export function PayrollView() {
                   <Button
                     size="sm"
                     onClick={() => setIsPayslipOpen(true)}
-                    className="gap-2 text-xs font-semibold"
+                    className="gap-2 text-xs font-medium h-8 bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     Volantes de Pago
@@ -651,15 +731,15 @@ export function PayrollView() {
             </div>
 
             {loadingDetails ? (
-              <p className="text-sm text-muted-foreground">Cargando desglose de nómina...</p>
+              <p className="text-xs text-muted-foreground py-6 animate-pulse">Cargando desglose de nómina...</p>
             ) : !payrollDetails ? (
-              <p className="text-sm text-destructive">Error al cargar los detalles de la nómina.</p>
+              <p className="text-xs text-destructive py-6 font-semibold">Error al cargar los detalles de la nómina.</p>
             ) : (
               <>
                 <div className="max-h-[300px] overflow-y-auto border rounded-md">
                   <Table>
-                    <TableHeader>
-                      <TableRow>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         <TableHead>Empleado</TableHead>
                         <TableHead>Cédula</TableHead>
                         <TableHead className="text-right">Sueldo Bruto</TableHead>
@@ -677,13 +757,13 @@ export function PayrollView() {
                           <TableCell className="text-right font-mono text-xs">
                             {formatCurrency(Number(item.grossSalary))}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-amber-700">
+                          <TableCell className="text-right font-mono text-xs text-amber-700 font-medium">
                             {formatCurrency(Number(item.sfsEmployee))}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-amber-700">
+                          <TableCell className="text-right font-mono text-xs text-amber-700 font-medium">
                             {formatCurrency(Number(item.afpEmployee))}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-red-600">
+                          <TableCell className="text-right font-mono text-xs text-red-600 font-medium">
                             {formatCurrency(Number(item.isrDeduction))}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-green-700 font-bold">
@@ -724,10 +804,11 @@ export function PayrollView() {
               </>
             )}
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-3 border-t mt-4">
               <Button
                 size="sm"
                 variant="outline"
+                className="h-8 text-xs font-medium"
                 onClick={() => {
                   setIsDetailOpen(false);
                   setSelectedPayrollId(null);
@@ -742,26 +823,35 @@ export function PayrollView() {
 
       {/* Modal Volantes de Pago (Payslips) Imprimibles */}
       {isPayslipOpen && selectedPayrollId && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-3xl shadow-2xl border relative my-8">
-            <div className="flex items-center justify-between border-b pb-3 mb-4 print:hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-3xl shadow-2xl border relative my-8">
+            <button
+              type="button"
+              onClick={() => setIsPayslipOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 print:hidden"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <div className="flex items-center justify-between border-b pb-3 mb-4 pr-6 print:hidden">
               <div>
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Printer className="w-5 h-5 text-primary" />
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-primary shrink-0" />
                   Volantes de Pago de Nómina
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Comprobantes individuales de pago para los empleados.
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handlePrintPayslips} className="gap-2">
-                  <Printer className="w-4 h-4" />
+                <Button size="sm" onClick={handlePrintPayslips} className="gap-2 text-xs font-medium h-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Printer className="w-3.5 h-3.5" />
                   Imprimir / Guardar PDF
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
+                  className="h-8 text-xs font-medium"
                   onClick={() => setIsPayslipOpen(false)}
                 >
                   Cerrar

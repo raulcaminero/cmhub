@@ -30,12 +30,12 @@ export function Header() {
 
   function handleLogout() {
     dispatch(logout());
-    router.push('/login');
+    router.push('/login' as any);
   }
 
   function navigateTo(tab: string) {
     setDropdownOpen(false);
-    router.push(`/cmhub/settings?tab=${tab}`);
+    router.push(`/cmhub/settings?tab=${tab}` as any);
   }
 
   const initials = profile

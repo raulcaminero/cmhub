@@ -717,6 +717,7 @@ export default function SettingsPage() {
                       <Input
                         id="lock-date"
                         type="date"
+                        aria-label={t('settings.lockDateLabel')}
                         value={lockDate}
                         onChange={(e) => setLockDate(e.target.value)}
                         className="h-8 text-xs font-medium w-40 shadow-2xs cursor-pointer"
@@ -843,98 +844,118 @@ export default function SettingsPage() {
           {/* Register New Company form */}
           <div>
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Plus className="w-4 h-4 text-primary shrink-0" />
                   {t('settings.addNewCompany')}
                 </CardTitle>
-                <CardDescription className="text-[11px] mt-0.5">{t('settings.addNewCompanyDesc')}</CardDescription>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('settings.addNewCompanyDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleRegisterCompany} className="space-y-3">
                   <div className="space-y-1">
-                    <Label htmlFor="new-name">{t('settings.tradeName')}</Label>
+                    <Label htmlFor="new-name" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.tradeName')} *
+                    </Label>
                     <Input
                       id="new-name"
                       placeholder="Mi Empresa SRL"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
+                      className="h-9 text-xs"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-tradeName">{t('settings.commercialName')}</Label>
+                    <Label htmlFor="new-tradeName" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.commercialName')}
+                    </Label>
                     <Input
                       id="new-tradeName"
                       value={newTradeName}
                       onChange={(e) => setNewTradeName(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-rnc">{t('settings.rnc')}</Label>
+                    <Label htmlFor="new-rnc" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.rnc')} *
+                    </Label>
                     <Input
                       id="new-rnc"
                       placeholder="131234567"
                       value={newRnc}
                       onChange={(e) => setNewRnc(e.target.value)}
+                      className="h-9 text-xs font-mono"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-regime">{t('settings.taxRegime')}</Label>
+                    <Label htmlFor="new-regime" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.taxRegime')}
+                    </Label>
                     <Select value={newTaxRegime} onValueChange={(val) => setNewTaxRegime(val)}>
                       <SelectTrigger id="new-regime" className="w-full h-9 text-xs font-medium">
                         <SelectValue placeholder={t('settings.taxRegime')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ORDINARIO">{t('settings.ordinaryRegime')}</SelectItem>
-                        <SelectItem value="RST">{t('settings.rst')}</SelectItem>
+                        <SelectItem value="ORDINARIO" className="text-xs">{t('settings.ordinaryRegime')}</SelectItem>
+                        <SelectItem value="RST" className="text-xs">{t('settings.rst')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-phone">{t('settings.phone')}</Label>
+                    <Label htmlFor="new-phone" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.phone')}
+                    </Label>
                     <Input
                       id="new-phone"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-email">{t('settings.contactEmail')}</Label>
+                    <Label htmlFor="new-email" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.contactEmail')}
+                    </Label>
                     <Input
                       id="new-email"
                       type="email"
                       placeholder="contacto@empresa.com"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-address">{t('settings.address')}</Label>
+                    <Label htmlFor="new-address" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.address')}
+                    </Label>
                     <Input
                       id="new-address"
                       value={newAddress}
                       onChange={(e) => setNewAddress(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
 
                   {newSuccess && (
-                    <p className="text-xs text-green-600 font-medium">{newSuccess}</p>
+                    <p className="text-xs text-emerald-600 font-semibold mt-2">{newSuccess}</p>
                   )}
                   {newError && (
-                    <p className="text-xs text-destructive font-medium">{newError}</p>
+                    <p className="text-xs text-destructive font-semibold mt-2">{newError}</p>
                   )}
 
-                  <Button type="submit" disabled={isCreatingCompany} className="w-full mt-2">
+                  <Button type="submit" disabled={isCreatingCompany} className="w-full h-9 text-xs font-medium gap-2 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isCreatingCompany ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         {t('settings.registering')}
                       </>
                     ) : (
                       <>
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4" />
                         {t('settings.registerCompany')}
                       </>
                     )}
