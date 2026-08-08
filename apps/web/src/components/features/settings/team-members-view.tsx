@@ -35,6 +35,8 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  X,
 } from 'lucide-react';
 
 interface TeamMembersViewProps {
@@ -52,6 +54,16 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
   const [role, setRole] = useState<'ADMIN' | 'CONTADOR' | 'VIEWER'>('CONTADOR');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const [pendingRoleChange, setPendingRoleChange] = useState<{
+    user: CompanyUser;
+    newRole: 'ADMIN' | 'CONTADOR' | 'VIEWER';
+  } | null>(null);
+
+  const [userToRemove, setUserToRemove] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,11 +96,10 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
     }
   };
 
-  const handleRemoveUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`¿Estás seguro de que deseas remover a ${userEmail} de esta empresa?`)) return;
-
+  const handleRemoveUser = async (userId: string) => {
     setSuccessMsg('');
     setErrorMsg('');
+    setUserToRemove(null);
 
     try {
       await removeCompanyUser({ companyId, userId }).unwrap();
@@ -96,6 +107,14 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err: any) {
       setErrorMsg(err?.data?.message || 'Error al remover el usuario.');
+    }
+  };
+
+  const getRoleLabel = (r: 'ADMIN' | 'CONTADOR' | 'VIEWER') => {
+    switch (r) {
+      case 'ADMIN': return 'ADMINISTRADOR';
+      case 'CONTADOR': return 'CONTADOR';
+      case 'VIEWER': return 'AUXILIAR / LECTOR';
     }
   };
 
@@ -221,7 +240,11 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
                     <TableCell>
                       <Select
                         value={u.role}
-                        onValueChange={(val) => handleRoleChange(u.userId, val as any)}
+                        onValueChange={(val) => {
+                          if (val !== u.role) {
+                            setPendingRoleChange({ user: u, newRole: val as any });
+                          }
+                        }}
                         disabled={isUpdating}
                       >
                         <SelectTrigger className={`h-7 text-[11px] font-semibold px-2.5 rounded-md border ${getRoleBadgeClass(u.role)}`}>
@@ -239,7 +262,7 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                        onClick={() => handleRemoveUser(u.userId, u.email)}
+                        onClick={() => setUserToRemove({ id: u.userId, email: u.email })}
                         disabled={isRemoving}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -252,6 +275,145 @@ export function TeamMembersView({ companyId }: TeamMembersViewProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal Confirmación de Cambio de Rol */}
+      {pendingRoleChange && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative space-y-4">
+            <button
+              type="button"
+              onClick={() => setPendingRoleChange(null)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary shrink-0" />
+              Confirmar Cambio de Rol
+            </h3>
+            
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              ¿Estás seguro de que deseas modificar los permisos del usuario?
+            </p>
+
+            <div className="bg-muted/30 border rounded-lg p-3 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-semibold">Usuario:</span>
+                <span className="font-bold text-foreground">{pendingRoleChange.user.firstName} {pendingRoleChange.user.lastName}</span>
+              </div>
+              <div className="flex justify-between font-mono text-[11px]">
+                <span className="text-muted-foreground font-sans font-semibold">Correo:</span>
+                <span>{pendingRoleChange.user.email}</span>
+              </div>
+              <div className="border-t pt-2 mt-1 flex justify-between items-center">
+                <span className="text-muted-foreground font-semibold">Rol Actual:</span>
+                <span className="font-semibold text-muted-foreground">{getRoleLabel(pendingRoleChange.user.role)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-semibold">Nuevo Rol:</span>
+                <span className="font-bold text-primary">{getRoleLabel(pendingRoleChange.newRole)}</span>
+              </div>
+            </div>
+
+            {pendingRoleChange.user.role === 'ADMIN' && pendingRoleChange.newRole !== 'ADMIN' && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Atención:</strong> Al cambiar un Administrador a {getRoleLabel(pendingRoleChange.newRole)}, se revocarán sus permisos para modificar la empresa, NCFs y gestionar miembros del equipo.
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-medium"
+                onClick={() => setPendingRoleChange(null)}
+                disabled={isUpdating}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isUpdating}
+                onClick={async () => {
+                  await handleRoleChange(pendingRoleChange.user.userId, pendingRoleChange.newRole);
+                  setPendingRoleChange(null);
+                }}
+                className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  'Confirmar y Guardar Rol'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación de Remover Usuario */}
+      {userToRemove && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative space-y-4">
+            <button
+              type="button"
+              onClick={() => setUserToRemove(null)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            <h3 className="text-sm font-bold flex items-center gap-2 text-rose-600">
+              <Trash2 className="w-4 h-4 shrink-0" />
+              Remover Miembro del Equipo
+            </h3>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              ¿Estás seguro de que deseas revocar el acceso a la empresa para <strong className="text-foreground">{userToRemove.email}</strong>?
+            </p>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-medium"
+                onClick={() => setUserToRemove(null)}
+                disabled={isRemoving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isRemoving}
+                onClick={() => handleRemoveUser(userToRemove.id)}
+                className="h-8 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white"
+              >
+                {isRemoving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Removiendo...
+                  </>
+                ) : (
+                  'Sí, Remover Miembro'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
