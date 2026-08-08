@@ -7,7 +7,7 @@ export default function NcfPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/cmhub/settings?tab=ncf');
+    router.replace('/cmhub/settings?tab=ncf' as any);
   }, [router]);
 
   return null;

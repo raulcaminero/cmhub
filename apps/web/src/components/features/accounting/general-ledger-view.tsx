@@ -162,6 +162,7 @@ export function GeneralLedgerView({ companyId }: Props) {
               <Input
                 id="gl-start-date"
                 type="date"
+                aria-label={t('ledger.fromDate')}
                 className="h-8 text-xs font-medium w-32 shadow-2xs cursor-pointer"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -174,6 +175,7 @@ export function GeneralLedgerView({ companyId }: Props) {
               <Input
                 id="gl-end-date"
                 type="date"
+                aria-label={t('ledger.toDate')}
                 className="h-8 text-xs font-medium w-32 shadow-2xs cursor-pointer"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}

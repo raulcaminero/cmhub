@@ -28,7 +28,7 @@ export default function LoginPage() {
     const result = await login({ email, password });
     if ('data' in result && result.data) {
       dispatch(setCredentials(result.data));
-      router.push('/cmhub');
+      router.push('/cmhub' as any);
     }
   }
 
@@ -65,7 +65,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="password">{t('auth.passwordLabel')}</Label>
-              <Link href="/forgot-password" className="text-xs text-indigo-600 hover:underline font-medium">
+              <Link href={'/forgot-password' as any} className="text-xs text-indigo-600 hover:underline font-medium">
                 {t('auth.forgotPasswordLink')}
               </Link>
             </div>
@@ -103,7 +103,7 @@ export default function LoginPage() {
 
           <div className="text-center text-xs text-muted-foreground pt-2">
             {t('auth.noAccount')}{' '}
-            <Link href="/register" className="text-indigo-600 hover:underline font-semibold">
+            <Link href={'/register' as any} className="text-indigo-600 hover:underline font-semibold">
               {t('auth.registerLink')}
             </Link>
           </div>

@@ -639,17 +639,17 @@ export default function ReportsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t('reports.code')}</TableHead>
-                        <TableHead>{t('reports.accountName')}</TableHead>
-                        <TableHead className="text-right">{t('reports.balance')}</TableHead>
+                        <TableHead className="text-[11px] font-bold">{t('reports.code')}</TableHead>
+                        <TableHead className="text-[11px] font-bold">{t('reports.accountName')}</TableHead>
+                        <TableHead className="text-[11px] font-bold text-right">{t('reports.balance')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {financials.balanceSheet.map((acc) => (
                         <TableRow key={acc.id} className={acc.code.length <= 2 ? 'font-semibold bg-muted/20' : ''}>
-                          <TableCell className="font-mono text-xs">{acc.code}</TableCell>
-                          <TableCell className="text-sm">{acc.name}</TableCell>
-                          <TableCell className="text-right font-mono text-sm">
+                          <TableCell className="font-mono text-[11px]">{acc.code}</TableCell>
+                          <TableCell className="text-[11px] font-medium">{acc.name}</TableCell>
+                          <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
                             {acc.balance.toFixed(2)}
                           </TableCell>
                         </TableRow>
@@ -662,7 +662,7 @@ export default function ReportsPage() {
 
             {/* Income Statement */}
             <Card>
-              <CardHeader>
+              <CardHeader className="py-3 px-4">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary shrink-0" />
                   {t('reports.incomeStatementTitle')}
@@ -670,25 +670,25 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 {isLoadingFinancials ? (
-                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+                  <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
                 ) : !financials || financials.incomeStatement.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
+                  <p className="text-xs text-muted-foreground">{t('common.noData')}</p>
                 ) : (
                   <div className="space-y-4">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t('reports.code')}</TableHead>
-                          <TableHead>{t('reports.accountName')}</TableHead>
-                          <TableHead className="text-right">{t('reports.balance')}</TableHead>
+                          <TableHead className="text-[11px] font-bold">{t('reports.code')}</TableHead>
+                          <TableHead className="text-[11px] font-bold">{t('reports.accountName')}</TableHead>
+                          <TableHead className="text-[11px] font-bold text-right">{t('reports.balance')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {financials.incomeStatement.map((acc) => (
                           <TableRow key={acc.id} className={acc.code.length <= 2 ? 'font-semibold bg-muted/20' : ''}>
-                            <TableCell className="font-mono text-xs">{acc.code}</TableCell>
-                            <TableCell className="text-sm">{acc.name}</TableCell>
-                            <TableCell className="text-right font-mono text-sm">
+                            <TableCell className="font-mono text-[11px]">{acc.code}</TableCell>
+                            <TableCell className="text-[11px] font-medium">{acc.name}</TableCell>
+                            <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
                               {acc.balance.toFixed(2)}
                             </TableCell>
                           </TableRow>

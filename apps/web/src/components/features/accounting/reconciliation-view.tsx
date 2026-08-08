@@ -119,6 +119,15 @@ export function ReconciliationView() {
   const [selectedBankTx, setSelectedBankTx] = useState<BankTransaction | null>(null);
   const [selectedLedgerLine, setSelectedLedgerLine] = useState<LedgerLine | null>(null);
 
+  // Result / Feedback Modal State
+  const [resultModal, setResultModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    type: 'success' | 'error' | 'info';
+    matchesCount?: number;
+  } | null>(null);
+
   const { data: aiSuggestion, isLoading: loadingAi } = useGetAiSuggestionQuery(
     { companyId: companyId!, id: selectedBankTx?.id! },
     { skip: !companyId || !selectedBankTx }
@@ -159,23 +168,43 @@ export function ReconciliationView() {
               setIsOcrOpen(false);
               setIsImportOpen(true);
             } else {
-              alert('Error al leer el contenido del estado de cuenta.');
+              setResultModal({
+                isOpen: true,
+                type: 'error',
+                title: 'Error en Escaneo',
+                description: 'No se pudo leer el contenido del estado de cuenta.',
+              });
             }
           } else if (statusRes.status === 'failed') {
             clearInterval(pollInterval);
             setIsPollingOcr(false);
-            alert(statusRes.result || 'Error durante el análisis del estado de cuenta.');
+            setResultModal({
+              isOpen: true,
+              type: 'error',
+              title: 'Error de Análisis OCR',
+              description: statusRes.result || 'Ocurrió un error durante el análisis del estado de cuenta.',
+            });
           }
         } catch (err: any) {
           clearInterval(pollInterval);
           setIsPollingOcr(false);
-          alert('Error de conexión al consultar estado del escaneo.');
+          setResultModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error de Conexión',
+            description: 'No se pudo consultar el estado del escaneo inteligente.',
+          });
         }
       }, 1000);
 
     } catch (err: any) {
       setIsPollingOcr(false);
-      alert(err.data?.message || 'Error al subir el estado de cuenta.');
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al Subir Archivo',
+        description: err.data?.message || 'Ocurrió un error al subir el estado de cuenta.',
+      });
     }
   }
 
@@ -201,7 +230,12 @@ export function ReconciliationView() {
       }).unwrap();
       setIsImportOpen(false);
       setCsvContent('');
-      alert(`Se importaron con éxito ${res.importedCount} transacciones bancarias.`);
+      setResultModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Extracto Bancario Importado',
+        description: `Se importaron con éxito ${res.importedCount} transacciones bancarias en el sistema.`,
+      });
     } catch (err: any) {
       setImportError(err.data?.message || 'Error al importar extracto CSV.');
     }
@@ -211,9 +245,20 @@ export function ReconciliationView() {
     if (!companyId || !selectedAccountId) return;
     try {
       const res = await autoMatch({ companyId, accountId: selectedAccountId }).unwrap();
-      alert(`Conciliación automática ejecutada. Se emparejaron ${res.matchesCount} movimientos.`);
-    } catch (err) {
-      alert('Error al ejecutar la conciliación automática.');
+      setResultModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Conciliación Inteligente Completada',
+        description: `El motor de IA analizó los movimientos y logró emparejar ${res.matchesCount} transacciones automáticas.`,
+        matchesCount: res.matchesCount,
+      });
+    } catch (err: any) {
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error en Conciliación',
+        description: err.data?.message || 'Ocurrió un error al ejecutar la conciliación automática.',
+      });
     }
   }
 
@@ -228,8 +273,13 @@ export function ReconciliationView() {
       }).unwrap();
       setSelectedBankTx(null);
       setSelectedLedgerLine(null);
-    } catch (err) {
-      alert('Error al conciliar manualmente.');
+    } catch (err: any) {
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al Conciliar',
+        description: err.data?.message || 'No se pudo vincular los movimientos seleccionados.',
+      });
     }
   }
 
@@ -238,8 +288,13 @@ export function ReconciliationView() {
     if (confirm('¿Deseas anular la conciliación de este movimiento?')) {
       try {
         await unmatch({ companyId, id }).unwrap();
-      } catch (err) {
-        alert('Error al desconciliar el movimiento.');
+      } catch (err: any) {
+        setResultModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Error al Desconciliar',
+          description: err.data?.message || 'No se pudo anular la conciliación del movimiento.',
+        });
       }
     }
   }
@@ -255,7 +310,12 @@ export function ReconciliationView() {
       setSelectedBankTx(null);
       setSelectedLedgerLine(null);
     } catch (err: any) {
-      alert(err.data?.message || 'Error al aplicar conciliación inteligente.');
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error en Sugerencia IA',
+        description: err.data?.message || 'Error al aplicar conciliación inteligente.',
+      });
     }
   }
 
@@ -298,7 +358,7 @@ export function ReconciliationView() {
           <Tooltip content="Escanear estado de cuenta con IA">
             <Button
               size="sm"
-              className="gap-2 text-xs font-semibold shadow-xs"
+              className="h-9 gap-2 text-xs font-medium shadow-2xs"
               onClick={() => setIsOcrOpen(true)}
               disabled={!selectedAccountId}
             >
@@ -310,7 +370,7 @@ export function ReconciliationView() {
           <Tooltip content="Importar archivo CSV o Excel">
             <Button
               size="sm"
-              className="gap-2 text-xs font-semibold shadow-xs"
+              className="h-9 gap-2 text-xs font-medium shadow-2xs"
               onClick={() => setIsImportOpen(true)}
               disabled={!selectedAccountId}
             >
@@ -322,7 +382,7 @@ export function ReconciliationView() {
           <Tooltip content="Emparejar transacciones con IA">
             <Button
               size="sm"
-              className="gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md transition-all text-white"
+              className="h-9 gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-xs transition-all text-white text-xs font-medium"
               onClick={handleAutoMatch}
               disabled={!selectedAccountId || isMatching}
             >
@@ -409,8 +469,9 @@ export function ReconciliationView() {
             {/* Bank statement panel */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <h3 className="text-md font-semibold flex items-center gap-2">
-                  🏦 Extracto Bancario ({report.unreconciledBankCount} pendientes)
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Landmark className="w-4 h-4 text-indigo-600 shrink-0" />
+                  Extracto Bancario ({report.unreconciledBankCount} pendientes)
                 </h3>
                 <div className="relative w-full sm:w-56">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -418,14 +479,14 @@ export function ReconciliationView() {
                     placeholder="Buscar en extracto..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-8 text-xs"
+                    className="pl-9 h-8 text-xs font-medium"
                   />
                 </div>
               </div>
               <div className="border rounded-md max-h-[400px] overflow-y-auto bg-card">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       <TableHead>Fecha</TableHead>
                       <TableHead>Concepto</TableHead>
                       <TableHead className="text-right">Monto</TableHead>
@@ -436,16 +497,16 @@ export function ReconciliationView() {
                       <TableRow
                         key={tx.id}
                         onClick={() => setSelectedBankTx(selectedBankTx?.id === tx.id ? null : tx)}
-                        className={`cursor-pointer ${selectedBankTx?.id === tx.id ? 'bg-indigo-100/50 hover:bg-indigo-100' : 'hover:bg-accent'}`}
+                        className={`cursor-pointer ${selectedBankTx?.id === tx.id ? 'bg-indigo-100/50 hover:bg-indigo-100 dark:bg-indigo-950/40' : 'hover:bg-accent'}`}
                       >
-                        <TableCell className="font-mono text-xs whitespace-nowrap">
+                        <TableCell className="font-mono text-[11px] whitespace-nowrap text-muted-foreground">
                           {new Date(tx.date).toISOString().split('T')[0]}
                         </TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate">
-                          <p className="font-semibold">{tx.description}</p>
+                        <TableCell className="text-[11px] max-w-[200px] truncate">
+                          <p className="font-medium text-foreground">{tx.description}</p>
                           {tx.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {tx.reference}</span>}
                         </TableCell>
-                        <TableCell className={`text-right font-mono text-xs font-bold ${tx.amount > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        <TableCell className={`text-right font-mono text-[11px] font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {formatCurrency(tx.amount)}
                         </TableCell>
                       </TableRow>
@@ -470,18 +531,19 @@ export function ReconciliationView() {
             {/* Ledger lines panel */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <h3 className="text-md font-semibold flex items-center gap-2">
-                  📖 Libro Contable ({report.unreconciledBooksCount} pendientes)
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Info className="w-4 h-4 text-purple-600 shrink-0" />
+                  Libro Contable ({report.unreconciledBooksCount} pendientes)
                 </h3>
               </div>
               <div className="border rounded-md max-h-[400px] overflow-y-auto bg-card">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       <TableHead>Fecha</TableHead>
                       <TableHead>Referencia</TableHead>
-                      <TableHead className="text-right">Debito</TableHead>
-                      <TableHead className="text-right">Credito</TableHead>
+                      <TableHead className="text-right">Débito</TableHead>
+                      <TableHead className="text-right">Crédito</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -489,19 +551,19 @@ export function ReconciliationView() {
                       <TableRow
                         key={line.id}
                         onClick={() => setSelectedLedgerLine(selectedLedgerLine?.id === line.id ? null : line)}
-                        className={`cursor-pointer ${selectedLedgerLine?.id === line.id ? 'bg-purple-100/50 hover:bg-purple-100' : 'hover:bg-accent'}`}
+                        className={`cursor-pointer ${selectedLedgerLine?.id === line.id ? 'bg-purple-100/50 hover:bg-purple-100 dark:bg-purple-950/40' : 'hover:bg-accent'}`}
                       >
-                        <TableCell className="font-mono text-xs whitespace-nowrap">
+                        <TableCell className="font-mono text-[11px] whitespace-nowrap text-muted-foreground">
                           {new Date(line.date).toISOString().split('T')[0]}
                         </TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate">
-                          <p className="font-semibold">{line.entryDescription}</p>
+                        <TableCell className="text-[11px] max-w-[200px] truncate">
+                          <p className="font-medium text-foreground">{line.entryDescription}</p>
                           {line.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {line.reference}</span>}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-green-700">
+                        <TableCell className="text-right font-mono text-[11px] font-bold text-emerald-600">
                           {line.debit > 0 ? formatCurrency(line.debit) : '-'}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-xs text-red-700">
+                        <TableCell className="text-right font-mono text-[11px] font-bold text-rose-600">
                           {line.credit > 0 ? formatCurrency(line.credit) : '-'}
                         </TableCell>
                       </TableRow>
@@ -605,11 +667,14 @@ export function ReconciliationView() {
 
           {/* Reconciled list */}
           <div className="space-y-3 pt-4">
-            <h3 className="text-md font-semibold">🔗 Transacciones Conciliadas</h3>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              Transacciones Conciliadas
+            </h3>
             <div className="border rounded-md max-h-[300px] overflow-y-auto bg-card">
               <Table>
-                <TableHeader>
-                  <TableRow>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <TableHead>Fecha</TableHead>
                     <TableHead>Extracto Banco</TableHead>
                     <TableHead className="text-right">Monto</TableHead>
@@ -620,26 +685,26 @@ export function ReconciliationView() {
                 <TableBody>
                   {report.reconciledBankTransactions.map((tx) => (
                     <TableRow key={tx.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">
+                      <TableCell className="font-mono text-[11px] whitespace-nowrap text-muted-foreground">
                         {new Date(tx.date).toISOString().split('T')[0]}
                       </TableCell>
-                      <TableCell className="text-xs">
-                        <p className="font-semibold">{tx.description}</p>
-                        {tx.reference && <span className="text-[10px] text-muted-foreground">Ref: {tx.reference}</span>}
+                      <TableCell className="text-[11px]">
+                        <p className="font-medium text-foreground">{tx.description}</p>
+                        {tx.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {tx.reference}</span>}
                       </TableCell>
-                      <TableCell className={`text-right font-mono text-xs font-bold ${tx.amount > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      <TableCell className={`text-right font-mono text-[11px] font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {formatCurrency(tx.amount)}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        <p className="font-semibold text-foreground">{tx.journalEntryDescription || '-'}</p>
-                        {tx.journalEntryReference && <span>Ref: {tx.journalEntryReference}</span>}
+                      <TableCell className="text-[11px] text-muted-foreground">
+                        <p className="font-medium text-foreground">{tx.journalEntryDescription || '-'}</p>
+                        {tx.journalEntryReference && <span className="font-mono text-[10px]">Ref: {tx.journalEntryReference}</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleUnmatch(tx.id)}
-                          className="h-8 text-destructive hover:bg-destructive/10 text-xs"
+                          className="h-7 text-destructive hover:bg-destructive/10 text-[11px] px-2 font-semibold"
                         >
                           Desconciliar
                         </Button>
@@ -670,27 +735,33 @@ export function ReconciliationView() {
 
       {/* Import CSV Modal */}
       {isImportOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-lg shadow-xl border relative">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Importar Extracto Bancario</h3>
-                <p className="text-xs text-muted-foreground">
-                  Pega el contenido CSV del extracto de tu banco dominicano.
-                </p>
-              </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" onClick={() => setIsImportOpen(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsImportOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Upload className="w-4 h-4 text-primary shrink-0" />
+              Importar Extracto Bancario
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
+              Pega el contenido CSV del extracto de tu banco dominicano.
+            </p>
 
-            <form onSubmit={handleImportCsv} className="space-y-4">
+            <form onSubmit={handleImportCsv} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="csv-data">Datos CSV (Delimitado por coma o punto y coma)</Label>
+                <Label htmlFor="csv-data" className="text-xs font-semibold text-muted-foreground">
+                  Datos CSV (Delimitado por coma o punto y coma) *
+                </Label>
                 <textarea
                   id="csv-data"
-                  rows={8}
-                  className="w-full rounded-md border bg-transparent p-2 font-mono text-xs focus:ring-1 focus:ring-ring focus:outline-none"
+                  rows={7}
+                  className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   placeholder={defaultCsvTemplate}
                   value={csvContent}
                   onChange={(e) => setCsvContent(e.target.value)}
@@ -699,14 +770,15 @@ export function ReconciliationView() {
               </div>
 
               {importError && (
-                <p className="text-xs text-destructive font-medium">{importError}</p>
+                <p className="text-xs text-destructive font-semibold mt-2">{importError}</p>
               )}
 
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-between items-center pt-3 border-t mt-4">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
+                  className="h-8 text-xs font-medium"
                   onClick={() => setCsvContent(defaultCsvTemplate)}
                 >
                   Cargar Plantilla Ejemplo
@@ -716,13 +788,21 @@ export function ReconciliationView() {
                     type="button"
                     variant="outline"
                     size="sm"
+                    className="h-8 text-xs font-medium"
                     onClick={() => setIsImportOpen(false)}
                     disabled={isImporting}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" size="sm" disabled={isImporting}>
-                    {isImporting ? 'Importando...' : 'Importar'}
+                  <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Importando...
+                      </>
+                    ) : (
+                      'Importar'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -733,24 +813,35 @@ export function ReconciliationView() {
 
       {/* Modal Escaneo Estado de Cuenta (OCR) */}
       {isOcrOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <h3 className="text-lg font-semibold mb-2">Escanear Estado de Cuenta (OCR)</h3>
-            <p className="text-xs text-muted-foreground mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsOcrOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Camera className="w-4 h-4 text-primary shrink-0" />
+              Escanear Estado de Cuenta (OCR)
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Sube la imagen o el PDF de tu extracto bancario. El motor de IA extraerá las filas de transacciones automáticamente para conciliarlas.
             </p>
             
-            <div className="border border-dashed border-primary rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
-              <Camera className="w-10 h-10 text-primary animate-pulse" />
+            <div className="border border-dashed border-primary/50 rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
+              <Camera className="w-8 h-8 text-primary animate-pulse" />
               {isScanning || isPollingOcr ? (
                 <div className="space-y-2">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                  <p className="text-sm font-medium">Analizando extracto bancario con IA...</p>
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
+                  <p className="text-xs font-semibold">Analizando extracto bancario con IA...</p>
                   <p className="text-[10px] text-muted-foreground">Extrayendo movimientos contables.</p>
                 </div>
               ) : (
                 <>
-                  <Label htmlFor="statement-ocr-file" className="cursor-pointer font-semibold hover:underline text-primary text-sm">
+                  <Label htmlFor="statement-ocr-file" className="cursor-pointer font-semibold hover:underline text-primary text-xs">
                     Sube una foto o PDF del extracto
                   </Label>
                   <span className="text-[10px] text-muted-foreground">Formatos soportados: JPG, PNG, PDF</span>
@@ -765,19 +856,65 @@ export function ReconciliationView() {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex justify-end gap-2 pt-3 border-t mt-4">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setIsOcrOpen(false);
-                }}
+                className="h-8 text-xs font-medium"
+                onClick={() => setIsOcrOpen(false)}
                 disabled={isScanning || isPollingOcr}
               >
                 Cerrar
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Resultado / Notificación Shadcn UI */}
+      {resultModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative text-center flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setResultModal(null)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            {resultModal.type === 'success' ? (
+              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                <Sparkles className="w-6 h-6 animate-bounce" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+            )}
+
+            <h3 className="text-base font-bold text-foreground">
+              {resultModal.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs leading-relaxed">
+              {resultModal.description}
+            </p>
+
+            {resultModal.matchesCount !== undefined && (
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-lg p-3 w-full mb-4 font-mono text-xs">
+                <span className="text-muted-foreground block text-[10px] uppercase font-sans font-bold">Movimientos Emparejados</span>
+                <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">+{resultModal.matchesCount}</span>
+              </div>
+            )}
+
+            <Button
+              onClick={() => setResultModal(null)}
+              className="w-full h-9 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Entendido
+            </Button>
           </div>
         </div>
       )}

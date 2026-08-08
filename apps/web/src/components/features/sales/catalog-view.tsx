@@ -12,9 +12,16 @@ import {
   useToggleProductActiveMutation,
   Product 
 } from '@/services/products.api';
-import { Plus, Search, Package, Edit, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Edit, CheckCircle, XCircle, Loader2, X } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -137,83 +144,83 @@ export default function CatalogView({ companyId }: { companyId: string }) {
         <p className="text-xs text-muted-foreground">
           {t('sales.catalogDesc')}
         </p>
-        <Button onClick={handleOpenCreateModal} size="sm" className="gap-2 font-semibold shadow-2xs shrink-0">
-          <Plus className="w-4 h-4" />
+        <Button onClick={handleOpenCreateModal} size="sm" className="h-8 text-xs gap-1.5 font-semibold shadow-2xs shrink-0">
+          <Plus className="w-3.5 h-3.5" />
           {t('sales.newProduct')}
         </Button>
       </div>
 
       <Card>
-        <CardContent className="p-5 sm:p-6 space-y-4">
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <CardContent className="p-4 space-y-3">
+          <div className="relative w-full sm:w-56">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t('sales.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs h-9 shadow-2xs font-medium"
+              className="pl-8 text-xs h-8 shadow-2xs font-medium"
             />
           </div>
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">{t('common.loading')}</div>
+              <div className="p-8 text-center text-xs text-muted-foreground">{t('common.loading')}</div>
             ) : !filteredProducts || filteredProducts.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
+              <div className="p-8 text-center text-xs text-muted-foreground">
                 {t('common.noData')}
               </div>
             ) : (
-              <table className="w-full text-sm text-left">
+              <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b text-xs uppercase text-slate-500 bg-slate-50">
-                    <th className="py-2.5 px-3">{t('sales.code')}</th>
-                    <th className="py-2.5 px-3">{t('sales.sku')}</th>
-                    <th className="py-2.5 px-3">{t('sales.productName')}</th>
-                    <th className="py-2.5 px-3">{t('sales.type')}</th>
-                    <th className="py-2.5 px-3 text-right">{t('sales.price')}</th>
-                    <th className="py-2.5 px-3 text-right">{t('sales.cost')}</th>
-                    <th className="py-2.5 px-3">{t('common.status')}</th>
-                    <th className="py-2.5 px-3 text-right">{t('sales.actions')}</th>
+                  <tr className="border-b text-[11px] font-bold text-muted-foreground bg-muted/30">
+                    <th className="py-2 px-3">{t('sales.code')}</th>
+                    <th className="py-2 px-3">{t('sales.sku')}</th>
+                    <th className="py-2 px-3">{t('sales.productName')}</th>
+                    <th className="py-2 px-3">{t('sales.type')}</th>
+                    <th className="py-2 px-3 text-right">{t('sales.price')}</th>
+                    <th className="py-2 px-3 text-right">{t('sales.cost')}</th>
+                    <th className="py-2 px-3">{t('common.status')}</th>
+                    <th className="py-2 px-3 text-right">{t('sales.actions')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border/50">
                   {filteredProducts.map((prod) => (
-                    <tr key={prod.id} className={`hover:bg-slate-50/60 ${!prod.isActive ? 'opacity-60 bg-slate-50/40' : ''}`}>
-                      <td className="py-2.5 px-4 font-mono font-bold text-slate-700">{prod.code}</td>
-                      <td className="py-2.5 px-4">{prod.sku || '-'}</td>
-                      <td className="py-2.5 px-4">
-                        <div className="font-semibold text-slate-900">{prod.name}</div>
+                    <tr key={prod.id} className={`hover:bg-muted/40 transition-colors ${!prod.isActive ? 'opacity-60 bg-muted/20' : ''}`}>
+                      <td className="py-2 px-3 font-mono font-bold text-[11px] text-foreground">{prod.code}</td>
+                      <td className="py-2 px-3 text-[11px] text-muted-foreground">{prod.sku || '-'}</td>
+                      <td className="py-2 px-3">
+                        <div className="font-medium text-[11px] text-foreground">{prod.name}</div>
                       </td>
-                      <td className="py-2.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          prod.type === 'SERVICE' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                      <td className="py-2 px-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          prod.type === 'SERVICE' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400' : 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400'
                         }`}>
                           {prod.type}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                      <td className="py-2 px-3 text-right font-mono font-bold text-[11px] text-foreground">
                         {formatCurrency(Number(prod.price))}
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono text-slate-600">
+                      <td className="py-2 px-3 text-right font-mono text-[11px] text-muted-foreground">
                         {prod.cost ? formatCurrency(Number(prod.cost)) : '-'}
                       </td>
-                      <td className="py-2.5 px-4">
+                      <td className="py-2 px-3">
                         {prod.isActive ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                          <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
                             <CheckCircle className="w-3 h-3" /> Activo
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                          <span className="inline-flex items-center gap-1 text-[11px] bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 px-2 py-0.5 rounded-full font-semibold">
                             <XCircle className="w-3 h-3" /> Inactivo
                           </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-4 text-right space-x-1">
+                      <td className="py-2 px-3 text-right space-x-1">
                         <Tooltip content="Editar producto o servicio" align="end">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleOpenEditModal(prod)}
-                            className="h-7 w-7 p-0 text-slate-500 hover:text-indigo-600"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </Button>
@@ -222,7 +229,7 @@ export default function CatalogView({ companyId }: { companyId: string }) {
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleActive({ companyId, id: prod.id })}
-                          className="h-7 px-2 text-[10px] text-slate-500 hover:text-slate-900"
+                          className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
                         >
                           {prod.isActive ? 'Desactivar' : 'Activar'}
                         </Button>
@@ -238,96 +245,104 @@ export default function CatalogView({ companyId }: { companyId: string }) {
 
       {/* Modal Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card text-card-foreground border rounded-lg shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="px-6 py-4 border-b bg-muted/40">
-              <h3 className="text-lg font-semibold mb-1">
-                {editingProduct ? t('sales.editItem') : t('sales.newItem')}
-              </h3>
-              <p className="text-xs text-muted-foreground mb-4">
-                {t('sales.itemSubtitle')}
-              </p>
-            </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Package className="w-4 h-4 text-primary shrink-0" />
+              {editingProduct ? t('sales.editItem') : t('sales.newItem')}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
+              {t('sales.itemSubtitle')}
+            </p>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-semibold">Tipo *</Label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as any)}
-                    className="w-full h-9 rounded border border-input bg-background px-2 text-xs focus:outline-none"
-                  >
-                    <option value="SERVICE">Servicio</option>
-                    <option value="PRODUCT">Producto Físico</option>
-                    <option value="DIGITAL">Producto Digital</option>
-                  </select>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Tipo *</Label>
+                  <Select value={type} onValueChange={(val) => setType(val as any)}>
+                    <SelectTrigger className="w-full h-9 text-xs font-medium">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SERVICE" className="text-xs">Servicio</SelectItem>
+                      <SelectItem value="PRODUCT" className="text-xs">Producto Físico</SelectItem>
+                      <SelectItem value="DIGITAL" className="text-xs">Producto Digital</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Código</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Código</Label>
                   <Input
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    className="h-9 font-mono"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs font-semibold">Nombre *</Label>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground">Nombre *</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-9"
+                  className="h-9 text-xs"
                   required
                 />
               </div>
 
-              <div>
-                <Label className="text-xs font-semibold">Descripción</Label>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground">Descripción</Label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full h-16 rounded border border-input p-2 text-xs focus:outline-none"
+                  className="w-full h-16 rounded-md border border-input bg-background p-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs font-semibold">Precio *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Precio *</Label>
                   <Input
                     type="number"
                     step="0.01"
                     min="0"
                     value={price || ''}
                     onChange={(e) => setPrice(Number(e.target.value))}
-                    className="h-9 font-mono"
+                    className="h-9 text-xs font-mono"
                     required
                   />
                 </div>
-                <div>
-                  <Label className="text-xs font-semibold">Costo</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground">Costo</Label>
                   <Input
                     type="number"
                     step="0.01"
                     min="0"
                     value={cost || ''}
                     onChange={(e) => setCost(Number(e.target.value))}
-                    className="h-9 font-mono"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
               </div>
 
-              {formError && <p className="text-xs text-red-600 font-semibold">{formError}</p>}
+              {formError && <p className="text-xs text-destructive font-semibold mt-2">{formError}</p>}
 
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setIsModalOpen(false)}>
                   {t('common.cancel')}
                 </Button>
-                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button type="submit" size="sm" disabled={isCreating || isUpdating} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreating || isUpdating ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       {t('common.saving')}
                     </>
                   ) : (

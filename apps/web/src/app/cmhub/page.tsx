@@ -315,7 +315,7 @@ export default function DashboardPage() {
             <CardDescription>{t('dashboard.quickLinksDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/cmhub/accounting" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/accounting' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-blue-500/10 text-blue-600">
                   <DollarSign className="w-4 h-4" />
@@ -328,7 +328,7 @@ export default function DashboardPage() {
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
             </Link>
 
-            <Link href="/cmhub/ncf" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/ncf' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-purple-500/10 text-purple-600">
                   <FileText className="w-4 h-4" />
@@ -341,7 +341,7 @@ export default function DashboardPage() {
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
             </Link>
 
-            <Link href="/cmhub/tax" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/tax' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-amber-500/10 text-amber-600">
                   <Receipt className="w-4 h-4" />
@@ -359,42 +359,42 @@ export default function DashboardPage() {
 
       {/* Recent Activity Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
-          <CardDescription>{t('dashboard.recentActivityDesc')}</CardDescription>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-bold">{t('dashboard.recentActivity')}</CardTitle>
+          <CardDescription className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.recentActivityDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {recentActivities.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
+            <div className="text-center py-6 text-xs text-muted-foreground">
               {t('common.noRecentActivity')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('common.date')}</TableHead>
-                  <TableHead>{t('common.description')}</TableHead>
-                  <TableHead>{t('common.type')}</TableHead>
-                  <TableHead>{t('common.method')}</TableHead>
-                  <TableHead className="text-right">{t('common.amount')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.date')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.description')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.type')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.method')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('common.amount')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentActivities.map((act) => (
                   <TableRow key={act.id}>
-                    <TableCell className="text-sm text-muted-foreground font-mono">
+                    <TableCell className="text-[11px] text-muted-foreground font-mono">
                       {new Date(act.date).toLocaleDateString('es-ES')}
                     </TableCell>
-                    <TableCell className="font-medium">{act.description}</TableCell>
+                    <TableCell className="text-[11px] font-medium">{act.description}</TableCell>
                     <TableCell>
-                      <Badge variant={act.type === 'INCOME' ? 'default' : 'destructive'}>
+                      <Badge variant={act.type === 'INCOME' ? 'default' : 'destructive'} className="text-[11px]">
                         {act.type === 'INCOME' ? t('common.income') : t('common.expense')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground capitalize">
+                    <TableCell className="text-[11px] text-muted-foreground capitalize">
                       {act.paymentMethod.replace('_', ' ')}
                     </TableCell>
-                    <TableCell className={`text-right font-semibold ${act.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
+                    <TableCell className={`text-right font-mono text-[11px] font-bold ${act.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {formatCurrency(act.amount)}
                     </TableCell>
                   </TableRow>

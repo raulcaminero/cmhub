@@ -276,48 +276,48 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('invoicesView.invoiceNo')}</TableHead>
-                  <TableHead>{t('invoicesView.client')}</TableHead>
-                  <TableHead>{t('common.date')}</TableHead>
-                  <TableHead>{t('invoicesView.ncfType')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.amount')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.itbis')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.balance')}</TableHead>
-                  <TableHead>{t('common.status')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.actions')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.invoiceNo')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.client')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.date')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.ncfType')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.amount')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.itbis')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.balance')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.status')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((inv) => (
                   <TableRow key={inv.id}>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-[11px] font-mono text-muted-foreground">
                       {new Date(inv.date).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className={`font-mono text-sm font-semibold ${inv.isVoided ? 'line-through text-muted-foreground' : 'text-primary'}`}>{inv.ncf}</TableCell>
+                    <TableCell className={`font-mono text-[11px] font-bold ${inv.isVoided ? 'line-through text-muted-foreground' : 'text-primary'}`}>{inv.ncf}</TableCell>
                     <TableCell>
-                      <div className="font-medium text-sm">{inv.clientName}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{inv.clientRnc}</div>
+                      <div className="font-medium text-[11px] text-foreground">{inv.clientName}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{inv.clientRnc}</div>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
                       {formatCurrency(Number(inv.amount))}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-right font-mono text-[11px] text-muted-foreground">
                       {formatCurrency(Number(inv.itbis))}
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-[11px]">
                       {inv.isVoided ? (
-                        <span className="text-red-500 font-semibold">ANULADA</span>
+                        <span className="text-rose-600 font-bold text-[11px]">ANULADA</span>
                       ) : inv.paymentMethod === '04' ? (
                         inv.paymentDate ? (
-                          <span className="text-emerald-600 font-medium">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
+                          <span className="text-emerald-600 font-semibold text-[11px]">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
                         ) : (
-                          <span className="text-amber-600 font-medium">Crédito Pendiente</span>
+                          <span className="text-amber-600 font-semibold text-[11px]">Crédito Pendiente</span>
                         )
                       ) : (
                         PAYMENT_METHODS.find((p) => p.code === inv.paymentMethod)?.label.split(' - ')[1] || inv.paymentMethod
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right text-[11px]">
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="outline"
@@ -326,7 +326,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                             setSelectedInvoice(inv);
                             setIsPrintOpen(true);
                           }}
-                          className="gap-1 h-7 text-xs"
+                          className="gap-1 h-7 text-[11px] px-2 font-semibold"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           Imprimir
@@ -340,7 +340,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                               setInvoiceToCollect(inv);
                               setCollectModalOpen(true);
                             }}
-                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            className="h-7 text-[11px] px-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
                           >
                             Cobrar
                           </Button>
@@ -619,6 +619,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                 <Input
                   id="collect-date"
                   type="date"
+                  aria-label="Fecha de Cobro"
                   value={collectDate}
                   onChange={(e) => setCollectDate(e.target.value)}
                   required

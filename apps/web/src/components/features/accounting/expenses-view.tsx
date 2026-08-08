@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -92,6 +92,7 @@ export function ExpensesView() {
   const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [csvText, setCsvText] = useState('');
   const [importError, setImportError] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
 
   const [providerRnc, setProviderRnc] = useState('');
   const [providerName, setProviderName] = useState('');
@@ -179,6 +180,7 @@ export function ExpensesView() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedFileName(file.name);
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -491,6 +493,7 @@ export function ExpensesView() {
               <Input
                 id="startDate"
                 type="date"
+                aria-label="Fecha Desde"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="h-8 text-xs w-36"
@@ -501,6 +504,7 @@ export function ExpensesView() {
               <Input
                 id="endDate"
                 type="date"
+                aria-label="Fecha Hasta"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="h-8 text-xs w-36"
@@ -512,27 +516,27 @@ export function ExpensesView() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Proveedor</TableHead>
-                <TableHead>NCF</TableHead>
-                <TableHead>Tipo de Gasto</TableHead>
-                <TableHead className="text-right">Monto</TableHead>
-                <TableHead className="text-right">ITBIS</TableHead>
-                <TableHead className="text-center">Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="text-[11px] font-bold">Fecha</TableHead>
+                <TableHead className="text-[11px] font-bold">Proveedor</TableHead>
+                <TableHead className="text-[11px] font-bold">NCF</TableHead>
+                <TableHead className="text-[11px] font-bold">Tipo de Gasto</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">Monto</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">ITBIS</TableHead>
+                <TableHead className="text-[11px] font-bold text-center">Estado</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
                     Cargando gastos...
                   </TableCell>
                 </TableRow>
               ) : expenses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
                     No se encontraron gastos registrados en este período.
                   </TableCell>
                 </TableRow>
@@ -541,31 +545,31 @@ export function ExpensesView() {
                   const typeLabel = EXPENSE_TYPES.find((t) => t.code === expense.expenseType)?.label || expense.expenseType;
                   return (
                     <TableRow key={expense.id} className={expense.isVoided ? 'opacity-50 line-through bg-muted/20' : ''}>
-                      <TableCell className="text-xs">{new Date(expense.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-[11px] font-mono text-muted-foreground">{new Date(expense.date).toLocaleDateString()}</TableCell>
                       <TableCell>
-                        <div className="font-medium text-xs">{expense.providerName}</div>
-                        <div className="text-[11px] text-muted-foreground">{expense.providerRnc}</div>
+                        <div className="font-medium text-[11px] text-foreground">{expense.providerName}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono">{expense.providerRnc}</div>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{expense.ncf}</TableCell>
-                      <TableCell className="text-xs">{typeLabel}</TableCell>
-                      <TableCell className="text-right font-medium text-xs">{formatCurrency(expense.amount)}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground">{formatCurrency(expense.itbis)}</TableCell>
-                      <TableCell className="text-center text-xs">
+                      <TableCell className="font-mono text-[11px]">{expense.ncf}</TableCell>
+                      <TableCell className="text-[11px] text-muted-foreground">{typeLabel}</TableCell>
+                      <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">{formatCurrency(expense.amount)}</TableCell>
+                      <TableCell className="text-right font-mono text-[11px] text-muted-foreground">{formatCurrency(expense.itbis)}</TableCell>
+                      <TableCell className="text-center text-[11px]">
                         {expense.isVoided ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
                             Anulado
                           </span>
                         ) : expense.paymentMethod === '04' && !(expense as any).isPaid ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                             Por Pagar
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                             Pagado
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-xs">
+                      <TableCell className="text-right text-[11px]">
                         <div className="flex items-center justify-end gap-1">
                           {expense.paymentMethod === '04' && !(expense as any).isPaid && !expense.isVoided && (
                             <Button
@@ -634,20 +638,34 @@ export function ExpensesView() {
 
       {/* Modal Registrar Gasto */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg border border-border shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
-            <h2 className="text-lg font-bold">Registrar Nuevo Gasto / Compra NCF</h2>
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-primary shrink-0" />
+              Registrar Nuevo Gasto / Compra NCF
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
+              Ingresa los datos de la factura o comprobante fiscal para el reporte 606.
+            </p>
 
             {errorMessage && (
-              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200">
+              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200 font-semibold mb-3">
                 {errorMessage}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="contactSelect">Seleccionar Contacto (Opcional)</Label>
+                  <Label htmlFor="contactSelect" className="text-xs font-semibold text-muted-foreground">Seleccionar Contacto (Opcional)</Label>
                   <select
                     id="contactSelect"
                     onChange={(e) => handleSelectContact(e.target.value)}
@@ -663,45 +681,48 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="providerName">Nombre o Razón Social Proveedor *</Label>
+                  <Label htmlFor="providerName" className="text-xs font-semibold text-muted-foreground">Nombre o Razón Social Proveedor *</Label>
                   <Input
                     id="providerName"
                     value={providerName}
                     onChange={(e) => setProviderName(e.target.value)}
                     required
                     placeholder="Ej. Claro Dominicana"
+                    className="h-9 text-xs"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="providerRnc">RNC / Cédula Proveedor *</Label>
+                  <Label htmlFor="providerRnc" className="text-xs font-semibold text-muted-foreground">RNC / Cédula Proveedor *</Label>
                   <Input
                     id="providerRnc"
                     value={providerRnc}
                     onChange={(e) => setProviderRnc(e.target.value)}
                     required
                     placeholder="Ej. 101010101"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="ncf">NCF (Comprobante Fiscal) *</Label>
+                  <Label htmlFor="ncf" className="text-xs font-semibold text-muted-foreground">NCF (Comprobante Fiscal) *</Label>
                   <Input
                     id="ncf"
                     value={ncf}
                     onChange={(e) => setNcf(e.target.value)}
                     required
                     placeholder="Ej. B0100000001"
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="expenseType">Tipo de Bienes y Servicios (606) *</Label>
+                  <Label htmlFor="expenseType" className="text-xs font-semibold text-muted-foreground">Tipo de Bienes y Servicios (606) *</Label>
                   <select
                     id="expenseType"
                     value={expenseType}
                     onChange={(e) => setExpenseType(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                   >
                     {EXPENSE_TYPES.map((t) => (
                       <option key={t.code} value={t.code}>
@@ -712,12 +733,12 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="date">Fecha Comprobante *</Label>
-                  <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                  <Label htmlFor="date" className="text-xs font-semibold text-muted-foreground">Fecha Comprobante *</Label>
+                  <Input id="date" type="date" aria-label="Fecha Comprobante" value={date} onChange={(e) => setDate(e.target.value)} required className="h-9 text-xs font-medium" />
                 </div>
 
                 <div>
-                  <Label htmlFor="amount">Monto Total Facturado *</Label>
+                  <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground">Monto Total Facturado *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -725,27 +746,29 @@ export function ExpensesView() {
                     value={amount || ''}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     required
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="itbis">ITBIS Facturado</Label>
+                  <Label htmlFor="itbis" className="text-xs font-semibold text-muted-foreground">ITBIS Facturado</Label>
                   <Input
                     id="itbis"
                     type="number"
                     step="0.01"
                     value={itbis || ''}
                     onChange={(e) => setItbis(Number(e.target.value))}
+                    className="h-9 text-xs font-mono"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="paymentMethod">Forma de Pago *</Label>
+                  <Label htmlFor="paymentMethod" className="text-xs font-semibold text-muted-foreground">Forma de Pago *</Label>
                   <select
                     id="paymentMethod"
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                   >
                     {PAYMENT_METHODS.map((m) => (
                       <option key={m.code} value={m.code}>
@@ -757,12 +780,12 @@ export function ExpensesView() {
 
                 {paymentMethod !== '04' && (
                   <div>
-                    <Label htmlFor="bankAccountId">Cuenta de Banco / Caja de Origen</Label>
+                    <Label htmlFor="bankAccountId" className="text-xs font-semibold text-muted-foreground">Cuenta de Banco / Caja de Origen</Label>
                     <select
                       id="bankAccountId"
                       value={bankAccountId}
                       onChange={(e) => setBankAccountId(e.target.value)}
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                     >
                       <option value="">-- Pago General --</option>
                       {accounts?.map((acc) => (
@@ -843,12 +866,19 @@ export function ExpensesView() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setIsOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar Gasto'}
+                <Button type="submit" size="sm" disabled={isCreating} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Guardar Gasto'
+                  )}
                 </Button>
               </div>
             </form>
@@ -858,39 +888,52 @@ export function ExpensesView() {
 
       {/* Modal Pagar Gasto Pendiente */}
       {payModalOpen && expenseToPay && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg border border-border shadow-lg max-w-md w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold">Registrar Pago a Proveedor</h2>
-            <p className="text-xs text-muted-foreground">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setPayModalOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary shrink-0" />
+              Registrar Pago a Proveedor
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Proveedor: <strong>{expenseToPay.providerName}</strong> ({expenseToPay.providerRnc})<br />
               NCF: <span className="font-mono">{expenseToPay.ncf}</span> | Monto: <strong>{formatCurrency(expenseToPay.amount)}</strong>
             </p>
 
             {payError && (
-              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200">
+              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200 font-semibold mb-3">
                 {payError}
               </div>
             )}
 
-            <form onSubmit={handlePaySubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="payDate">Fecha del Pago *</Label>
+            <form onSubmit={handlePaySubmit} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="payDate" className="text-xs font-semibold text-muted-foreground">Fecha del Pago *</Label>
                 <Input
                   id="payDate"
                   type="date"
+                  aria-label="Fecha del Pago"
                   value={payDate}
                   onChange={(e) => setPayDate(e.target.value)}
+                  className="h-9 text-xs font-medium"
                   required
                 />
               </div>
 
-              <div>
-                <Label htmlFor="payBankId">Cuenta de Origen de Fondos</Label>
+              <div className="space-y-1">
+                <Label htmlFor="payBankId" className="text-xs font-semibold text-muted-foreground">Cuenta de Origen de Fondos</Label>
                 <select
                   id="payBankId"
                   value={payBankId}
                   onChange={(e) => setPayBankId(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                 >
                   <option value="">-- Cuenta General / Caja --</option>
                   {accounts?.map((acc) => (
@@ -901,12 +944,12 @@ export function ExpensesView() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setPayModalOpen(false)}>
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+                <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setPayModalOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isPaying} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                  {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar Pago'}
+                <Button type="submit" size="sm" disabled={isPaying} className="h-8 text-xs font-medium gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
+                  {isPaying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirmar Pago'}
                 </Button>
               </div>
             </form>
@@ -916,22 +959,30 @@ export function ExpensesView() {
 
       {/* Modal Escaneo OCR */}
       {isOcrOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg border border-border shadow-lg max-w-md w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsOcrOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Camera className="w-4 h-4 text-primary shrink-0" />
               Escaneo Inteligente de Facturas (OCR)
-            </h2>
-            <p className="text-xs text-muted-foreground">
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Sube la imagen o foto (JPG, PNG) de tu factura o recibo. El sistema extraerá automáticamente el RNC, NCF, Fecha y Montos para autocompletar el registro.
             </p>
 
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center space-y-3">
+            <div className="border-2 border-dashed border-primary/50 rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
               {isPollingOcr ? (
-                <div className="py-4 space-y-2">
-                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                <div className="py-2 space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                   <p className="text-xs font-semibold">Procesando y analizando factura con Inteligencia Artificial...</p>
-                  <p className="text-[11px] text-muted-foreground">Por favor espera unos segundos.</p>
+                  <p className="text-[10px] text-muted-foreground">Por favor espera unos segundos.</p>
                 </div>
               ) : (
                 <>
@@ -953,8 +1004,8 @@ export function ExpensesView() {
               )}
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button type="button" variant="outline" onClick={() => setIsOcrOpen(false)} disabled={isPollingOcr}>
+            <div className="flex justify-end pt-3 border-t mt-4">
+              <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setIsOcrOpen(false)} disabled={isPollingOcr}>
                 Cerrar
               </Button>
             </div>
@@ -964,46 +1015,134 @@ export function ExpensesView() {
 
       {/* Modal Importar Excel / CSV */}
       {isExcelOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg border border-border shadow-lg max-w-lg w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-primary" />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setIsExcelOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-primary shrink-0" />
               Carga Masiva de Gastos (CSV / Excel)
-            </h2>
-            <p className="text-xs text-muted-foreground">
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Puedes cargar múltiples compras y gastos desde un archivo CSV o pegando directamente los datos.
             </p>
 
             {importError && (
-              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200">
+              <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200 font-semibold mb-3">
                 {importError}
               </div>
             )}
 
             <form onSubmit={handleCsvImport} className="space-y-4">
-              <div>
-                <Label htmlFor="csvFile">Seleccionar Archivo CSV</Label>
-                <Input id="csvFile" type="file" accept=".csv, .txt" onChange={handleFileChange} className="text-xs" />
+              {/* Drag and Drop Zone */}
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground block">
+                  Archivo de Gastos (CSV / TXT / Excel) *
+                </Label>
+                <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-6 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
+                  <input
+                    id="excelFileInput"
+                    type="file"
+                    accept=".csv, .txt, .xlsx, .xls"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                  />
+                  
+                  {selectedFileName ? (
+                    <div className="flex items-center gap-3 bg-card border px-4 py-2.5 rounded-lg text-xs shadow-2xs z-0">
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <div className="text-left overflow-hidden">
+                        <span className="font-semibold text-foreground truncate block max-w-[240px]">
+                          {selectedFileName}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium block">
+                          ✓ Archivo cargado correctamente
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-2 z-20"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFileName('');
+                          setCsvText('');
+                        }}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 z-0">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-xs text-primary group-hover:underline block">
+                          Haz clic aquí para seleccionar tu archivo CSV o Excel
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block mt-0.5">
+                          Soporta archivos .csv, .txt y hojas de cálculo
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="csvText">O Pega los datos en formato CSV (Fecha, RNC, Nombre, NCF, FormaPago, TipoGasto, Monto, ITBIS, ITBISRet, ISRRet)</Label>
+              {/* Option Divider */}
+              <div className="relative flex items-center justify-center my-2">
+                <div className="border-t w-full border-border"></div>
+                <span className="bg-card px-2 text-[10px] uppercase font-bold text-muted-foreground shrink-0 absolute">
+                  O pega el contenido manualmente
+                </span>
+              </div>
+
+              {/* Manual Text Area */}
+              <div className="space-y-1">
+                <Label htmlFor="csvText" className="text-xs font-semibold text-muted-foreground">
+                  Formato de Columnas (CSV)
+                </Label>
                 <textarea
                   id="csvText"
-                  rows={5}
+                  rows={4}
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
                   placeholder="Fecha,RNC,Nombre,NCF,FormaPago,TipoGasto,Monto,ITBIS,ITBISRet,ISRRet&#10;2026-05-10,101010101,Claro,B0100000001,02,02,1500.00,270.00,0,0"
-                  className="w-full rounded-md border border-input bg-background p-2 text-xs font-mono"
+                  className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setIsExcelOpen(false)}>
+              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs font-medium"
+                  onClick={() => {
+                    setIsExcelOpen(false);
+                    setSelectedFileName('');
+                    setCsvText('');
+                  }}
+                >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isImporting}>
-                  {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Procesar Importación'}
+                <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : (
+                    'Procesar Importación'
+                  )}
                 </Button>
               </div>
             </form>

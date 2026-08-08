@@ -197,13 +197,13 @@ export function JournalEntriesView() {
                         <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium">{t('entries.draft')}</span>
                       )}
                       {entry.status === 'POSTED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-medium">{t('entries.posted')}</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold">{t('entries.posted')}</span>
                       )}
                       {entry.status === 'VOIDED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-medium">{t('entries.voided')}</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-semibold">{t('entries.voided')}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
                       <span>Ref: {entry.reference || 'N/A'}</span>
                       <span>{t('common.date')}: {new Date(entry.date).toLocaleDateString()}</span>
                       
@@ -211,7 +211,7 @@ export function JournalEntriesView() {
                         <Button
                           variant="outline"
                           onClick={() => handlePost(entry.id)}
-                          className="h-7 text-xs px-2 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          className="h-6 text-[11px] px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 font-semibold"
                         >
                           {t('entries.approve')}
                         </Button>
@@ -220,7 +220,7 @@ export function JournalEntriesView() {
                         <Button
                           variant="outline"
                           onClick={() => handleVoid(entry.id)}
-                          className="h-7 text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                          className="h-6 text-[11px] px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 font-semibold"
                         >
                           {t('entries.void')}
                         </Button>
@@ -230,11 +230,11 @@ export function JournalEntriesView() {
                   
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="h-8">{t('entries.account')}</TableHead>
-                        <TableHead className="h-8">{t('entries.detail')}</TableHead>
-                        <TableHead className="h-8 text-right">{t('entries.debit')}</TableHead>
-                        <TableHead className="h-8 text-right">{t('entries.credit')}</TableHead>
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="h-7 text-[11px] font-bold">{t('entries.account')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold">{t('entries.detail')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold text-right">{t('entries.debit')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold text-right">{t('entries.credit')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -242,16 +242,16 @@ export function JournalEntriesView() {
                         const acc = accounts?.find((a) => a.id === line.accountId);
                         return (
                           <TableRow key={line.id} className="hover:bg-transparent py-1">
-                            <TableCell className="py-2 text-sm font-medium">
+                            <TableCell className="py-1.5 text-[11px] font-medium text-foreground">
                               {acc ? `${acc.code} — ${acc.name}` : t('entries.unknownAccount')}
                             </TableCell>
-                            <TableCell className="py-2 text-xs text-muted-foreground">
+                            <TableCell className="py-1.5 text-[11px] text-muted-foreground">
                               {line.description || '-'}
                             </TableCell>
-                            <TableCell className="py-2 text-sm text-right font-mono">
+                            <TableCell className="py-1.5 text-[11px] text-right font-mono font-bold text-foreground">
                               {line.debit > 0 ? formatCurrency(Number(line.debit)) : '-'}
                             </TableCell>
-                            <TableCell className="py-2 text-sm text-right font-mono">
+                            <TableCell className="py-1.5 text-[11px] text-right font-mono font-bold text-foreground">
                               {line.credit > 0 ? formatCurrency(Number(line.credit)) : '-'}
                             </TableCell>
                           </TableRow>
@@ -281,6 +281,7 @@ export function JournalEntriesView() {
                   <Input
                     id="entry-date"
                     type="date"
+                    aria-label={t('entries.date')}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
