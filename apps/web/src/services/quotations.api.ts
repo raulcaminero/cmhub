@@ -57,6 +57,7 @@ export interface CreateQuotationPayload {
 }
 
 export const quotationsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getQuotations: builder.query<Quotation[], { companyId: string }>({
       query: ({ companyId }) => ({

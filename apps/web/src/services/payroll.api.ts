@@ -44,6 +44,7 @@ export interface CalculatedTaxes {
 }
 
 export const payrollApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getPayrolls: builder.query<Payroll[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/payroll`,

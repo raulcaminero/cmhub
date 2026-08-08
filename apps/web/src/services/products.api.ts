@@ -32,6 +32,7 @@ export interface CreateProductPayload {
 }
 
 export const productsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getProducts: builder.query<Product[], { companyId: string; includeInactive?: boolean }>({
       query: ({ companyId, includeInactive }) => ({

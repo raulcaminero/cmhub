@@ -18,6 +18,7 @@ export interface CreateEmployeeDto {
 }
 
 export const employeesApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getEmployees: builder.query<Employee[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/employees`,
