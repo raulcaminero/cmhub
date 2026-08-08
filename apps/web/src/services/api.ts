@@ -70,6 +70,14 @@ const baseQueryWithReauth: BaseQueryFn<
     }
   }
 
+  if (result.error && result.error.status === 403) {
+    if (typeof window !== 'undefined') {
+      const errorData = result.error.data as any;
+      const msg = errorData?.message || 'No tienes permisos suficientes para realizar esta acción.';
+      window.dispatchEvent(new CustomEvent('cmhub:access-denied', { detail: { message: msg } }));
+    }
+  }
+
   return result;
 };
 
