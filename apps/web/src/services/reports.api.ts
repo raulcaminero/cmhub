@@ -63,6 +63,7 @@ export interface GeneralLedgerReport {
 }
 
 export const reportsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getFinancials: builder.query<FinancialsReport, { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/reports/financials`,

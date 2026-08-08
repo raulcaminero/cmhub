@@ -25,6 +25,7 @@ export interface CreateJournalEntryDto {
 }
 
 export const accountingApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getAccounts: builder.query<Account[], { companyId: string; type?: AccountType; isActive?: boolean }>({
       query: ({ companyId, ...params }) => ({ url: `/companies/${companyId}/accounting/accounts`, params }),
@@ -77,7 +78,6 @@ export const accountingApi = api.injectEndpoints({
       invalidatesTags: ['Company', 'JournalEntry', 'Account', 'Expense', 'NcfSequence'],
     }),
   }),
-  overrideExisting: true,
 });
 
 export const {
