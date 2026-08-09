@@ -32,10 +32,8 @@ const companySlice = createSlice({
     setCompanies(state, action: PayloadAction<Company[]>) {
       state.list = action.payload;
       if (action.payload.length > 0) {
-        const stillExists = state.active && action.payload.some((c) => c.id === state.active!.id);
-        if (!stillExists) {
-          state.active = action.payload[0];
-        }
+        const validActive = state.active && action.payload.find((c) => c.id === state.active!.id);
+        state.active = validActive || action.payload[0];
       } else {
         state.active = null;
       }
