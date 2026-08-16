@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, X } from 'lucide-react';
 import { Invoice } from '@/services/invoices.api';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 
 interface InvoicePrintDialogProps {
   invoice: Invoice | null;
@@ -13,6 +14,7 @@ interface InvoicePrintDialogProps {
 
 export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDialogProps) {
   const company = useAppSelector((state) => state.company.active);
+  const formatCurrency = useCurrency();
 
   if (!invoice || !isOpen) return null;
 
@@ -98,9 +100,9 @@ export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDia
                     <tr key={idx}>
                       <td className="py-1.5 font-sans font-medium text-gray-800">{l.description}</td>
                       <td className="py-1.5 text-center">{l.quantity}</td>
-                      <td className="py-1.5 text-right">RD$ {(l.unitPrice || 0).toFixed(2)}</td>
-                      <td className="py-1.5 text-right">RD$ {(l.itbis || 0).toFixed(2)}</td>
-                      <td className="py-1.5 text-right font-semibold text-gray-900">RD$ {(l.total || 0).toFixed(2)}</td>
+                      <td className="py-1.5 text-right">{formatCurrency(l.unitPrice || 0)}</td>
+                      <td className="py-1.5 text-right">{formatCurrency(l.itbis || 0)}</td>
+                      <td className="py-1.5 text-right font-semibold text-gray-900">{formatCurrency(l.total || 0)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -111,7 +113,7 @@ export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDia
                   <p className="font-semibold text-gray-800">Servicios de Consultoría / Venta Comercial</p>
                   <p className="text-xs text-gray-400">Cantidad: 1</p>
                 </div>
-                <p className="font-mono font-medium text-gray-800">RD$ {subtotal.toFixed(2)}</p>
+                <p className="font-mono font-medium text-gray-800">{formatCurrency(subtotal)}</p>
               </div>
             )}
           </div>
@@ -122,15 +124,15 @@ export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDia
           <div className="w-1/2 ml-auto space-y-1.5 text-xs">
             <div className="flex justify-between text-gray-500">
               <span>Subtotal:</span>
-              <span className="font-mono">RD$ {subtotal.toFixed(2)}</span>
+              <span className="font-mono">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-500">
               <span>ITBIS (18%):</span>
-              <span className="font-mono">RD$ {invoice.itbis.toFixed(2)}</span>
+              <span className="font-mono">{formatCurrency(invoice.itbis)}</span>
             </div>
             <div className="flex justify-between border-t pt-1.5 font-bold text-sm text-gray-900 border-gray-200">
               <span>Total:</span>
-              <span className="font-mono">RD$ {invoice.amount.toFixed(2)}</span>
+              <span className="font-mono">{formatCurrency(invoice.amount)}</span>
             </div>
           </div>
 

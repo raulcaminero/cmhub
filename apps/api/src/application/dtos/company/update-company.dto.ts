@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, Matches, MaxLength, IsEmail } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Matches, MaxLength, IsEmail, Length } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaxRegime } from '@domain/enums';
 
@@ -24,6 +24,28 @@ export class UpdateCompanyDto {
   @IsOptional()
   @IsString()
   tradeName?: string;
+
+  @ApiPropertyOptional({ description: 'ISO 3166-1 alpha-2 country code', example: 'DO' })
+  @IsOptional()
+  @IsString()
+  @Length(2, 2)
+  country?: string;
+
+  @ApiPropertyOptional({ description: 'ISO 4217 currency code', example: 'DOP' })
+  @IsOptional()
+  @IsString()
+  @Length(3, 3)
+  currency?: string;
+
+  @ApiPropertyOptional({ description: 'BCP 47 locale tag', example: 'es-DO' })
+  @IsOptional()
+  @IsString()
+  locale?: string;
+
+  @ApiPropertyOptional({ description: 'List of enabled system modules', example: ['DR_FISCAL'] })
+  @IsOptional()
+  @IsString({ each: true })
+  enabledModules?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()

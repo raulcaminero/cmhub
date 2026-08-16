@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cmhub/shared-types": "*",
@@ -34,10 +36,12 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9",
     "eslint-config-next": "15.3.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

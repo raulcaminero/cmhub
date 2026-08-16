@@ -5,6 +5,9 @@ import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user
 import { CreateInvoiceDto } from '@application/dtos/invoice/create-invoice.dto';
 import { CollectInvoiceDto } from '@application/dtos/invoice/collect-invoice.dto';
 
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+
 @ApiTags('invoices')
 @ApiBearerAuth()
 @Controller('companies/:companyId/accounting/invoices')
@@ -43,9 +46,10 @@ export class InvoicesController {
     return this.invoiceService.collectInvoice(companyId, id, dto);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post(':id/void')
   @ApiOperation({ summary: 'Void an invoice and reverse its accounting ledger entry' })
-  voidInvoice(@Param('companyId') companyId: string, @Param('id') id: string) {
-    return this.invoiceService.voidInvoice(companyId, id);
+  voidInvoice(@Param('companyId') companyId: string, @Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.invoiceService.voidInvoice(companyId, id, user.userId);
   }
 }

@@ -4,6 +4,8 @@ import { CreateNcfSequenceDto } from '../../dtos/ncf/create-ncf-sequence.dto';
 import { NcfType } from '@domain/enums';
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
+import { AuditLogService } from '../audit/audit-log.service';
+
 export const NCF_SEQUENCE_REPOSITORY = 'NCF_SEQUENCE_REPOSITORY';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class NcfSequenceService {
   constructor(
     @Inject(NCF_SEQUENCE_REPOSITORY) private readonly ncfSequenceRepository: INcfSequenceRepository,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async getSequences(companyId: string) {
@@ -23,7 +26,7 @@ export class NcfSequenceService {
       throw new BadRequestException(`A sequence for NCF type ${dto.type} already exists for this company`);
     }
 
-    return this.ncfSequenceRepository.create({
+    const seq = await this.ncfSequenceRepository.create({
       companyId,
       type: dto.type,
       prefix: dto.prefix,
@@ -32,6 +35,16 @@ export class NcfSequenceService {
       isActive: true,
       expiresAt: new Date(dto.expiresAt),
     });
+
+    await this.auditLogService.logAction({
+      companyId,
+      action: 'NCF_SEQUENCE_CREATE',
+      entity: 'NcfSequence',
+      entityId: seq.id,
+      details: { type: dto.type, prefix: dto.prefix, max: dto.max, expiresAt: dto.expiresAt },
+    });
+
+    return seq;
   }
 
   async generateNextNcf(companyId: string, type: NcfType, tx?: any): Promise<string> {

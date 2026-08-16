@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Delete, Put, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, Param, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { ContactService } from '@application/services/contact/contact.service';
 import { CreateContactDto } from '@application/dtos/contact/create-contact.dto';
 import { UpdateContactDto } from '@application/dtos/contact/update-contact.dto';
@@ -11,6 +12,8 @@ export class ContactsController {
   constructor(private readonly contactService: ContactService) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300000) // 5 minutes cache in ms
   @ApiOperation({ summary: 'List all company contacts' })
   getContacts(@Param('companyId') companyId: string) {
     return this.contactService.getContacts(companyId);

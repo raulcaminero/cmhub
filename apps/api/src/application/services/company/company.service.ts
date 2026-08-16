@@ -9,8 +9,14 @@ import { ICompanyRepository } from '@domain/repositories/company.repository.inte
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { CreateCompanyDto } from '../../dtos/company/create-company.dto';
 import { UpdateCompanyDto } from '../../dtos/company/update-company.dto';
-import { TaxRegime, UserRole, AccountType } from '@domain/enums';
+import { TaxRegime, AccountType } from '@domain/enums';
+import { UserRole } from '@prisma/client';
 import { ACCOUNT_REPOSITORY } from '../accounting/accounting.service';
+
+import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
+import { AuditLogService } from '../audit/audit-log.service';
+
+import { TAX_RATE_SEEDS } from './tax-rate-seeds';
 
 export const COMPANY_REPOSITORY = 'COMPANY_REPOSITORY';
 
@@ -19,17 +25,70 @@ export class CompanyService {
   constructor(
     @Inject(COMPANY_REPOSITORY) private readonly companyRepository: ICompanyRepository,
     @Inject(ACCOUNT_REPOSITORY) private readonly accountRepository: IAccountRepository,
+    private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
+
+  private getModulesForCountry(country: string): string[] {
+    const map: Record<string, string[]> = {
+      DO: ['DR_FISCAL'],
+      US: ['US_ACCOUNTING'],
+      MX: ['LATAM'],
+      CO: ['LATAM'],
+      PE: ['LATAM'],
+      CL: ['LATAM'],
+      AR: ['LATAM'],
+    };
+    return map[country] ?? ['DR_FISCAL'];
+  }
+
+  private getDefaultCurrencyForCountry(country: string): string {
+    const map: Record<string, string> = {
+      DO: 'DOP',
+      US: 'USD',
+      MX: 'MXN',
+      CO: 'COP',
+      PE: 'PEN',
+      CL: 'CLP',
+      AR: 'ARS',
+      EC: 'USD',
+      PA: 'USD',
+      PR: 'USD',
+    };
+    return map[country] ?? 'USD';
+  }
+
+  private getDefaultLocaleForCountry(country: string): string {
+    const map: Record<string, string> = {
+      DO: 'es-DO',
+      US: 'en-US',
+      MX: 'es-MX',
+      CO: 'es-CO',
+      PE: 'es-PE',
+      CL: 'es-CL',
+      AR: 'es-AR',
+    };
+    return map[country] ?? 'es-DO';
+  }
 
   async create(dto: CreateCompanyDto, userId: string) {
     const existing = await this.companyRepository.findByRnc(dto.rnc);
     if (existing) throw new ConflictException('A company with this RNC already exists');
+
+    const country = dto.country ?? 'DO';
+    const currency = dto.currency ?? this.getDefaultCurrencyForCountry(country);
+    const locale = dto.locale ?? this.getDefaultLocaleForCountry(country);
+    const enabledModules = this.getModulesForCountry(country);
 
     const company = await this.companyRepository.create({
       name: dto.name,
       rnc: dto.rnc,
       tradeName: dto.tradeName ?? null,
       taxRegime: dto.taxRegime ?? TaxRegime.ORDINARIO,
+      country,
+      currency,
+      locale,
+      enabledModules,
       address: dto.address ?? null,
       phone: dto.phone ?? null,
       email: dto.email ?? null,
@@ -37,10 +96,29 @@ export class CompanyService {
 
     await this.companyRepository.addUserToCompany(company.id, userId, UserRole.ADMIN);
     
-    // Seed standard chart of accounts
+    // Seed standard chart of accounts & tax rates
     await this.seedStandardAccounts(company.id);
+    await this.seedTaxRates(company.id, country);
 
     return company;
+  }
+
+  private async seedTaxRates(companyId: string, country: string) {
+    const seeds = TAX_RATE_SEEDS[country] ?? TAX_RATE_SEEDS['DO'];
+    for (const seed of seeds) {
+      await this.prisma.taxRate.create({
+        data: {
+          companyId,
+          name: seed.name,
+          code: seed.code,
+          rate: seed.rate,
+          taxType: seed.taxType,
+          agency: seed.agency,
+          appliesTo: seed.appliesTo,
+          isDefault: seed.isDefault ?? false,
+        },
+      });
+    }
   }
 
   private async seedStandardAccounts(companyId: string) {
@@ -325,6 +403,10 @@ export class CompanyService {
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.tradeName !== undefined) updateData.tradeName = dto.tradeName;
     if (dto.taxRegime !== undefined) updateData.taxRegime = dto.taxRegime;
+    if (dto.country !== undefined) updateData.country = dto.country;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.locale !== undefined) updateData.locale = dto.locale;
+    if (dto.enabledModules !== undefined) updateData.enabledModules = dto.enabledModules;
     if (dto.address !== undefined) updateData.address = dto.address;
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.email !== undefined) updateData.email = dto.email;
@@ -336,5 +418,158 @@ export class CompanyService {
     }
 
     return this.companyRepository.update(companyId, updateData);
+  }
+
+  // --- TEAM USER MANAGEMENT ---
+
+  async getCompanyUsers(companyId: string) {
+    const userRoles = await this.prisma.userCompanyRole.findMany({
+      where: { companyId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return userRoles.map((ur) => ({
+      userId: ur.user.id,
+      email: ur.user.email,
+      firstName: ur.user.firstName,
+      lastName: ur.user.lastName,
+      role: ur.role,
+      joinedAt: ur.createdAt,
+    }));
+  }
+
+  async addCompanyUser(companyId: string, emailInput: string, role: UserRole) {
+    const email = emailInput.toLowerCase().trim();
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('El usuario con este correo electrónico no está registrado en el sistema.');
+    }
+
+    const existingRole = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: user.id,
+          companyId,
+        },
+      },
+    });
+
+    if (existingRole) {
+      throw new ConflictException('Este usuario ya es miembro de esta empresa.');
+    }
+
+    const createdRole = await this.prisma.userCompanyRole.create({
+      data: {
+        userId: user.id,
+        companyId,
+        role,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+
+    return {
+      userId: createdRole.user.id,
+      email: createdRole.user.email,
+      firstName: createdRole.user.firstName,
+      lastName: createdRole.user.lastName,
+      role: createdRole.role,
+      joinedAt: createdRole.createdAt,
+    };
+  }
+
+  async updateUserRole(companyId: string, targetUserId: string, newRole: UserRole) {
+    const existing = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('El usuario no pertenece a esta empresa.');
+    }
+
+    const updated = await this.prisma.userCompanyRole.update({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+      data: { role: newRole },
+      include: {
+        user: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+    });
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId: targetUserId,
+      action: 'UPDATE_ROLE',
+      entity: 'UserCompanyRole',
+      entityId: targetUserId,
+      details: { previousRole: existing.role, newRole },
+    });
+
+    return {
+      userId: updated.user.id,
+      email: updated.user.email,
+      firstName: updated.user.firstName,
+      lastName: updated.user.lastName,
+      role: updated.role,
+    };
+  }
+
+  async removeCompanyUser(companyId: string, targetUserId: string, currentUserId: string) {
+    if (targetUserId === currentUserId) {
+      throw new ForbiddenException('No puedes removerte a ti mismo de la empresa.');
+    }
+
+    const existing = await this.prisma.userCompanyRole.findUnique({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('El usuario no pertenece a esta empresa.');
+    }
+
+    await this.prisma.userCompanyRole.delete({
+      where: {
+        userId_companyId: {
+          userId: targetUserId,
+          companyId,
+        },
+      },
+    });
+
+    return { message: 'Usuario removido de la empresa exitosamente.' };
   }
 }

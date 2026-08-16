@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation, Invoice } from '@/services/invoices.api';
 import { useGetContactsQuery } from '@/services/contacts.api';
@@ -11,11 +11,12 @@ import { validarDocFiscal } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Printer, Loader2 } from 'lucide-react';
+import { Plus, Printer, Loader2, Receipt } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
 import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -45,9 +46,12 @@ interface InvoicesViewProps {
   onCloseExternalModal?: () => void;
 }
 
+import Link from 'next/link';
+
 export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExternalModal }: InvoicesViewProps = {}) {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(50);
@@ -96,6 +100,12 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   const [isOpen, setIsOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
+
+  useEffect(() => {
+    if (externalOpenModal) {
+      setIsOpen(true);
+    }
+  }, [externalOpenModal]);
 
   const [collectModalOpen, setCollectModalOpen] = useState(false);
   const [invoiceToCollect, setInvoiceToCollect] = useState<Invoice | null>(null);
@@ -241,16 +251,22 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>{t('invoicesView.title')}</CardTitle>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
+    <div className="space-y-3">
+      {/* Action Toolbar with Description */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Registro de facturas con comprobante fiscal NCF emitidos a clientes.
+        </p>
+        <Button size="sm" asChild className="gap-2 font-semibold shadow-2xs shrink-0">
+          <Link href={"/cmhub/sales/invoices/new" as any}>
             <Plus className="w-4 h-4" />
             {t('invoicesView.newInvoice')}
-          </Button>
-        </CardHeader>
-        <CardContent>
+          </Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-5 sm:p-6 space-y-4">
 
           {isLoading ? (
             <p className="text-sm text-muted-foreground">{t('invoicesView.loading')}</p>
@@ -260,48 +276,48 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('invoicesView.invoiceNo')}</TableHead>
-                  <TableHead>{t('invoicesView.client')}</TableHead>
-                  <TableHead>{t('common.date')}</TableHead>
-                  <TableHead>{t('invoicesView.ncfType')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.amount')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.itbis')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.balance')}</TableHead>
-                  <TableHead>{t('common.status')}</TableHead>
-                  <TableHead className="text-right">{t('invoicesView.actions')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.invoiceNo')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.client')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.date')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('invoicesView.ncfType')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.amount')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.itbis')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.balance')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.status')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('invoicesView.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((inv) => (
                   <TableRow key={inv.id}>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-[11px] font-mono text-muted-foreground">
                       {new Date(inv.date).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className={`font-mono text-sm font-semibold ${inv.isVoided ? 'line-through text-muted-foreground' : 'text-primary'}`}>{inv.ncf}</TableCell>
+                    <TableCell className={`font-mono text-[11px] font-bold ${inv.isVoided ? 'line-through text-muted-foreground' : 'text-primary'}`}>{inv.ncf}</TableCell>
                     <TableCell>
-                      <div className="font-medium text-sm">{inv.clientName}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{inv.clientRnc}</div>
+                      <div className="font-medium text-[11px] text-foreground">{inv.clientName}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">{inv.clientRnc}</div>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
-                      RD$ {Number(inv.amount).toFixed(2)}
+                    <TableCell className="text-right font-mono text-[11px] font-bold text-foreground">
+                      {formatCurrency(Number(inv.amount))}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
-                      RD$ {Number(inv.itbis).toFixed(2)}
+                    <TableCell className="text-right font-mono text-[11px] text-muted-foreground">
+                      {formatCurrency(Number(inv.itbis))}
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-[11px]">
                       {inv.isVoided ? (
-                        <span className="text-red-500 font-semibold">ANULADA</span>
+                        <span className="text-rose-600 font-bold text-[11px]">ANULADA</span>
                       ) : inv.paymentMethod === '04' ? (
                         inv.paymentDate ? (
-                          <span className="text-emerald-600 font-medium">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
+                          <span className="text-emerald-600 font-semibold text-[11px]">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
                         ) : (
-                          <span className="text-amber-600 font-medium">Crédito Pendiente</span>
+                          <span className="text-amber-600 font-semibold text-[11px]">Crédito Pendiente</span>
                         )
                       ) : (
                         PAYMENT_METHODS.find((p) => p.code === inv.paymentMethod)?.label.split(' - ')[1] || inv.paymentMethod
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right text-[11px]">
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="outline"
@@ -310,7 +326,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                             setSelectedInvoice(inv);
                             setIsPrintOpen(true);
                           }}
-                          className="gap-1 h-7 text-xs"
+                          className="gap-1 h-7 text-[11px] px-2 font-semibold"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           Imprimir
@@ -324,7 +340,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                               setInvoiceToCollect(inv);
                               setCollectModalOpen(true);
                             }}
-                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            className="h-7 text-[11px] px-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
                           >
                             Cobrar
                           </Button>
@@ -481,7 +497,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
               <InvoiceLineEditor companyId={companyId} lines={lines} onChange={setLines} />
 
               <div className="border p-4 rounded-md space-y-3 bg-muted/20">
-                <span className="text-xs font-semibold block border-b pb-1">Monto Global Manual o Retenciones de Ley (RD$)</span>
+                <span className="text-xs font-semibold block border-b pb-1">Monto Global Manual o Retenciones de Ley</span>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="inv-total">Monto Total (Con ITBIS)</Label>
@@ -595,7 +611,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
           <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
             <h3 className="text-lg font-semibold mb-2">Registrar Cobro de Factura</h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Registra el cobro de la factura a crédito <strong>NCF {invoiceToCollect.ncf}</strong> por un monto total de <strong>RD$ {Number(invoiceToCollect.amount).toFixed(2)}</strong>.
+              Registra el cobro de la factura a crédito <strong>NCF {invoiceToCollect.ncf}</strong> por un monto total de <strong>{formatCurrency(Number(invoiceToCollect.amount))}</strong>.
             </p>
             <form onSubmit={handleCollectSubmit} className="space-y-4">
               <div className="space-y-1">
@@ -603,6 +619,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                 <Input
                   id="collect-date"
                   type="date"
+                  aria-label="Fecha de Cobro"
                   value={collectDate}
                   onChange={(e) => setCollectDate(e.target.value)}
                   required

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccountsView } from '@/components/features/accounting/accounts-view';
 import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
@@ -12,8 +13,24 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { useGetCompaniesQuery, useCreateCompanyMutation, useUpdateCompanyMutation } from '@/services/companies.api';
 import { useGetPeriodLockQuery, useUpdatePeriodLockMutation } from '@/services/accounting.api';
 import { setActiveCompany } from '@/store/slices/company.slice';
-import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe } from 'lucide-react';
+import { useChangePasswordMutation, useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
+import { Building2, BookOpen, Layers, Check, Loader2, Plus, Globe, KeyRound, ShieldCheck, Users, Eye, EyeOff, Moon, User, Settings as SettingsIcon, FileText } from 'lucide-react';
 import { TaxRegime } from '@cmhub/shared-types';
+import { TeamMembersView } from '@/components/features/settings/team-members-view';
+import { NcfSequencesView } from '@/components/features/settings/ncf-sequences-view';
+import { ThemeSelector } from '@/components/theme-toggle';
+import { useTabMemory } from '@/hooks/use-tab-memory';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+type SettingsTab = 'profile' | 'company' | 'my-companies' | 'ncf' | 'team' | 'accounts' | 'preferences' | 'security';
+
+const VALID_TABS: SettingsTab[] = ['profile', 'company', 'my-companies', 'ncf', 'team', 'accounts', 'preferences', 'security'];
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -22,6 +39,15 @@ export default function SettingsPage() {
   const companyList = useAppSelector((state) => state.company.list);
 
   const [mounted, setMounted] = useState(false);
+
+  // Profile
+  const { data: profile } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const [profFirstName, setProfFirstName] = useState('');
+  const [profLastName, setProfLastName] = useState('');
+  const [profEmail, setProfEmail] = useState('');
+  const [profSuccess, setProfSuccess] = useState('');
+  const [profError, setProfError] = useState('');
 
   const { data: companies, isLoading: loadingCompanies } = useGetCompaniesQuery();
   const [updateCompany, { isLoading: isUpdatingCompany }] = useUpdateCompanyMutation();
@@ -63,13 +89,55 @@ export default function SettingsPage() {
     }
   }
 
-  const [activeTab, setActiveTab] = useState<'company' | 'my-companies' | 'accounts' | 'preferences'>('company');
+  const { activeTab, changeTab } = useTabMemory<SettingsTab>('company', VALID_TABS);
+
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  // Security & Password Change form
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passSuccess, setPassSuccess] = useState('');
+  const [passError, setPassError] = useState('');
+  const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPassSuccess('');
+    setPassError('');
+
+    if (newPassword !== confirmPassword) {
+      setPassError('La nueva contraseña y su confirmación no coinciden.');
+      return;
+    }
+
+    if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+      setPassError('La nueva contraseña debe tener al menos 8 caracteres, incluir números y mayúsculas.');
+      return;
+    }
+
+    try {
+      const res = await changePassword({ currentPassword, newPassword }).unwrap();
+      setPassSuccess(res.message);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPassSuccess(''), 4000);
+    } catch (err: any) {
+      setPassError(err.data?.message || 'Error al cambiar la contraseña. Verifica tu clave actual.');
+    }
+  }
 
   // Company settings edit form
   const [compName, setCompName] = useState('');
   const [compTradeName, setCompTradeName] = useState('');
   const [compRnc, setCompRnc] = useState('');
   const [compTaxRegime, setCompTaxRegime] = useState('ORDINARIO');
+  const [compCountry, setCompCountry] = useState('DO');
+  const [compCurrency, setCompCurrency] = useState('DOP');
+  const [compModules, setCompModules] = useState<string[]>(['DR_FISCAL']);
   const [compAddress, setCompAddress] = useState('');
   const [compPhone, setCompPhone] = useState('');
   const [compEmail, setCompEmail] = useState('');
@@ -81,6 +149,9 @@ export default function SettingsPage() {
   const [newTradeName, setNewTradeName] = useState('');
   const [newRnc, setNewRnc] = useState('');
   const [newTaxRegime, setNewTaxRegime] = useState('ORDINARIO');
+  const [newCountry, setNewCountry] = useState('DO');
+  const [newCurrency, setNewCurrency] = useState('DOP');
+  const [newModules, setNewModules] = useState<string[]>(['DR_FISCAL']);
   const [newAddress, setNewAddress] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -91,6 +162,17 @@ export default function SettingsPage() {
     setMounted(true);
   }, []);
 
+  // Read ?tab= URL param — handled by TabSearchParamSync inside Suspense
+
+  // Populate profile form fields
+  useEffect(() => {
+    if (profile) {
+      setProfFirstName(profile.firstName);
+      setProfLastName(profile.lastName);
+      setProfEmail(profile.email);
+    }
+  }, [profile]);
+
   // Populate active company details
   useEffect(() => {
     if (activeCompany) {
@@ -98,11 +180,28 @@ export default function SettingsPage() {
       setCompTradeName(activeCompany.tradeName || '');
       setCompRnc(activeCompany.rnc || '');
       setCompTaxRegime(activeCompany.taxRegime || 'ORDINARIO');
+      setCompCountry(activeCompany.country || 'DO');
+      setCompCurrency(activeCompany.currency || 'DOP');
+      setCompModules(activeCompany.enabledModules && activeCompany.enabledModules.length > 0 ? activeCompany.enabledModules : ['DR_FISCAL']);
       setCompAddress(activeCompany.address || '');
       setCompPhone(activeCompany.phone || '');
       setCompEmail(activeCompany.email || '');
     }
   }, [activeCompany]);
+
+  async function handleUpdateProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setProfSuccess('');
+    setProfError('');
+    try {
+      const body: UpdateProfileRequest = { firstName: profFirstName, lastName: profLastName, email: profEmail };
+      await updateProfile(body).unwrap();
+      setProfSuccess('Perfil actualizado correctamente.');
+      setTimeout(() => setProfSuccess(''), 3000);
+    } catch (err: any) {
+      setProfError(err.data?.message || 'Error al actualizar el perfil.');
+    }
+  }
 
   if (!mounted) {
     return (
@@ -133,6 +232,17 @@ export default function SettingsPage() {
           tradeName: compTradeName || undefined,
           rnc: cleanRnc,
           taxRegime: compTaxRegime as TaxRegime,
+          country: compCountry,
+          currency: compCurrency,
+          enabledModules: compModules,
+          locale: compCountry === 'US' ? 'en-US'
+            : compCountry === 'MX' ? 'es-MX'
+            : compCountry === 'CO' ? 'es-CO'
+            : compCountry === 'PE' ? 'es-PE'
+            : compCountry === 'CL' ? 'es-CL'
+            : compCountry === 'AR' ? 'es-AR'
+            : compCountry === 'DO' ? 'es-DO'
+            : 'es',
           address: compAddress || undefined,
           phone: compPhone || undefined,
           email: compEmail || undefined,
@@ -164,6 +274,9 @@ export default function SettingsPage() {
         tradeName: newTradeName || undefined,
         rnc: cleanRnc,
         taxRegime: newTaxRegime as TaxRegime,
+        country: newCountry,
+        currency: newCurrency,
+        enabledModules: newModules,
         address: newAddress || undefined,
         phone: newPhone || undefined,
         email: newEmail || undefined,
@@ -188,56 +301,207 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
-          <p className="text-muted-foreground">{t('settings.subtitle')}</p>
+    <div className="space-y-4">
+      <div>
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <SettingsIcon className="w-5 h-5 text-primary shrink-0" />
+              {t('settings.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('settings.subtitle')}</p>
+          </div>
         </div>
       </div>
 
-      <div className="flex border-b pb-4 gap-2 overflow-x-auto">
-        <Button
-          variant={activeTab === 'company' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('company')}
-          className="gap-2 shrink-0"
+      <div className="flex border-b border-border overflow-x-auto whitespace-nowrap scrollbar-none">
+        <button
+          onClick={() => changeTab('profile')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'profile'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <Building2 className="w-4 h-4" />
+          <User className="w-3.5 h-3.5" />
+          Mi Perfil
+        </button>
+        <button
+          onClick={() => changeTab('company')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'company'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
           {t('settings.activeCompanyTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'my-companies' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('my-companies')}
-          className="gap-2 shrink-0"
+        </button>
+        <button
+          onClick={() => changeTab('my-companies')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'my-companies'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <Layers className="w-4 h-4" />
+          <Layers className="w-3.5 h-3.5" />
           {t('settings.myCompaniesTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'accounts' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('accounts')}
-          className="gap-2 shrink-0"
+        </button>
+        <button
+          onClick={() => changeTab('ncf')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'ncf'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <BookOpen className="w-4 h-4" />
+          <FileText className="w-3.5 h-3.5" />
+          {t('nav.ncf')}
+        </button>
+        <button
+          onClick={() => changeTab('team')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'team'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          Equipo y Accesos
+        </button>
+        <button
+          onClick={() => changeTab('accounts')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'accounts'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
           {t('settings.chartOfAccountsTab')}
-        </Button>
-        <Button
-          variant={activeTab === 'preferences' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('preferences')}
-          className="gap-2 shrink-0"
+        </button>
+        <button
+          onClick={() => changeTab('preferences')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'preferences'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <Globe className="w-4 h-4" />
+          <Globe className="w-3.5 h-3.5" />
           {t('settings.preferences')}
-        </Button>
+        </button>
+        <button
+          onClick={() => changeTab('security')}
+          className={`px-3.5 py-2 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'security'
+              ? 'border-primary text-primary font-semibold'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          Seguridad
+        </button>
       </div>
 
+      {activeTab === 'profile' && (
+        <div className="max-w-xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <User className="w-4 h-4 text-primary" />
+                Mi Perfil
+              </CardTitle>
+              <CardDescription className="text-[11px] mt-0.5">Actualiza tu nombre, apellido y correo electrónico de acceso.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Avatar display */}
+              <div className="flex items-center gap-3.5 mb-4 p-3 bg-muted/30 rounded-lg border">
+                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-bold shrink-0">
+                  {profile ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() : 'U'}
+                </div>
+                <div>
+                  <p className="font-bold text-sm">{profile?.firstName} {profile?.lastName}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Miembro desde {profile ? new Date(profile.createdAt ?? Date.now()).toLocaleDateString('es-DO', { month: 'long', year: 'numeric' }) : '—'}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleUpdateProfile} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="prof-firstname" className="text-[11px] font-semibold text-muted-foreground">Nombre *</Label>
+                    <Input
+                      id="prof-firstname"
+                      value={profFirstName}
+                      onChange={(e) => setProfFirstName(e.target.value)}
+                      className="h-8 text-xs"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="prof-lastname" className="text-[11px] font-semibold text-muted-foreground">Apellido *</Label>
+                    <Input
+                      id="prof-lastname"
+                      value={profLastName}
+                      onChange={(e) => setProfLastName(e.target.value)}
+                      className="h-8 text-xs"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="prof-email" className="text-[11px] font-semibold text-muted-foreground">Correo Electrónico *</Label>
+                  <Input
+                    id="prof-email"
+                    type="email"
+                    value={profEmail}
+                    onChange={(e) => setProfEmail(e.target.value)}
+                    className="h-8 text-xs"
+                    required
+                  />
+                </div>
+
+                {profSuccess && <p className="text-xs text-emerald-600 font-semibold">{profSuccess}</p>}
+                {profError && <p className="text-xs text-destructive font-semibold">{profError}</p>}
+
+                <div className="flex items-center gap-3 pt-1">
+                  <Button type="submit" disabled={isUpdatingProfile} size="sm" className="h-8 text-xs font-semibold shadow-2xs">
+                    {isUpdatingProfile ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...</> : 'Guardar Cambios'}
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground">Para cambiar la contraseña ve a la pestaña <strong>Seguridad</strong>.</p>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'ncf' && <NcfSequencesView />}
+
+      {activeTab === 'team' && (
+        activeCompany ? (
+          <TeamMembersView companyId={activeCompany.id} />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-slate-500">{t('common.selectCompany')}</p>
+            </CardContent>
+          </Card>
+        )
+      )}
 
       {activeTab === 'company' && (
         <div className="space-y-6">
           <Card>
           <CardHeader>
-            <CardTitle>{t('settings.activeCompanyTitle')}</CardTitle>
-            <CardDescription>{t('settings.activeCompanyDesc')}</CardDescription>
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" />
+              {t('settings.activeCompanyTitle')}
+            </CardTitle>
+            <CardDescription className="text-[11px] mt-0.5">{t('settings.activeCompanyDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!activeCompany ? (
@@ -245,72 +509,168 @@ export default function SettingsPage() {
                 {t('settings.noCompanySelected')}
               </div>
             ) : (
-              <form onSubmit={handleUpdateCompany} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleUpdateCompany} className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="edit-name">{t('settings.tradeName')}</Label>
+                    <Label htmlFor="edit-name" className="text-[11px] font-semibold text-muted-foreground">{t('settings.tradeName')}</Label>
                     <Input
                       id="edit-name"
                       value={compName}
                       onChange={(e) => setCompName(e.target.value)}
+                      className="h-8 text-xs"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-tradeName">{t('settings.commercialName')}</Label>
+                    <Label htmlFor="edit-tradeName" className="text-[11px] font-semibold text-muted-foreground">{t('settings.commercialName')}</Label>
                     <Input
                       id="edit-tradeName"
                       value={compTradeName}
                       onChange={(e) => setCompTradeName(e.target.value)}
+                      className="h-8 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-rnc">{t('settings.rnc')}</Label>
+                    <Label htmlFor="edit-rnc" className="text-[11px] font-semibold text-muted-foreground">{t('settings.rnc')}</Label>
                     <Input
                       id="edit-rnc"
                       value={compRnc}
                       onChange={(e) => setCompRnc(e.target.value)}
+                      className="h-8 text-xs"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-regime">{t('settings.taxRegime')}</Label>
+                    <Label htmlFor="edit-regime" className="text-[11px] font-semibold text-muted-foreground">{t('settings.taxRegime')}</Label>
+                    <Select value={compTaxRegime} onValueChange={(val) => setCompTaxRegime(val)}>
+                      <SelectTrigger id="edit-regime" className="w-full h-8 text-xs font-medium">
+                        <SelectValue placeholder={t('settings.taxRegime')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ORDINARIO" className="text-xs">{t('settings.ordinaryRegime')}</SelectItem>
+                        <SelectItem value="RST" className="text-xs">{t('settings.rst')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* TODO: Re-enable País/Moneda selectors when multi-country engine is ready */}
+                  {false && (<>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-country">País</Label>
                     <select
-                      id="edit-regime"
-                      value={compTaxRegime}
-                      onChange={(e) => setCompTaxRegime(e.target.value)}
+                      id="edit-country"
+                      value={compCountry}
+                      onChange={(e) => {
+                        setCompCountry(e.target.value);
+                        // Auto-set default currency based on country
+                        const currencyMap: Record<string, string> = {
+                          DO: 'DOP', US: 'USD', MX: 'MXN', CO: 'COP',
+                          PE: 'PEN', CL: 'CLP', AR: 'ARS', EC: 'USD',
+                          GT: 'GTQ', HN: 'HNL', CR: 'CRC', PA: 'USD',
+                        };
+                        setCompCurrency(currencyMap[e.target.value] || 'USD');
+                      }}
                       className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
-                      <option value="ORDINARIO">{t('settings.ordinaryRegime')}</option>
-                      <option value="RST">{t('settings.rst')}</option>
+                      <option value="DO">🇩🇴 República Dominicana</option>
+                      <option value="US">🇺🇸 Estados Unidos</option>
+                      <option value="MX">🇲🇽 México</option>
+                      <option value="CO">🇨🇴 Colombia</option>
+                      <option value="PE">🇵🇪 Perú</option>
+                      <option value="CL">🇨🇱 Chile</option>
+                      <option value="AR">🇦🇷 Argentina</option>
+                      <option value="EC">🇪🇨 Ecuador</option>
+                      <option value="GT">🇬🇹 Guatemala</option>
+                      <option value="HN">🇭🇳 Honduras</option>
+                      <option value="CR">🇨🇷 Costa Rica</option>
+                      <option value="PA">🇵🇦 Panamá</option>
+                      <option value="PR">🇵🇷 Puerto Rico (USD)</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-phone">{t('settings.phone')}</Label>
+                    <Label htmlFor="edit-currency">Moneda</Label>
+                    <select
+                      id="edit-currency"
+                      value={compCurrency}
+                      onChange={(e) => setCompCurrency(e.target.value)}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="DOP">DOP — Peso Dominicano (RD$)</option>
+                      <option value="USD">USD — Dólar Americano ($)</option>
+                      <option value="MXN">MXN — Peso Mexicano (MX$)</option>
+                      <option value="COP">COP — Peso Colombiano</option>
+                      <option value="PEN">PEN — Sol Peruano (S/)</option>
+                      <option value="CLP">CLP — Peso Chileno</option>
+                      <option value="ARS">ARS — Peso Argentino</option>
+                      <option value="GTQ">GTQ — Quetzal Guatemalteco</option>
+                      <option value="HNL">HNL — Lempira Hondureño</option>
+                      <option value="CRC">CRC — Colón Costarricense</option>
+                    </select>
+                  </div>
+                  </>)}
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-phone" className="text-[11px] font-semibold text-muted-foreground">{t('settings.phone')}</Label>
                     <Input
                       id="edit-phone"
                       value={compPhone}
                       onChange={(e) => setCompPhone(e.target.value)}
+                      className="h-8 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="edit-email">{t('settings.contactEmail')}</Label>
+                    <Label htmlFor="edit-email" className="text-[11px] font-semibold text-muted-foreground">{t('settings.contactEmail')}</Label>
                     <Input
                       id="edit-email"
                       type="email"
                       value={compEmail}
                       onChange={(e) => setCompEmail(e.target.value)}
+                      className="h-8 text-xs"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="edit-address">{t('settings.address')}</Label>
+                  <Label htmlFor="edit-address" className="text-[11px] font-semibold text-muted-foreground">{t('settings.address')}</Label>
                   <Input
                     id="edit-address"
                     value={compAddress}
                     onChange={(e) => setCompAddress(e.target.value)}
+                    className="h-8 text-xs"
                   />
+                </div>
+
+                {/* Read-only Fiscal Module & Country Info */}
+                <div className="pt-3 border-t space-y-2.5">
+                  <h4 className="text-xs font-bold flex items-center gap-2 text-foreground">
+                    <Globe className="w-3.5 h-3.5 text-primary" />
+                    Configuración Fiscal & Módulo Activo
+                  </h4>
+                  <div className="p-3 rounded-lg border bg-muted/30 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <span className="text-muted-foreground block text-[11px] font-medium">País de Operación</span>
+                      <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 mt-0.5">
+                        {activeCompany?.country === 'US' ? '🇺🇸 Estados Unidos' :
+                         activeCompany?.country === 'MX' ? '🇲🇽 México' :
+                         activeCompany?.country === 'CO' ? '🇨🇴 Colombia' : '🇩🇴 República Dominicana'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[11px] font-medium">Moneda Principal</span>
+                      <span className="font-semibold text-foreground text-xs mt-0.5 block">
+                        {activeCompany?.currency || 'DOP'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[11px] font-medium">Módulo Fiscal</span>
+                      <span className="font-semibold text-primary text-xs mt-0.5 block">
+                        {activeCompany?.enabledModules?.includes('US_ACCOUNTING') ? 'USA Accounting' :
+                         activeCompany?.enabledModules?.includes('LATAM') ? 'Latinoamérica' :
+                         'Módulo Fiscal RD (DGII)'}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Nota: Los módulos fiscales y la moneda se asignan automáticamente al registrar la empresa según el país seleccionado.
+                  </p>
                 </div>
 
                 {compSuccess && (
@@ -320,10 +680,10 @@ export default function SettingsPage() {
                   <p className="text-xs text-destructive font-medium">{compError}</p>
                 )}
 
-                <Button type="submit" disabled={isUpdatingCompany} className="w-full md:w-auto">
+                <Button type="submit" disabled={isUpdatingCompany} size="sm" className="h-8 text-xs font-semibold shadow-2xs w-full md:w-auto">
                   {isUpdatingCompany ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                       {t('common.saving')}
                     </>
                   ) : (
@@ -338,24 +698,29 @@ export default function SettingsPage() {
         {activeCompany && (
           <Card>
             <CardHeader>
-              <CardTitle>{t('settings.periodLockTitle')}</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                {t('settings.periodLockTitle')}
+              </CardTitle>
+              <CardDescription className="text-[11px] mt-0.5">
                 {t('settings.periodLockDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loadingLock ? (
-                <p className="text-sm text-muted-foreground animate-pulse">{t('common.loading')}</p>
+                <p className="text-xs text-muted-foreground animate-pulse">{t('common.loading')}</p>
               ) : (
-                <form onSubmit={handleUpdateLock} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleUpdateLock} className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="lock-date">{t('settings.lockDateLabel')}</Label>
+                      <Label htmlFor="lock-date" className="text-[11px] font-semibold text-muted-foreground">{t('settings.lockDateLabel')}</Label>
                       <Input
                         id="lock-date"
                         type="date"
+                        aria-label={t('settings.lockDateLabel')}
                         value={lockDate}
                         onChange={(e) => setLockDate(e.target.value)}
+                        className="h-8 text-xs font-medium w-40 shadow-2xs cursor-pointer"
                       />
                       <p className="text-[11px] text-muted-foreground">
                         {t('settings.lockDateHint')}
@@ -364,17 +729,17 @@ export default function SettingsPage() {
                   </div>
 
                   {lockSuccess && (
-                    <p className="text-xs text-green-600 font-medium">{lockSuccess}</p>
+                    <p className="text-xs text-emerald-600 font-semibold">{lockSuccess}</p>
                   )}
                   {lockError && (
-                    <p className="text-xs text-destructive font-medium">{lockError}</p>
+                    <p className="text-xs text-destructive font-semibold">{lockError}</p>
                   )}
 
                   <div className="flex gap-2">
-                    <Button type="submit" disabled={isUpdatingLock}>
+                    <Button type="submit" disabled={isUpdatingLock} size="sm" className="h-8 text-xs font-semibold shadow-2xs">
                       {isUpdatingLock ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
                           {t('common.saving')}
                         </>
                       ) : (
@@ -385,6 +750,8 @@ export default function SettingsPage() {
                       <Button
                         type="button"
                         variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold shadow-2xs"
                         onClick={async () => {
                           if (confirm('¿Estás seguro de que deseas eliminar el bloqueo y reabrir todos los períodos?')) {
                             setLockDate('');
@@ -418,7 +785,10 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Company Registry List */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold tracking-tight">{t('settings.registeredCompanies')}</h2>
+            <h3 className="text-sm font-bold tracking-tight flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary shrink-0" />
+              {t('settings.registeredCompanies')}
+            </h3>
             {loadingCompanies ? (
               <div className="flex justify-center p-6">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -438,7 +808,7 @@ export default function SettingsPage() {
                     <Card key={comp.id} className={`border transition-all ${isActive ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
-                          <CardTitle className="text-base font-bold truncate pr-2">{comp.name}</CardTitle>
+                          <CardTitle className="text-sm font-bold truncate pr-2">{comp.name}</CardTitle>
                           {isActive && (
                             <span className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                               <Check className="w-3 h-3" />
@@ -474,95 +844,118 @@ export default function SettingsPage() {
           {/* Register New Company form */}
           <div>
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('settings.addNewCompany')}</CardTitle>
-                <CardDescription>{t('settings.addNewCompanyDesc')}</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-primary shrink-0" />
+                  {t('settings.addNewCompany')}
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('settings.addNewCompanyDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleRegisterCompany} className="space-y-3">
                   <div className="space-y-1">
-                    <Label htmlFor="new-name">{t('settings.tradeName')}</Label>
+                    <Label htmlFor="new-name" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.tradeName')} *
+                    </Label>
                     <Input
                       id="new-name"
                       placeholder="Mi Empresa SRL"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
+                      className="h-9 text-xs"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-tradeName">{t('settings.commercialName')}</Label>
+                    <Label htmlFor="new-tradeName" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.commercialName')}
+                    </Label>
                     <Input
                       id="new-tradeName"
                       value={newTradeName}
                       onChange={(e) => setNewTradeName(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-rnc">{t('settings.rnc')}</Label>
+                    <Label htmlFor="new-rnc" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.rnc')} *
+                    </Label>
                     <Input
                       id="new-rnc"
                       placeholder="131234567"
                       value={newRnc}
                       onChange={(e) => setNewRnc(e.target.value)}
+                      className="h-9 text-xs font-mono"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-regime">{t('settings.taxRegime')}</Label>
-                    <select
-                      id="new-regime"
-                      value={newTaxRegime}
-                      onChange={(e) => setNewTaxRegime(e.target.value)}
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    >
-                      <option value="ORDINARIO">{t('settings.ordinaryRegime')}</option>
-                      <option value="RST">{t('settings.rst')}</option>
-                    </select>
+                    <Label htmlFor="new-regime" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.taxRegime')}
+                    </Label>
+                    <Select value={newTaxRegime} onValueChange={(val) => setNewTaxRegime(val)}>
+                      <SelectTrigger id="new-regime" className="w-full h-9 text-xs font-medium">
+                        <SelectValue placeholder={t('settings.taxRegime')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ORDINARIO" className="text-xs">{t('settings.ordinaryRegime')}</SelectItem>
+                        <SelectItem value="RST" className="text-xs">{t('settings.rst')}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-phone">{t('settings.phone')}</Label>
+                    <Label htmlFor="new-phone" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.phone')}
+                    </Label>
                     <Input
                       id="new-phone"
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-email">{t('settings.contactEmail')}</Label>
+                    <Label htmlFor="new-email" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.contactEmail')}
+                    </Label>
                     <Input
                       id="new-email"
                       type="email"
                       placeholder="contacto@empresa.com"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new-address">{t('settings.address')}</Label>
+                    <Label htmlFor="new-address" className="text-xs font-semibold text-muted-foreground">
+                      {t('settings.address')}
+                    </Label>
                     <Input
                       id="new-address"
                       value={newAddress}
                       onChange={(e) => setNewAddress(e.target.value)}
+                      className="h-9 text-xs"
                     />
                   </div>
 
                   {newSuccess && (
-                    <p className="text-xs text-green-600 font-medium">{newSuccess}</p>
+                    <p className="text-xs text-emerald-600 font-semibold mt-2">{newSuccess}</p>
                   )}
                   {newError && (
-                    <p className="text-xs text-destructive font-medium">{newError}</p>
+                    <p className="text-xs text-destructive font-semibold mt-2">{newError}</p>
                   )}
 
-                  <Button type="submit" disabled={isCreatingCompany} className="w-full mt-2">
+                  <Button type="submit" disabled={isCreatingCompany} className="w-full h-9 text-xs font-medium gap-2 mt-2 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isCreatingCompany ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         {t('settings.registering')}
                       </>
                     ) : (
                       <>
-                        <Plus className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4" />
                         {t('settings.registerCompany')}
                       </>
                     )}
@@ -579,22 +972,148 @@ export default function SettingsPage() {
       )}
 
       {activeTab === 'preferences' && (
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                {t('settings.preferences')}
+              </CardTitle>
+              <CardDescription className="text-[11px] mt-0.5">{t('settings.languageDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 border rounded-lg bg-card">
+                <div>
+                  <h4 className="font-bold text-xs">{t('settings.languageSelect')}</h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">ES (Español) / EN (English)</p>
+                </div>
+                <LanguageSwitcher />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Moon className="w-4 h-4 text-primary" />
+                Tema Visual de la Aplicación
+              </CardTitle>
+              <CardDescription className="text-[11px] mt-0.5">
+                Personaliza la apariencia de la plataforma según tus preferencias o la luz del ambiente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ThemeSelector />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'security' && (
         <Card className="max-w-xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-indigo-600" />
-              {t('settings.preferences')}
+            <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+              <KeyRound className="w-4 h-4 text-primary" />
+              Cambiar Contraseña de Acceso
             </CardTitle>
-            <CardDescription>{t('settings.languageDescription')}</CardDescription>
+            <CardDescription className="text-[11px] mt-0.5">
+              Actualiza tu contraseña de usuario de forma segura.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
-              <div>
-                <h4 className="font-semibold text-sm">{t('settings.languageSelect')}</h4>
-                <p className="text-xs text-muted-foreground">ES (Español) / EN (English)</p>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <Label htmlFor="current-pass" className="text-[11px] font-semibold text-muted-foreground">Contraseña Actual *</Label>
+                <div className="relative">
+                  <Input
+                    id="current-pass"
+                    type={showCurrentPass ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="h-8 text-xs pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPass(!showCurrentPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showCurrentPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
-              <LanguageSwitcher />
-            </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="new-pass" className="text-[11px] font-semibold text-muted-foreground">Nueva Contraseña *</Label>
+                <div className="relative">
+                  <Input
+                    id="new-pass"
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="h-8 text-xs pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showNewPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Password criteria */}
+              {newPassword.length > 0 && (
+                <div className="p-2.5 bg-muted/40 border rounded-md text-[11px] space-y-1 text-muted-foreground">
+                  <p className="font-bold text-foreground mb-1 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                    Criterios de seguridad:
+                  </p>
+                  <div className={newPassword.length >= 8 ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
+                    {newPassword.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                  </div>
+                  <div className={/\d/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
+                    {/\d/.test(newPassword) ? '✓' : '○'} Al menos un número (0-9)
+                  </div>
+                  <div className={/[A-Z]/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
+                    {/[A-Z]/.test(newPassword) ? '✓' : '○'} Al menos una letra mayúscula (A-Z)
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label htmlFor="confirm-pass" className="text-[11px] font-semibold text-muted-foreground">Confirmar Nueva Contraseña *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-pass"
+                    type={showConfirmPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="h-8 text-xs pr-9"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {passSuccess && <p className="text-xs text-emerald-600 font-bold">{passSuccess}</p>}
+              {passError && <p className="text-xs text-destructive font-bold">{passError}</p>}
+
+              <Button type="submit" disabled={isChangingPassword} size="sm" className="h-8 text-xs font-semibold shadow-2xs gap-1.5">
+                {isChangingPassword ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Actualizando...</> : 'Actualizar Contraseña'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       )}

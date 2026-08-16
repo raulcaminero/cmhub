@@ -57,6 +57,7 @@ export interface CreateQuotationPayload {
 }
 
 export const quotationsApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getQuotations: builder.query<Quotation[], { companyId: string }>({
       query: ({ companyId }) => ({
@@ -84,6 +85,21 @@ export const quotationsApi = api.injectEndpoints({
         method: 'PATCH',
         body: { status },
       }),
+      async onQueryStarted({ companyId, id, status }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          quotationsApi.util.updateQueryData('getQuotations', { companyId }, (draft) => {
+            const quotation = draft.find((q) => q.id === id);
+            if (quotation) {
+              quotation.status = status;
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
+      },
       invalidatesTags: ['Quotations'],
     }),
   }),

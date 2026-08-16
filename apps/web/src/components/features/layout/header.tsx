@@ -2,46 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { CompanySwitcher } from './company-switcher';
-import { useTranslation } from '@/lib/use-translation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { useRouter } from 'next/navigation';
-import { useGetProfileQuery, useUpdateProfileMutation, UpdateProfileRequest } from '@/services/auth.api';
-import { LogOut, User, X, Loader2 } from 'lucide-react';
+import { useGetProfileQuery } from '@/services/auth.api';
+import { LogOut, User, Settings, Shield, Palette } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header() {
-  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { data: profile } = useGetProfileQuery();
-  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Initialize form fields when profile data loads or modal is opened
-  useEffect(() => {
-    if (profile && modalOpen) {
-      setFirstName(profile.firstName);
-      setLastName(profile.lastName);
-      setEmail(profile.email);
-      setPassword('');
-      setSuccessMessage('');
-      setErrorMessage('');
-    }
-  }, [profile, modalOpen]);
 
   // Click outside to close dropdown menu
   useEffect(() => {
@@ -56,29 +30,16 @@ export function Header() {
 
   function handleLogout() {
     dispatch(logout());
-    router.push('/login');
+    router.push('/login' as any);
   }
 
-  async function handleUpdateProfile(e: React.FormEvent) {
-    e.preventDefault();
-    setSuccessMessage('');
-    setErrorMessage('');
-
-    try {
-      const body: UpdateProfileRequest = { firstName, lastName, email };
-      if (password && password.trim()) body.password = password;
-
-      await updateProfile(body).unwrap();
-      setSuccessMessage(t('common.success'));
-      setPassword('');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
-      setErrorMessage(err.data?.message || t('common.error'));
-    }
+  function navigateTo(tab: string) {
+    setDropdownOpen(false);
+    router.push(`/cmhub/settings?tab=${tab}` as any);
   }
 
-  const initials = profile 
-    ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() 
+  const initials = profile
+    ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
     : 'U';
 
   return (
@@ -86,149 +47,103 @@ export function Header() {
       <CompanySwitcher />
 
       {/* User profile section */}
-      <div className="flex items-center gap-4 relative" ref={dropdownRef}>
+      <div className="flex items-center gap-3 relative" ref={dropdownRef}>
+        <ThemeToggle />
+
         <button
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm hover:brightness-95 transition-all outline-none"
+          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm hover:brightness-95 transition-all outline-none ring-2 ring-primary/20"
         >
           {initials}
         </button>
 
-
         {dropdownOpen && (
-          <div className="absolute right-0 top-11 w-56 bg-card text-card-foreground border rounded-lg shadow-lg py-1 z-40 animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="absolute right-0 top-11 w-60 bg-card text-card-foreground border rounded-xl shadow-xl py-1.5 z-40 animate-in fade-in slide-in-from-top-1 duration-150">
+            {/* User info header */}
             {profile && (
-              <div className="px-4 py-2.5 border-b">
-                <p className="text-sm font-semibold truncate">{profile.firstName} {profile.lastName}</p>
-                <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+              <div className="px-4 py-3 border-b">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shrink-0">
+                    {initials}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{profile.firstName} {profile.lastName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
+                  </div>
+                </div>
               </div>
             )}
-            <button
-              onClick={() => {
-                setDropdownOpen(false);
-                setModalOpen(true);
-              }}
-              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2.5 hover:bg-muted transition-colors"
-            >
-              <User className="w-4 h-4 text-muted-foreground" />
-              {t('header.profileSettings')}
-            </button>
-            <div className="border-t my-1"></div>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm flex items-center gap-2.5 hover:bg-muted text-destructive hover:text-destructive transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              {t('header.logout')}
-            </button>
+
+            {/* Navigation items */}
+            <div className="py-1">
+              <button
+                onClick={() => navigateTo('profile')}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
+              >
+                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm leading-tight">Mi Perfil</p>
+                  <p className="text-[10px] text-muted-foreground">Nombre, correo y datos</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigateTo('preferences')}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
+              >
+                <div className="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Palette className="w-3.5 h-3.5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm leading-tight">Preferencias</p>
+                  <p className="text-[10px] text-muted-foreground">Tema e idioma</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigateTo('security')}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
+              >
+                <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm leading-tight">Seguridad</p>
+                  <p className="text-[10px] text-muted-foreground">Cambiar contraseña</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigateTo('company')}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
+              >
+                <div className="w-7 h-7 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0">
+                  <Settings className="w-3.5 h-3.5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm leading-tight">Configuraciones</p>
+                  <p className="text-[10px] text-muted-foreground">Empresa y equipo</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Logout */}
+            <div className="border-t mt-1 pt-1">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-destructive/10 text-destructive hover:text-destructive transition-colors rounded-md"
+              >
+                <div className="w-7 h-7 rounded-md bg-destructive/10 flex items-center justify-center shrink-0">
+                  <LogOut className="w-3.5 h-3.5" />
+                </div>
+                <p className="font-medium">Cerrar sesión</p>
+              </button>
+            </div>
           </div>
         )}
       </div>
-
-
-      {/* Profile Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-lg w-full max-w-md shadow-xl border relative">
-            <button
-              onClick={() => {
-                setModalOpen(false);
-                setErrorMessage('');
-                setSuccessMessage('');
-                setPassword('');
-              }}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            
-            <h3 className="text-lg font-semibold mb-2">Ajustes de Perfil</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Edita tus datos personales y actualiza tu cuenta.
-            </p>
-
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label htmlFor="prof-name">Nombre</Label>
-                  <Input
-                    id="prof-name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="prof-lastname">Apellido</Label>
-                  <Input
-                    id="prof-lastname"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="prof-email">Correo Electrónico</Label>
-                <Input
-                  id="prof-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="prof-pass">Nueva Contraseña</Label>
-                <Input
-                  id="prof-pass"
-                  type="password"
-                  placeholder="Dejar en blanco para no cambiar"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={8}
-                />
-              </div>
-
-              {successMessage && (
-                <p className="text-xs text-green-600 font-medium">{successMessage}</p>
-              )}
-              {errorMessage && (
-                <p className="text-xs text-destructive font-medium">{errorMessage}</p>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setModalOpen(false);
-                    setErrorMessage('');
-                    setSuccessMessage('');
-                    setPassword('');
-                  }}
-                  disabled={isUpdating}
-                >
-                  Cerrar
-                </Button>
-                <Button type="submit" size="sm" disabled={isUpdating}>
-                  {isUpdating ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-2 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    'Guardar Cambios'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

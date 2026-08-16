@@ -10,39 +10,49 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/use-translation';
+import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const [login, { isLoading, error }] = useLoginMutation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const result = await login({ email, password });
     if ('data' in result && result.data) {
       dispatch(setCredentials(result.data));
-      router.push('/cmhub');
+      router.push('/cmhub' as any);
     }
   }
 
+  const errorMessage = (error as any)?.data?.message || (error ? t('auth.invalidCredentials') : null);
+
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <CardHeader className="space-y-1">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">CM</span>
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">CM</span>
           </div>
           <span className="font-semibold text-lg">CMHub</span>
         </div>
-        <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
-        <CardDescription>Ingresa tus credenciales para acceder al sistema</CardDescription>
+        <CardTitle className="text-2xl">{t('auth.loginTitle')}</CardTitle>
+        <CardDescription>{t('auth.loginSubtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Correo electrónico</Label>
+            <Label htmlFor="email">{t('auth.emailLabel')}</Label>
             <Input
               id="email"
               type="email"
@@ -53,26 +63,48 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
+            <div className="flex justify-between items-center">
+              <Label htmlFor="password">{t('auth.passwordLabel')}</Label>
+              <Link href={'/forgot-password' as any} className="text-xs text-indigo-600 hover:underline font-medium">
+                {t('auth.forgotPasswordLink')}
+              </Link>
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
-          {error && (
-            <p className="text-sm text-destructive">Credenciales incorrectas. Inténtalo de nuevo.</p>
+
+          {errorMessage && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-start gap-2 leading-relaxed">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
+            </div>
           )}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+
+          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" disabled={isLoading}>
+            {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
           </Button>
-          <div className="text-center text-sm text-muted-foreground pt-2">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/register" className="text-primary hover:underline font-medium">
-              Regístrate
+
+          <div className="text-center text-xs text-muted-foreground pt-2">
+            {t('auth.noAccount')}{' '}
+            <Link href={'/register' as any} className="text-indigo-600 hover:underline font-semibold">
+              {t('auth.registerLink')}
             </Link>
           </div>
         </form>

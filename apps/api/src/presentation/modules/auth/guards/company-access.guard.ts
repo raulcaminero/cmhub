@@ -3,6 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
+import { extractCompanyId } from './extract-company-id.helper';
+
 @Injectable()
 export class CompanyAccessGuard implements CanActivate {
   constructor(
@@ -23,10 +25,7 @@ export class CompanyAccessGuard implements CanActivate {
       return false;
     }
 
-    let companyId = request.params.companyId;
-    if (!companyId && request.params.id && request.route?.path?.startsWith('/companies/:id')) {
-      companyId = request.params.id;
-    }
+    const companyId = extractCompanyId(request);
 
     if (!companyId) {
       return true;
