@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +34,7 @@ type SettingsTab = 'profile' | 'company' | 'my-companies' | 'ncf' | 'team' | 'ac
 
 const VALID_TABS: SettingsTab[] = ['profile', 'company', 'my-companies', 'ncf', 'team', 'accounts', 'preferences', 'security'];
 
-export default function SettingsPage() {
+function SettingsContent() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const activeCompany = useAppSelector((state) => state.company.active);
@@ -1120,4 +1122,13 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
 
