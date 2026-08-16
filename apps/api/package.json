@@ -30,7 +30,7 @@
     "@nestjs/swagger": "^11.4.5",
     "@prisma/client": "^5.19.0",
     "bcryptjs": "^2.4.3",
-    "bullmq": "^5.81.2",
+    "bullmq": "^6.1.0",
     "cache-manager": "^7.2.9",
     "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
