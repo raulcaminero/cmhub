@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
 import { useGetExpensesQuery } from '@/services/expenses.api';
 import { useTranslation } from '@/lib/use-translation';
@@ -16,7 +17,8 @@ import {
   FileText,
   Calendar,
   DollarSign,
-  TrendingDown
+  TrendingDown,
+  LayoutDashboard
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -33,6 +35,7 @@ export default function DashboardPage() {
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyId = activeCompany?.id;
   const [mounted, setMounted] = useState(false);
+  const formatCurrency = useCurrency();
 
   const getDashboardStartDate = () => {
     const d = new Date();
@@ -66,7 +69,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
           <p className="text-muted-foreground">{t('nav.companyManagement')}</p>
         </div>
         <Card>
@@ -155,73 +158,84 @@ export default function DashboardPage() {
    .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">{t('dashboard.subtitle')} {activeCompany?.name}</p>
+          <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <LayoutDashboard className="w-5 h-5 text-primary shrink-0" />
+            {t('nav.dashboard')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {activeCompany ? `${t('dashboard.subtitle')} ${activeCompany.name}` : 'Resumen financiero y operativo.'}
+          </p>
         </div>
         
-        <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">
-          <Building2 className="w-5 h-5 text-primary" />
-          <div>
-            <p className="text-sm font-semibold leading-none">{activeCompany?.name}</p>
-            <p className="text-xs text-muted-foreground">RNC: {activeCompany?.rnc}</p>
+        {activeCompany && (
+          <div className="flex items-center gap-3 px-4 py-2 border rounded-lg bg-card text-card-foreground">
+            <Building2 className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold leading-none">{activeCompany.name}</p>
+              {activeCompany.rnc && (
+                <p className="text-xs text-muted-foreground">
+                  {activeCompany.country === 'US' ? 'EIN' : activeCompany.country === 'MX' ? 'RFC' : 'RNC'}: {activeCompany.rnc}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.invoicing')}</CardTitle>
-            <ArrowUpRight className="w-4 h-4 text-green-500" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.invoicing')}</CardTitle>
+            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalInvoicesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.invoicingDesc')}</p>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(totalInvoicesSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.invoicingDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.expenses')}</CardTitle>
-            <ArrowDownRight className="w-4 h-4 text-red-500" />
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.expenses')}</CardTitle>
+            <ArrowDownRight className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">RD$ {totalExpensesSum.toLocaleString('es-DO', { minimumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.expensesDesc')}</p>
+            <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(totalExpensesSum)}</div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.expensesDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.netFlow')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.netFlow')}</CardTitle>
             {netCashFlow >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
             ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
+              <TrendingDown className="w-4 h-4 text-rose-500" />
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">
-              RD$ {netCashFlow.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+            <div className="text-lg font-bold tracking-tight text-card-foreground">
+              {formatCurrency(netCashFlow)}
             </div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.netFlowDesc')}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.netFlowDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.itbisNet')}</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('dashboard.itbisNet')}</CardTitle>
             <Receipt className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#0a1128]">
-              RD$ {itbisBalance.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+            <div className="text-lg font-bold tracking-tight text-card-foreground">
+              {formatCurrency(itbisBalance)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {itbisBalance >= 0 ? t('dashboard.itbisToPay') : t('dashboard.itbisInFavor')}
             </p>
           </CardContent>
@@ -260,7 +274,7 @@ export default function DashboardPage() {
                           className="w-4 bg-primary/80 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
-                            RD$ {m.income.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
+                            {formatCurrency(m.income, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
                         {/* Expense Bar */}
@@ -269,7 +283,7 @@ export default function DashboardPage() {
                           className="w-4 bg-slate-400 rounded-t-sm transition-all duration-500 hover:brightness-95 relative group"
                         >
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-50">
-                            RD$ {m.expense.toLocaleString('es-DO', { maximumFractionDigits: 0 })}
+                            {formatCurrency(m.expense, { maximumFractionDigits: 0 })}
                           </div>
                         </div>
                       </div>
@@ -301,7 +315,7 @@ export default function DashboardPage() {
             <CardDescription>{t('dashboard.quickLinksDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/cmhub/accounting" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/accounting' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-blue-500/10 text-blue-600">
                   <DollarSign className="w-4 h-4" />
@@ -314,7 +328,7 @@ export default function DashboardPage() {
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
             </Link>
 
-            <Link href="/cmhub/ncf" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/ncf' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-purple-500/10 text-purple-600">
                   <FileText className="w-4 h-4" />
@@ -327,7 +341,7 @@ export default function DashboardPage() {
               <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
             </Link>
 
-            <Link href="/cmhub/tax" className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+            <Link href={'/cmhub/tax' as any} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded bg-amber-500/10 text-amber-600">
                   <Receipt className="w-4 h-4" />
@@ -345,43 +359,43 @@ export default function DashboardPage() {
 
       {/* Recent Activity Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
-          <CardDescription>{t('dashboard.recentActivityDesc')}</CardDescription>
+        <CardHeader className="py-3 px-4">
+          <CardTitle className="text-sm font-bold">{t('dashboard.recentActivity')}</CardTitle>
+          <CardDescription className="text-[11px] text-muted-foreground mt-0.5">{t('dashboard.recentActivityDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {recentActivities.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">
+            <div className="text-center py-6 text-xs text-muted-foreground">
               {t('common.noRecentActivity')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('common.date')}</TableHead>
-                  <TableHead>{t('common.description')}</TableHead>
-                  <TableHead>{t('common.type')}</TableHead>
-                  <TableHead>{t('common.method')}</TableHead>
-                  <TableHead className="text-right">{t('common.amount')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.date')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.description')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.type')}</TableHead>
+                  <TableHead className="text-[11px] font-bold">{t('common.method')}</TableHead>
+                  <TableHead className="text-[11px] font-bold text-right">{t('common.amount')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentActivities.map((act) => (
                   <TableRow key={act.id}>
-                    <TableCell className="text-sm text-muted-foreground font-mono">
+                    <TableCell className="text-[11px] text-muted-foreground font-mono">
                       {new Date(act.date).toLocaleDateString('es-ES')}
                     </TableCell>
-                    <TableCell className="font-medium">{act.description}</TableCell>
+                    <TableCell className="text-[11px] font-medium">{act.description}</TableCell>
                     <TableCell>
-                      <Badge variant={act.type === 'INCOME' ? 'default' : 'destructive'}>
+                      <Badge variant={act.type === 'INCOME' ? 'default' : 'destructive'} className="text-[11px]">
                         {act.type === 'INCOME' ? t('common.income') : t('common.expense')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground capitalize">
+                    <TableCell className="text-[11px] text-muted-foreground capitalize">
                       {act.paymentMethod.replace('_', ' ')}
                     </TableCell>
-                    <TableCell className={`text-right font-semibold ${act.type === 'INCOME' ? 'text-green-600' : 'text-red-600'}`}>
-                      RD$ {act.amount.toLocaleString('es-DO', { minimumFractionDigits: 2 })}
+                    <TableCell className={`text-right font-mono text-[11px] font-bold ${act.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {formatCurrency(act.amount)}
                     </TableCell>
                   </TableRow>
                 ))}

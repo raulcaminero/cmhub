@@ -23,7 +23,15 @@ const baseQueryWithReauth: BaseQueryFn<
 > = async (args, apiInstance, extraOptions) => {
   let result = await baseQuery(args, apiInstance, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  const requestUrl = typeof args === 'string' ? args : args.url;
+  const isAuthEndpoint =
+    requestUrl.includes('/auth/login') ||
+    requestUrl.includes('/auth/refresh') ||
+    requestUrl.includes('/auth/register') ||
+    requestUrl.includes('/auth/forgot-password') ||
+    requestUrl.includes('/auth/reset-password');
+
+  if (result.error && result.error.status === 401 && !isAuthEndpoint) {
     if (!isRefreshing) {
       isRefreshing = true;
       refreshPromise = new Promise<string | null>(async (resolve) => {
@@ -62,6 +70,14 @@ const baseQueryWithReauth: BaseQueryFn<
     }
   }
 
+  if (result.error && result.error.status === 403) {
+    if (typeof window !== 'undefined') {
+      const errorData = result.error.data as any;
+      const msg = errorData?.message || 'No tienes permisos suficientes para realizar esta acción.';
+      window.dispatchEvent(new CustomEvent('cmhub:access-denied', { detail: { message: msg } }));
+    }
+  }
+
   return result;
 };
 
@@ -71,7 +87,7 @@ export const api = createApi({
   tagTypes: [
     'Account', 'JournalEntry', 'Company', 'Expense', 'NcfSequence', 
     'Contact', 'UserProfile', 'Invoice', 'Employee', 'Payroll', 'BankTransaction',
-    'Products', 'Quotations'
+    'Products', 'Quotations', 'CompanyUser'
   ],
   endpoints: () => ({}),
 });

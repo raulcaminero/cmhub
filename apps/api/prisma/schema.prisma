@@ -64,17 +64,25 @@ enum JournalEntryStatus {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String
-  firstName    String
-  lastName     String
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  companyRoles UserCompanyRole[]
-  JournalEntry JournalEntry[]
-  Invoice      Invoice[]
-  Expense      Expense[]
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  passwordHash         String
+  firstName            String
+  lastName             String
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  failedLoginAttempts  Int               @default(0)
+  lockUntil            DateTime?
+  hashedRefreshToken     String?
+  isEmailVerified        Boolean           @default(false)
+  emailVerificationToken String?
+  createdAt              DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  companyRoles         UserCompanyRole[]
+  JournalEntry         JournalEntry[]
+  Invoice              Invoice[]
+  Expense              Expense[]
+  auditLogs            AuditLog[]
 }
 
 model Company {
@@ -87,6 +95,11 @@ model Company {
   phone            String?
   email            String?
   lockDate         DateTime?         @db.Date
+  // Multi-country & Module configuration fields
+  country          String            @default("DO")   // ISO 3166-1 alpha-2: "DO", "US", "MX", "CO"...
+  currency         String            @default("DOP")  // ISO 4217: "DOP", "USD", "MXN"...
+  locale           String            @default("es-DO") // BCP 47 locale tag
+  enabledModules   String[]          @default(["DR_FISCAL"]) // Activated system modules: DR_FISCAL, US_ACCOUNTING, LATAM, INTERNATIONAL
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   userRoles        UserCompanyRole[]
@@ -102,6 +115,8 @@ model Company {
   taxFilings       TaxFiling[]
   products         Product[]
   quotations       Quotation[]
+  auditLogs        AuditLog[]
+  taxRates         TaxRate[]
 }
 
 model UserCompanyRole {
@@ -267,6 +282,8 @@ model Contact {
   email     String?
   phone     String?
   address   String?
+  isActive  Boolean     @default(true)
+  taxId     String?     // Generic tax ID for non-RD companies (EIN for US, RFC for MX, NIT for CO...)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -469,5 +486,44 @@ model InvoiceLine {
   product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  companyId String?
+  userId    String?
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+}
+
+model TaxRate {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String   // "ITBIS", "Sales Tax NY", "IVA", "GST"
+  code        String   // "ITBIS_18", "SALES_TAX_NY", "IVA_16"
+  rate        Decimal  @db.Decimal(5, 4) // 0.1800, 0.0885, 0.1600
+  taxType     String   // "VAT", "SALES_TAX", "RETENTION_ISR", "RETENTION_ITBIS"
+  agency      String   // "DGII", "IRS", "SAT", "DIAN"
+  appliesTo   String   // "SALE", "PURCHASE", "BOTH"
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([companyId, isActive])
 }
 

@@ -1,6 +1,7 @@
 import { api } from './api';
 
 export const taxCopilotApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     askCopilot: builder.mutation<{ reply: string }, { companyId: string; question: string }>({
       query: ({ companyId, question }) => ({

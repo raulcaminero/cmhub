@@ -4,6 +4,9 @@ import { NcfSequenceService } from '@application/services/ncf/ncf-sequence.servi
 import { CreateNcfSequenceDto } from '@application/dtos/ncf/create-ncf-sequence.dto';
 import { NcfType } from '@domain/enums';
 
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+
 @ApiTags('ncf')
 @ApiBearerAuth()
 @Controller('companies/:companyId/accounting/ncf')
@@ -16,6 +19,7 @@ export class NcfController {
     return this.ncfSequenceService.getSequences(companyId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post('sequences')
   @ApiOperation({ summary: 'Register a new NCF sequence' })
   createSequence(@Param('companyId') companyId: string, @Body() dto: CreateNcfSequenceDto) {
@@ -28,6 +32,7 @@ export class NcfController {
     return this.ncfSequenceService.generateNextNcf(companyId, type);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.CONTADOR)
   @Post('import')
   @ApiOperation({ summary: 'Bulk import NCF sequences' })
   importSequences(

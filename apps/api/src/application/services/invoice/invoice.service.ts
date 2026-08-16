@@ -12,6 +12,9 @@ import { checkPeriodLock } from '../accounting/period-lock.helper';
 import { ContactService } from '../contact/contact.service';
 import { ContactType } from '@domain/entities/contact.entity';
 
+import { AuditLogService } from '../audit/audit-log.service';
+import { TaxEngineService } from '../tax/tax-engine.service';
+
 export const INVOICE_REPOSITORY = 'INVOICE_REPOSITORY';
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
 export const JOURNAL_ENTRY_REPOSITORY = 'JOURNAL_ENTRY_REPOSITORY';
@@ -25,6 +28,8 @@ export class InvoiceService {
     private readonly ncfSequenceService: NcfSequenceService,
     private readonly contactService: ContactService,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
+    private readonly taxEngineService: TaxEngineService,
   ) {}
 
   async getInvoices(
@@ -138,13 +143,14 @@ export class InvoiceService {
     let calculatedItbis = 0;
     let calculatedCogs = 0;
     const formattedLines: any[] = [];
+    const defaultTaxRate = await this.taxEngineService.getDefaultVatRate(companyId);
 
     if (dto.lines && dto.lines.length > 0) {
       for (const l of dto.lines) {
         const qty = Number(l.quantity) || 1;
         const price = Number(l.unitPrice) || 0;
         const disc = Number(l.discount) || 0;
-        const taxRate = l.taxRate !== undefined ? Number(l.taxRate) : 18;
+        const taxRate = l.taxRate !== undefined ? Number(l.taxRate) : defaultTaxRate;
         const cost = l.cost !== undefined && l.cost !== null ? Number(l.cost) * qty : 0;
 
         const subtotal = qty * price * (1 - disc / 100);
@@ -361,6 +367,20 @@ export class InvoiceService {
         });
       }
 
+      await this.auditLogService.logAction({
+        companyId,
+        userId: createdByUserId,
+        action: 'INVOICE_CREATE',
+        entity: 'Invoice',
+        entityId: invoice.id,
+        details: {
+          ncf: invoice.ncf,
+          clientName: invoice.clientName,
+          amount: invoice.amount,
+          itbis: invoice.itbis,
+        },
+      });
+
       return invoice;
     });
   }
@@ -370,9 +390,10 @@ export class InvoiceService {
       where: { id: companyId },
       select: { lockDate: true },
     });
-    checkPeriodLock(company?.lockDate, dto.paymentDate);
+    checkPeriodLock(company?.lockDate, new Date(dto.paymentDate));
     const invoice = await this.invoiceRepository.findById(id, companyId);
     if (!invoice) throw new BadRequestException('Factura no encontrada.');
+    if (invoice.isVoided) throw new BadRequestException('No se puede cobrar una factura anulada.');
     if (invoice.paymentMethod !== PaymentMethod.CREDIT) {
       throw new BadRequestException('Solo se pueden cobrar facturas con método de pago a crédito.');
     }
@@ -419,13 +440,23 @@ export class InvoiceService {
 
       await this.journalEntryRepository.post(journalEntry.id, companyId, tx);
 
-      return this.invoiceRepository.update(id, companyId, {
+      const updated = await this.invoiceRepository.update(id, companyId, {
         paymentDate: new Date(dto.paymentDate),
       }, tx);
+
+      await this.auditLogService.logAction({
+        companyId,
+        action: 'INVOICE_COLLECT',
+        entity: 'Invoice',
+        entityId: id,
+        details: { ncf: invoice.ncf, clientName: invoice.clientName, paymentDate: dto.paymentDate },
+      });
+
+      return updated;
     });
   }
 
-  async voidInvoice(companyId: string, id: string) {
+  async voidInvoice(companyId: string, id: string, userId?: string) {
     const invoice = await this.invoiceRepository.findById(id, companyId);
     if (!invoice) throw new BadRequestException('Factura no encontrada.');
     if (invoice.isVoided) throw new BadRequestException('Esta factura ya está anulada.');
@@ -436,7 +467,7 @@ export class InvoiceService {
     });
     checkPeriodLock(company?.lockDate, invoice.date);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       if (invoice.journalEntryId) {
         await this.journalEntryRepository.void(invoice.journalEntryId, companyId, tx);
       }
@@ -445,5 +476,16 @@ export class InvoiceService {
         isVoided: true,
       }, tx);
     });
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId,
+      action: 'INVOICE_VOID',
+      entity: 'Invoice',
+      entityId: id,
+      details: { ncf: invoice.ncf, clientName: invoice.clientName, amount: invoice.amount },
+    });
+
+    return result;
   }
 }

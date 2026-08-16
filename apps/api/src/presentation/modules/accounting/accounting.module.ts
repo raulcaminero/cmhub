@@ -28,6 +28,7 @@ import {
   BANK_TRANSACTION_REPOSITORY,
 } from '@application/services/bank-reconciliation/bank-reconciliation.service';
 import { OcrService } from '@application/services/ocr/ocr.service';
+import { TaxEngineService } from '@application/services/tax/tax-engine.service';
 import { OcrQueueModule } from './ocr-queue.module';
 
 import { AccountRepository } from '@infrastructure/persistence/repositories/account.repository';
@@ -63,6 +64,7 @@ import { BankTransactionRepository } from '@infrastructure/persistence/repositor
     PayrollService,
     BankReconciliationService,
     OcrService,
+    TaxEngineService,
     { provide: ACCOUNT_REPOSITORY, useClass: AccountRepository },
     { provide: JOURNAL_ENTRY_REPOSITORY, useClass: JournalEntryRepository },
     { provide: EXPENSE_REPOSITORY, useClass: ExpenseRepository },

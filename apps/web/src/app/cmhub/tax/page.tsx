@@ -6,42 +6,36 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useAppSelector } from '@/store/hooks';
+import { useCurrency } from '@/hooks/use-company';
 import { useGetIt1SummaryQuery, useGetTaxFilingsQuery, useCreateTaxFilingMutation } from '@/services/reports.api';
-import { Download, Calendar, Calculator, FileText, DollarSign, Clock, Send, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
-import TaxCopilotView from '@/components/features/tax/tax-copilot-view';
+import { Download, Calendar, Calculator, FileText, Clock, Send, ShieldCheck, Loader2, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { calculateRetentions, RETENTION_TEMPLATES } from '@/lib/financial-calculations';
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
-const MONTHS = [
-  { code: '01', name: 'Enero' },
-  { code: '02', name: 'Febrero' },
-  { code: '03', name: 'Marzo' },
-  { code: '04', name: 'Abril' },
-  { code: '05', name: 'Mayo' },
-  { code: '06', name: 'Junio' },
-  { code: '07', name: 'Julio' },
-  { code: '08', name: 'Agosto' },
-  { code: '09', name: 'Septiembre' },
-  { code: '10', name: 'Octubre' },
-  { code: '11', name: 'Noviembre' },
-  { code: '12', name: 'Diciembre' },
-];
-
-const RETENTION_TEMPLATES = [
-  { id: 'alquiler', label: 'Alquiler Comercial (10% ISR / 100% ITBIS)', isrRate: 0.10, itbisRetainedRate: 1.0 },
-  { id: 'honorarios', label: 'Honorarios Profesionales (10% ISR / 30% ITBIS)', isrRate: 0.10, itbisRetainedRate: 0.30 },
-  { id: 'servicios_tecnicos', label: 'Servicios Técnicos y Otros (2% ISR / 30% ITBIS)', isrRate: 0.02, itbisRetainedRate: 0.30 },
-  { id: 'limpieza_seguridad', label: 'Servicios de Seguridad/Limpieza (2% ISR / 100% ITBIS)', isrRate: 0.02, itbisRetainedRate: 1.0 },
-  { id: 'informal', label: 'Compra a Proveedor Informal (Sin ISR / 100% ITBIS)', isrRate: 0.0, itbisRetainedRate: 1.0 },
-];
+const MONTH_CODES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'] as const;
+const MONTH_KEYS: Record<string, string> = {
+  '01': 'january', '02': 'february', '03': 'march', '04': 'april',
+  '05': 'may', '06': 'june', '07': 'july', '08': 'august',
+  '09': 'september', '10': 'october', '11': 'november', '12': 'december',
+};
 
 export default function TaxPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'board' | 'copilot'>('board');
+  const formatCurrency = useCurrency();
+  // TODO: When multi-country engine is ready, gate this page using useModules().showTaxModule
 
   // Period Selector States
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -75,22 +69,38 @@ export default function TaxPage() {
 
   const isPeriodFiled = taxFilings?.some((f) => f.period === periodStr && f.taxType === 'IT1');
 
+  const [confirmFilingOpen, setConfirmFilingOpen] = useState(false);
+  const [resultModal, setResultModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    type: 'success' | 'error';
+  } | null>(null);
+
   async function handleFilingSubmit() {
     if (!companyId) return;
     setSubmitError('');
     setSubmitSuccess('');
+    setConfirmFilingOpen(false);
 
-    if (confirm(`¿Estás seguro de presentar el IT-1 para el período ${selectedMonth}/${selectedYear}? Esto bloqueará el registro de facturas o gastos en este mes.`)) {
-      try {
-        await createTaxFiling({
-          companyId,
-          body: { period: periodStr, taxType: 'IT1' },
-        }).unwrap();
-        setSubmitSuccess('Declaración presentada con éxito y período contable cerrado.');
-        setTimeout(() => setSubmitSuccess(''), 4000);
-      } catch (err: any) {
-        setSubmitError(err.data?.message || 'Error al presentar la declaración.');
-      }
+    try {
+      await createTaxFiling({
+        companyId,
+        body: { period: periodStr, taxType: 'IT1' },
+      }).unwrap();
+      setResultModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Declaración IT-1 Presentada',
+        description: t('tax.filingSuccess'),
+      });
+    } catch (err: any) {
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al Presentar',
+        description: err.data?.message || t('tax.filingError'),
+      });
     }
   }
 
@@ -100,20 +110,12 @@ export default function TaxPage() {
 
   // Update calculator calculations
   useEffect(() => {
-    const template = RETENTION_TEMPLATES.find((t) => t.id === calcTemplate);
-    if (!template) return;
-
-    const itbisCalculated = Number((calcGross * 0.18).toFixed(2));
-    const itbisRet = Number((itbisCalculated * template.itbisRetainedRate).toFixed(2));
-    const isrRet = Number((calcGross * template.isrRate).toFixed(2));
-    const net = Number((calcGross + itbisCalculated - itbisRet - isrRet).toFixed(2));
-    const toDgi = Number((itbisRet + isrRet).toFixed(2));
-
-    setCalcItbis(itbisCalculated);
-    setCalcItbisRetained(itbisRet);
-    setCalcIsrRetained(isrRet);
-    setCalcNetToProvider(net);
-    setCalcTotalToDgi(toDgi);
+    const res = calculateRetentions(calcGross, calcTemplate, 0.18);
+    setCalcItbis(res.itbis);
+    setCalcItbisRetained(res.itbisRetained);
+    setCalcIsrRetained(res.isrRetained);
+    setCalcNetToProvider(res.netToProvider);
+    setCalcTotalToDgi(res.totalToDgi);
   }, [calcTemplate, calcGross]);
 
   if (!mounted) return null;
@@ -129,7 +131,7 @@ export default function TaxPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Error al generar el reporte.');
+        throw new Error(t('tax.reportError'));
       }
 
       const blob = await response.blob();
@@ -142,7 +144,12 @@ export default function TaxPage() {
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (err: any) {
-      alert(err.message || 'Error descargando el archivo.');
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error en Descarga',
+        description: err.message || t('tax.downloadError'),
+      });
     }
   };
 
@@ -157,7 +164,7 @@ export default function TaxPage() {
 
   const getDeadlineDate = (day: number) => {
     const date = getNextMonthDeadline(day);
-    return date.toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const getDaysRemaining = (day: number) => {
@@ -169,82 +176,67 @@ export default function TaxPage() {
     return diffDays;
   };
 
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Period Selector */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('tax.title')}</h1>
-          <p className="text-muted-foreground">{t('tax.subtitle')}</p>
+      <div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary shrink-0" />
+              {t('tax.title')}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('tax.subtitle')}</p>
+          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="taxYearSelect" className="text-xs font-semibold text-muted-foreground">{t('common.year')}:</Label>
+            <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val)}>
+              <SelectTrigger id="taxYearSelect" className="h-9 w-28 text-xs font-medium">
+                <SelectValue placeholder={t('common.year')} />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="taxMonthSelect" className="text-xs font-semibold text-muted-foreground">{t('common.month')}:</Label>
+            <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val)}>
+              <SelectTrigger id="taxMonthSelect" className="h-9 w-36 text-xs font-medium">
+                <SelectValue placeholder={t('common.month')} />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTH_CODES.map((code) => (
+                  <SelectItem key={code} value={code}>{t(`tax.${MONTH_KEYS[code]}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex items-center gap-2 bg-card border rounded-md p-2 shadow-sm self-start">
-          <Label className="text-xs font-semibold px-1">{t('tax.fiscalPeriod')}</Label>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="h-8 rounded border border-input bg-background px-2 text-xs focus-visible:outline-none"
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="h-8 rounded border border-input bg-background px-2 text-xs focus-visible:outline-none"
-          >
-            {MONTHS.map((m) => (
-              <option key={m.code} value={m.code}>{m.name}</option>
-            ))}
-          </select>
-        </div>
+      </div>
       </div>
 
       {!companyId ? (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-3.5">
             <p className="text-muted-foreground text-sm">{t('common.selectCompany')}</p>
           </CardContent>
         </Card>
       ) : (
         <>
-          {/* Tabs Selector */}
-          <div className="flex border-b border-muted mb-4">
-            <button
-              onClick={() => setActiveTab('board')}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-all ${
-                activeTab === 'board'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t('tax.boardTab')}
-            </button>
-            <button
-              onClick={() => setActiveTab('copilot')}
-              className={`px-4 py-2 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-                activeTab === 'copilot'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              {t('tax.copilotTab')}
-            </button>
-          </div>
-
-          {activeTab === 'board' ? (
-            <>
-              {/* Top row: Summary & Exports */}
-              <div className="grid gap-6 md:grid-cols-3">
+          {/* Top row: Summary & Exports */}
+          <div className="grid gap-6 md:grid-cols-3">
             {/* Obligaciones Card */}
             <Card className="md:col-span-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-emerald-600" />
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
                   {t('tax.obligationsTitle')} ({selectedYear}-{selectedMonth})
                 </CardTitle>
-                <CardDescription>{t('tax.obligationsDesc')}</CardDescription>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('tax.obligationsDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loadingIt1 ? (
@@ -257,26 +249,26 @@ export default function TaxPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b pb-4">
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisDue')}</span>
-                        <span className="text-lg font-bold font-mono">RD$ {it1Summary?.salesItbis.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold tracking-tight">{formatCurrency(it1Summary?.salesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-muted/40 rounded-md">
                         <span className="text-xs text-muted-foreground block font-medium">{t('tax.itbisAdvanced')}</span>
-                        <span className="text-lg font-bold font-mono">RD$ {it1Summary?.purchasesItbis.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold tracking-tight">{formatCurrency(it1Summary?.purchasesItbis ?? 0)}</span>
                       </div>
                       <div className="p-3 bg-emerald-50 dark:bg-emerald-950/15 rounded-md">
                         <span className="text-xs text-emerald-700 dark:text-emerald-400 block font-medium">{t('tax.itbisNet')}</span>
-                        <span className="text-lg font-bold font-mono text-emerald-600">RD$ {it1Summary?.itbisToPay.toFixed(2) || '0.00'}</span>
+                        <span className="text-lg font-bold tracking-tight text-emerald-600">{formatCurrency(it1Summary?.itbisToPay ?? 0)}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossSales')}</span>
-                        <span className="font-semibold font-mono">RD$ {it1Summary?.salesAmount.toFixed(2) || '0.00'}</span>
+                        <span className="font-semibold">{formatCurrency(it1Summary?.salesAmount ?? 0)}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm py-1">
                         <span className="text-muted-foreground">{t('tax.grossPurchases')}</span>
-                        <span className="font-semibold font-mono">RD$ {it1Summary?.purchasesAmount.toFixed(2) || '0.00'}</span>
+                        <span className="font-semibold">{formatCurrency(it1Summary?.purchasesAmount ?? 0)}</span>
                       </div>
                     </div>
 
@@ -298,9 +290,9 @@ export default function TaxPage() {
                       {!isPeriodFiled && (
                         <Button
                           type="button"
-                          onClick={handleFilingSubmit}
+                          onClick={() => setConfirmFilingOpen(true)}
                           disabled={isSubmitting}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 font-medium"
                           size="sm"
                         >
                           {isSubmitting ? (
@@ -327,11 +319,11 @@ export default function TaxPage() {
             {/* Descargas Card */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Download className="w-5 h-5 text-blue-600" />
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Download className="w-4 h-4 text-blue-600 shrink-0" />
                   {t('tax.downloadsTitle')}
                 </CardTitle>
-                 <CardDescription>{t('tax.downloadsDesc')}</CardDescription>
+                 <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('tax.downloadsDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button variant="outline" className="w-full justify-start text-left gap-2 text-xs font-mono" onClick={() => handleDownload('606')}>
@@ -359,24 +351,24 @@ export default function TaxPage() {
             {/* Calendar */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-indigo-600" />
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-indigo-600 shrink-0" />
                   {t('tax.upcomingDeadlines')}
                 </CardTitle>
-                <CardDescription>{t('tax.deadlinesDesc')} {selectedMonth}/{selectedYear}.</CardDescription>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('tax.deadlinesDesc')} ({selectedMonth}/{selectedYear}).</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* IR-3 / TSS */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineTss')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineTss')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(10)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(10) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(10)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(10)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -384,14 +376,14 @@ export default function TaxPage() {
                 {/* Envíos 606/7/8/9 */}
                 <div className="flex items-start justify-between border-b pb-2">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineEnvios')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineEnvios')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(15)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(15) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(15)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(15)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -399,14 +391,14 @@ export default function TaxPage() {
                 {/* IT-1 ITBIS */}
                 <div className="flex items-start justify-between">
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">{t('tax.deadlineIt1')}</span>
+                    <span className="text-xs font-bold text-foreground">{t('tax.deadlineIt1')}</span>
                     <span className="text-[11px] text-muted-foreground block">{getDeadlineDate(20)}</span>
                   </div>
                   <div>
                     {getDaysRemaining(20) > 0 ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(20)} d</span>
+                      <span className="text-[10px] bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expiresIn')} {getDaysRemaining(20)} d</span>
                     ) : (
-                      <span className="text-[10px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
+                      <span className="text-[10px] bg-red-50 dark:bg-red-950/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">{t('tax.expired')}</span>
                     )}
                   </div>
                 </div>
@@ -416,26 +408,28 @@ export default function TaxPage() {
             {/* Retention Calculator */}
             <Card className="md:col-span-2">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-emerald-600" />
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-emerald-600 shrink-0" />
                   {t('tax.calculatorTitle')}
                 </CardTitle>
-                <CardDescription>{t('tax.calculatorDesc')}</CardDescription>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">{t('tax.calculatorDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="calc-template" className="text-xs font-medium">{t('tax.operationType')}</Label>
-                    <select
-                      id="calc-template"
-                      value={calcTemplate}
-                      onChange={(e) => setCalcTemplate(e.target.value)}
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none"
-                    >
-                      {RETENTION_TEMPLATES.map((t) => (
-                        <option key={t.id} value={t.id}>{t.label}</option>
-                      ))}
-                    </select>
+                    <Select value={calcTemplate} onValueChange={setCalcTemplate}>
+                      <SelectTrigger id="calc-template" className="h-9 w-full text-xs font-medium">
+                        <SelectValue placeholder={t('tax.operationType')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RETENTION_TEMPLATES.map((tmpl) => (
+                          <SelectItem key={tmpl.id} value={tmpl.id}>
+                            {t(`tax.template_${tmpl.id}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="calc-gross" className="text-xs font-medium">{t('tax.grossAmount')}</Label>
@@ -455,15 +449,15 @@ export default function TaxPage() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between py-1 border-b">
                       <span className="text-muted-foreground">{t('tax.grossAmount')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcGross.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcGross)}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b">
                       <span className="text-muted-foreground">{t('tax.itbisBilled')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcItbis.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcItbis)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold">
                       <span>{t('tax.totalOriginal')}</span>
-                      <span className="font-mono">RD$ {(calcGross + calcItbis).toFixed(2)}</span>
+                      <span className="font-mono">{formatCurrency(calcGross + calcItbis)}</span>
                     </div>
                   </div>
 
@@ -471,19 +465,19 @@ export default function TaxPage() {
                   <div className="space-y-2 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-md border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between py-1 text-red-600">
                       <span>(-) {t('tax.retentionItbis')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcItbisRetained.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcItbisRetained)}</span>
                     </div>
                     <div className="flex justify-between py-1 text-red-600">
                       <span>(-) {t('tax.retentionIsr')}</span>
-                      <span className="font-semibold font-mono">RD$ {calcIsrRetained.toFixed(2)}</span>
+                      <span className="font-semibold font-mono">{formatCurrency(calcIsrRetained)}</span>
                     </div>
                     <div className="flex justify-between py-1 font-bold text-emerald-600 border-t pt-2 mt-1">
                       <span>{t('tax.netToPay')}</span>
-                      <span className="font-mono text-sm">RD$ {calcNetToProvider.toFixed(2)}</span>
+                      <span className="font-mono text-sm">{formatCurrency(calcNetToProvider)}</span>
                     </div>
                     <div className="flex justify-between py-0.5 text-[10px] text-muted-foreground">
                       <span>{t('tax.totalToDgi')}</span>
-                      <span className="font-mono">RD$ {calcTotalToDgi.toFixed(2)}</span>
+                      <span className="font-mono">{formatCurrency(calcTotalToDgi)}</span>
                     </div>
                   </div>
                 </div>
@@ -492,46 +486,46 @@ export default function TaxPage() {
           </div>
 
           {/* Historial de Declaraciones */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-indigo-600" />
+          <Card className="mt-4">
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
                 {t('tax.filingHistoryTitle')}
               </CardTitle>
-              <CardDescription>{t('tax.filingHistoryDesc')}</CardDescription>
+              <CardDescription className="text-[11px] text-muted-foreground mt-0.5">{t('tax.filingHistoryDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingFilings ? (
-                <p className="text-sm text-muted-foreground animate-pulse">{t('tax.loadingHistory')}</p>
+                <p className="text-xs text-muted-foreground animate-pulse">{t('tax.loadingHistory')}</p>
               ) : !taxFilings || taxFilings.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">{t('tax.noFilings')}</p>
+                <p className="text-xs text-muted-foreground text-center py-6">{t('tax.noFilings')}</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
+                  <table className="w-full text-xs text-left">
                     <thead>
-                      <tr className="border-b text-xs uppercase text-muted-foreground">
-                        <th className="py-2">{t('tax.period')}</th>
-                        <th className="py-2">{t('common.type')}</th>
-                        <th className="py-2 text-right">{t('tax.salesAmount')}</th>
-                        <th className="py-2 text-right">{t('tax.purchasesAmount')}</th>
-                        <th className="py-2 text-right">{t('tax.taxResult')}</th>
-                        <th className="py-2">{t('tax.filedDate')}</th>
-                        <th className="py-2">{t('common.status')}</th>
+                      <tr className="border-b text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/50">
+                        <th className="py-2 px-3">{t('tax.period')}</th>
+                        <th className="py-2 px-3">{t('common.type')}</th>
+                        <th className="py-2 px-3 text-right">{t('tax.salesAmount')}</th>
+                        <th className="py-2 px-3 text-right">{t('tax.purchasesAmount')}</th>
+                        <th className="py-2 px-3 text-right">{t('tax.taxResult')}</th>
+                        <th className="py-2 px-3">{t('tax.filedDate')}</th>
+                        <th className="py-2 px-3">{t('common.status')}</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-border/50">
                       {taxFilings.map((filing) => (
-                        <tr key={filing.id} className="border-b hover:bg-muted/30">
-                          <td className="py-2 font-semibold font-mono">
+                        <tr key={filing.id} className="hover:bg-muted/40 transition-colors">
+                          <td className="py-2 px-3 font-semibold font-mono text-[11px] text-foreground">
                             {filing.period.substring(4, 6)}/{filing.period.substring(0, 4)}
                           </td>
-                          <td className="py-2 font-bold">{filing.taxType}</td>
-                          <td className="py-2 text-right font-mono">RD$ {Number(filing.salesAmount).toFixed(2)}</td>
-                          <td className="py-2 text-right font-mono">RD$ {Number(filing.purchasesAmount).toFixed(2)}</td>
-                          <td className="py-2 text-right font-mono text-emerald-600 font-semibold">RD$ {Number(filing.itbisToPay).toFixed(2)}</td>
-                          <td className="py-2 text-muted-foreground">{new Date(filing.filedAt).toLocaleString()}</td>
-                          <td className="py-2">
-                            <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                          <td className="py-2 px-3 font-bold text-[11px] text-foreground">{filing.taxType}</td>
+                          <td className="py-2 px-3 text-right font-mono text-[11px] text-foreground">{formatCurrency(Number(filing.salesAmount))}</td>
+                          <td className="py-2 px-3 text-right font-mono text-[11px] text-foreground">{formatCurrency(Number(filing.purchasesAmount))}</td>
+                          <td className="py-2 px-3 text-right font-mono text-[11px] text-emerald-600 font-bold">{formatCurrency(Number(filing.itbisToPay))}</td>
+                          <td className="py-2 px-3 text-[11px] text-muted-foreground font-mono">{new Date(filing.filedAt).toLocaleString()}</td>
+                          <td className="py-2 px-3">
+                            <span className="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
                               {t('tax.filed')}
                             </span>
                           </td>
@@ -544,12 +538,108 @@ export default function TaxPage() {
             </CardContent>
           </Card>
         </>
-      ) : (
-        <div className="pt-2">
-          <TaxCopilotView companyId={companyId} />
+      )}
+      {/* Modal de Confirmación de Presentación (Shadcn UI) */}
+      {confirmFilingOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
+            <button
+              type="button"
+              onClick={() => setConfirmFilingOpen(false)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <Send className="w-4 h-4 text-primary shrink-0" />
+              Confirmar Presentación de IT-1
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">
+              {t('tax.confirmFiling', { period: `${selectedMonth}/${selectedYear}` })}
+            </p>
+
+            <div className="bg-muted/30 border rounded-lg p-3 text-xs mb-4 flex items-center justify-between">
+              <span className="font-semibold text-muted-foreground">Período Fiscal:</span>
+              <span className="font-mono font-bold text-foreground bg-background px-2.5 py-1 rounded border">
+                {selectedMonth}/{selectedYear}
+              </span>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-medium"
+                onClick={() => setConfirmFilingOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isSubmitting}
+                onClick={handleFilingSubmit}
+                className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {t('tax.submitting')}
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    {t('tax.submitDeclaration')}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
-        </>
+
+      {/* Modal de Resultado / Notificación Shadcn UI */}
+      {resultModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative text-center flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setResultModal(null)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            {resultModal.type === 'success' ? (
+              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+            )}
+
+            <h3 className="text-base font-bold text-foreground">
+              {resultModal.title}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 mb-4 max-w-xs leading-relaxed">
+              {resultModal.description}
+            </p>
+
+            <Button
+              onClick={() => setResultModal(null)}
+              className="w-full h-9 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              Entendido
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

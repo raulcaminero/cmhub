@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, FileText } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
+import { useCurrency } from '@/hooks/use-company';
 import {
   Table,
   TableBody,
@@ -34,6 +35,7 @@ interface EntryLineForm {
 export function JournalEntriesView() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+  const formatCurrency = useCurrency();
 
   const { data: entries, isLoading: isLoadingEntries } = useGetJournalEntriesQuery(
     { companyId: companyId! },
@@ -162,16 +164,20 @@ export function JournalEntriesView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      {/* Action Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
+        <p className="text-xs text-muted-foreground">
+          Registro de la contabilidad general de la empresa.
+        </p>
+        <Button size="sm" className="gap-2 font-semibold shadow-2xs shrink-0" onClick={() => setIsOpen(true)}>
+          <Plus className="w-4 h-4" />
+          {t('entries.newEntry')}
+        </Button>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle>{t('entries.title')}</CardTitle>
-          <Button size="sm" className="gap-2" onClick={() => setIsOpen(true)}>
-            <Plus className="w-4 h-4" />
-            {t('entries.newEntry')}
-          </Button>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 sm:p-6 space-y-4">
           {isLoadingEntries ? (
             <p className="text-sm text-muted-foreground">{t('entries.loading')}</p>
           ) : !entries || entries.length === 0 ? (
@@ -188,16 +194,16 @@ export function JournalEntriesView() {
                       <span className="text-sm font-semibold">{entry.description}</span>
                       
                       {entry.status === 'DRAFT' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border font-medium">{t('entries.draft')}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium">{t('entries.draft')}</span>
                       )}
                       {entry.status === 'POSTED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 border font-medium">{t('entries.posted')}</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold">{t('entries.posted')}</span>
                       )}
                       {entry.status === 'VOIDED' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 border font-medium">{t('entries.voided')}</span>
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-semibold">{t('entries.voided')}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
                       <span>Ref: {entry.reference || 'N/A'}</span>
                       <span>{t('common.date')}: {new Date(entry.date).toLocaleDateString()}</span>
                       
@@ -205,7 +211,7 @@ export function JournalEntriesView() {
                         <Button
                           variant="outline"
                           onClick={() => handlePost(entry.id)}
-                          className="h-7 text-xs px-2 text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                          className="h-6 text-[11px] px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200 font-semibold"
                         >
                           {t('entries.approve')}
                         </Button>
@@ -214,7 +220,7 @@ export function JournalEntriesView() {
                         <Button
                           variant="outline"
                           onClick={() => handleVoid(entry.id)}
-                          className="h-7 text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                          className="h-6 text-[11px] px-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 font-semibold"
                         >
                           {t('entries.void')}
                         </Button>
@@ -224,11 +230,11 @@ export function JournalEntriesView() {
                   
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="h-8">{t('entries.account')}</TableHead>
-                        <TableHead className="h-8">{t('entries.detail')}</TableHead>
-                        <TableHead className="h-8 text-right">{t('entries.debit')}</TableHead>
-                        <TableHead className="h-8 text-right">{t('entries.credit')}</TableHead>
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="h-7 text-[11px] font-bold">{t('entries.account')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold">{t('entries.detail')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold text-right">{t('entries.debit')}</TableHead>
+                        <TableHead className="h-7 text-[11px] font-bold text-right">{t('entries.credit')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -236,17 +242,17 @@ export function JournalEntriesView() {
                         const acc = accounts?.find((a) => a.id === line.accountId);
                         return (
                           <TableRow key={line.id} className="hover:bg-transparent py-1">
-                            <TableCell className="py-2 text-sm font-medium">
+                            <TableCell className="py-1.5 text-[11px] font-medium text-foreground">
                               {acc ? `${acc.code} — ${acc.name}` : t('entries.unknownAccount')}
                             </TableCell>
-                            <TableCell className="py-2 text-xs text-muted-foreground">
+                            <TableCell className="py-1.5 text-[11px] text-muted-foreground">
                               {line.description || '-'}
                             </TableCell>
-                            <TableCell className="py-2 text-sm text-right font-mono">
-                              {line.debit > 0 ? `RD$ ${Number(line.debit).toFixed(2)}` : '-'}
+                            <TableCell className="py-1.5 text-[11px] text-right font-mono font-bold text-foreground">
+                              {line.debit > 0 ? formatCurrency(Number(line.debit)) : '-'}
                             </TableCell>
-                            <TableCell className="py-2 text-sm text-right font-mono">
-                              {line.credit > 0 ? `RD$ ${Number(line.credit).toFixed(2)}` : '-'}
+                            <TableCell className="py-1.5 text-[11px] text-right font-mono font-bold text-foreground">
+                              {line.credit > 0 ? formatCurrency(Number(line.credit)) : '-'}
                             </TableCell>
                           </TableRow>
                         );
@@ -275,6 +281,7 @@ export function JournalEntriesView() {
                   <Input
                     id="entry-date"
                     type="date"
+                    aria-label={t('entries.date')}
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                     required
@@ -383,14 +390,14 @@ export function JournalEntriesView() {
                     {t('entries.linesCount')} {lines.length}
                   </div>
                   <div className="flex gap-4 font-mono">
-                    <div>{t('entries.debitsTotal')} RD$ {totalDebits.toFixed(2)}</div>
-                    <div>{t('entries.creditsTotal')} RD$ {totalCredits.toFixed(2)}</div>
+                    <div>{t('entries.debitsTotal')} {formatCurrency(totalDebits)}</div>
+                    <div>{t('entries.creditsTotal')} {formatCurrency(totalCredits)}</div>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
                   <span className={isBalanced ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
-                    {isBalanced ? t('entries.balanced') : `${t('entries.unbalanced')} RD$ ${difference.toFixed(2)}`}
+                    {isBalanced ? t('entries.balanced') : `${t('entries.unbalanced')} ${formatCurrency(difference)}`}
                   </span>
                 </div>
               </div>

@@ -45,7 +45,8 @@ export class ReportService {
 
     const header = `606|${company.rnc}|${period}|${expenses.length}`;
     const rows = expenses.map((exp) => {
-      const typeId = exp.providerRnc.length === 9 ? '1' : exp.providerRnc.length === 11 ? '2' : '3';
+      const rncLen = (exp.providerRnc || '').length;
+      const typeId = rncLen === 9 ? '1' : rncLen === 11 ? '2' : '3';
       const formattedDate = new Date(exp.date).toISOString().split('T')[0].replace(/-/g, '');
       const formattedPaymentDate = exp.paymentDate && !exp.isVoided
         ? new Date(exp.paymentDate).toISOString().split('T')[0].replace(/-/g, '') 
@@ -267,6 +268,34 @@ export class ReportService {
     };
   }
 
+  async exportFinancialsCsv(companyId: string): Promise<string> {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new BadRequestException('Empresa no encontrada');
+
+    const financials = await this.getFinancials(companyId);
+
+    const lines: string[] = [];
+    lines.push(`EMPRESA: ${company.name} (RNC: ${company.rnc})`);
+    lines.push(`FECHA DE GENERACIÓN: ${new Date().toISOString().split('T')[0]}`);
+    lines.push('');
+    lines.push('--- BALANCE GENERAL ---');
+    lines.push('Código,Cuenta,Tipo,Monto (DOP)');
+
+    financials.balanceSheet.forEach((row: any) => {
+      lines.push(`"${row.code}","${row.name}","${row.type}",${Number(row.balance || 0).toFixed(2)}`);
+    });
+
+    lines.push('');
+    lines.push('--- ESTADO DE RESULTADOS ---');
+    lines.push('Código,Cuenta,Tipo,Monto (DOP)');
+
+    financials.incomeStatement.forEach((row: any) => {
+      lines.push(`"${row.code}","${row.name}","${row.type}",${Number(row.balance || 0).toFixed(2)}`);
+    });
+
+    return lines.join('\r\n');
+  }
+
   async generate608Text(companyId: string, period: string): Promise<string> {
     const company = await this.prisma.company.findUnique({ where: { id: companyId } });
     if (!company) throw new BadRequestException('Empresa no encontrada');
@@ -344,7 +373,7 @@ export class ReportService {
       where: { id: accountId, companyId },
     });
     if (!account) {
-      throw new Error('Cuenta no encontrada o no pertenece a esta empresa');
+      throw new BadRequestException('Cuenta no encontrada o no pertenece a esta empresa.');
     }
 
     const dateFilter: Record<string, any> = {};

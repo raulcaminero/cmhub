@@ -11,6 +11,8 @@ import { checkPeriodLock } from '../accounting/period-lock.helper';
 import { ContactService } from '../contact/contact.service';
 import { ContactType } from '@domain/entities/contact.entity';
 
+import { AuditLogService } from '../audit/audit-log.service';
+
 export const EXPENSE_REPOSITORY = 'EXPENSE_REPOSITORY';
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
 export const JOURNAL_ENTRY_REPOSITORY = 'JOURNAL_ENTRY_REPOSITORY';
@@ -23,6 +25,7 @@ export class ExpenseService {
     @Inject(JOURNAL_ENTRY_REPOSITORY) private readonly journalEntryRepository: IJournalEntryRepository,
     private readonly contactService: ContactService,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async getExpenses(
@@ -314,7 +317,7 @@ export class ExpenseService {
 
       await this.journalEntryRepository.post(journalEntry.id, companyId, prismaTx);
 
-      return this.expenseRepository.create({
+      const expense = await this.expenseRepository.create({
         companyId,
         providerRnc: dto.providerRnc,
         providerName: dto.providerName,
@@ -335,6 +338,17 @@ export class ExpenseService {
         foreignPaymentType: dto.foreignPaymentType ?? null,
         createdByUserId: createdByUserId ?? null,
       }, prismaTx);
+
+      await this.auditLogService.logAction({
+        companyId,
+        userId: createdByUserId,
+        action: 'EXPENSE_CREATE',
+        entity: 'Expense',
+        entityId: expense.id,
+        details: { ncf: expense.ncf, providerName: expense.providerName, amount: expense.amount },
+      });
+
+      return expense;
     };
 
     if (tx) {
@@ -344,7 +358,7 @@ export class ExpenseService {
     }
   }
 
-  async voidExpense(companyId: string, id: string) {
+  async voidExpense(companyId: string, id: string, userId?: string) {
     const expense = await this.expenseRepository.findById(id, companyId);
     if (!expense) throw new BadRequestException('Gasto no encontrado.');
     if (expense.isVoided) throw new BadRequestException('Este gasto ya está anulado.');
@@ -355,7 +369,7 @@ export class ExpenseService {
     });
     checkPeriodLock(company?.lockDate, expense.date);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Void associated Journal Entry
       if (expense.journalEntryId) {
         await this.journalEntryRepository.void(expense.journalEntryId, companyId, tx);
@@ -365,6 +379,17 @@ export class ExpenseService {
         isVoided: true,
       }, tx);
     });
+
+    await this.auditLogService.logAction({
+      companyId,
+      userId,
+      action: 'EXPENSE_VOID',
+      entity: 'Expense',
+      entityId: id,
+      details: { ncf: expense.ncf, providerName: expense.providerName, amount: expense.amount },
+    });
+
+    return result;
   }
 
   async importExpenses(companyId: string, dtos: CreateExpenseDto[], createdByUserId?: string) {

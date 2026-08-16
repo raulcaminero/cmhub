@@ -4,6 +4,9 @@ import { AuthService } from '@application/services/auth/auth.service';
 import { LoginDto } from '@application/dtos/auth/login.dto';
 import { RegisterDto } from '@application/dtos/auth/register.dto';
 import { UpdateProfileDto } from '@application/dtos/auth/update-profile.dto';
+import { ForgotPasswordDto } from '@application/dtos/auth/forgot-password.dto';
+import { ResetPasswordDto } from '@application/dtos/auth/reset-password.dto';
+import { ChangePasswordDto } from '@application/dtos/auth/change-password.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser, CurrentUserPayload } from './decorators/current-user.decorator';
 
@@ -28,11 +31,59 @@ export class AuthController {
   }
 
   @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify user email with token' })
+  verifyEmail(@Body('email') email: string, @Body('token') token: string) {
+    return this.authService.verifyEmail(email, token);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email verification link' })
+  resendVerification(@Body('email') email: string) {
+    return this.authService.resendVerification(email);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset email' })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using token' })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @ApiBearerAuth()
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change password from user settings' })
+  changePassword(@CurrentUser() user: CurrentUserPayload, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.userId, dto);
+  }
+
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   refresh(@Body('refreshToken') refreshToken: string) {
     return this.authService.refresh(refreshToken);
+  }
+
+  @ApiBearerAuth()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout and revoke user refresh token' })
+  logout(@CurrentUser() user: CurrentUserPayload) {
+    return this.authService.logout(user.userId);
   }
 
   @ApiBearerAuth()
