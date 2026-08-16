@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
@@ -27,7 +29,7 @@ import { useTabMemory } from '@/hooks/use-tab-memory';
 type SalesTab = 'invoices' | 'catalog' | 'quotations';
 const VALID_TABS: SalesTab[] = ['invoices', 'catalog', 'quotations'];
 
-export default function SalesPage() {
+function SalesContent() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const formatCurrency = useCurrency();
@@ -231,5 +233,14 @@ export default function SalesPage() {
     </div>
   );
 }
+
+export default function SalesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SalesContent />
+    </Suspense>
+  );
+}
+
 
 

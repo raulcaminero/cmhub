@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JournalEntriesView } from '@/components/features/accounting/journal-entries-view';
 import { InvoicesView } from '@/components/features/accounting/invoices-view';
@@ -13,13 +13,12 @@ import { useCurrency } from '@/hooks/use-company';
 import { useGetFinancialsQuery } from '@/services/reports.api';
 import { useGetInvoicesQuery } from '@/services/invoices.api';
 import { useTranslation } from '@/lib/use-translation';
-
 import { useTabMemory } from '@/hooks/use-tab-memory';
 
 type AccountingTab = 'entries' | 'invoices' | 'expenses' | 'payroll' | 'reconciliation';
 const VALID_TABS: AccountingTab[] = ['entries', 'invoices', 'expenses', 'payroll', 'reconciliation'];
 
-export default function AccountingPage() {
+function AccountingContent() {
   const { t } = useTranslation();
   const { activeTab, changeTab } = useTabMemory<AccountingTab>('entries', VALID_TABS);
   const companyId = useAppSelector((state) => state.company.active?.id);
@@ -183,5 +182,13 @@ export default function AccountingPage() {
         <ReconciliationView />
       )}
     </div>
+  );
+}
+
+export default function AccountingPage() {
+  return (
+    <Suspense fallback={null}>
+      <AccountingContent />
+    </Suspense>
   );
 }

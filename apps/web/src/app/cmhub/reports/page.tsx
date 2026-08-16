@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
@@ -68,7 +70,7 @@ import { useTabMemory } from '@/hooks/use-tab-memory';
 type ReportsTab = 'tax' | 'financials' | 'ledger';
 const VALID_TABS: ReportsTab[] = ['tax', 'financials', 'ledger'];
 
-export default function ReportsPage() {
+function ReportsContent() {
   const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const token = useAppSelector((state) => state.auth.accessToken);
@@ -716,6 +718,14 @@ export default function ReportsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReportsContent />
+    </Suspense>
   );
 }
 
