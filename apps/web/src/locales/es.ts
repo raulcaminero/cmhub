@@ -309,7 +309,7 @@ export const es = {
     subtitle: 'Monitorea tus obligaciones fiscales.',
     fiscalPeriod: 'Período Fiscal:',
     boardTab: 'Tablero Fiscal',
-    copilotTab: 'Copiloto Inteligente',
+    copilotTab: 'Asistente IA',
     obligationsTitle: 'Obligaciones Estimadas del Período',
     obligationsDesc: 'Resumen acumulado del ITBIS y retenciones calculadas en base a facturas y gastos registrados.',
     itbisDue: 'ITBIS por Pagar (Ventas)',

@@ -311,7 +311,7 @@ export const en: Translations = {
     subtitle: 'Monitor your tax obligations.',
     fiscalPeriod: 'Fiscal Period:',
     boardTab: 'Tax Board',
-    copilotTab: 'AI Copilot',
+    copilotTab: 'AI Assistant',
     obligationsTitle: 'Estimated Period Obligations',
     obligationsDesc: 'Cumulative ITBIS and withholding summary based on registered invoices and expenses.',
     itbisDue: 'ITBIS Payable (Sales)',

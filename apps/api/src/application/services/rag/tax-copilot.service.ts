@@ -34,12 +34,12 @@ export class TaxCopilotService {
 
   async askCopilot(companyId: string, question: string, userId: string): Promise<string> {
     if (!this.checkSafeguards(userId)) {
-      return '⚠️ Has alcanzado el límite de 50 consultas diarias con tu Copiloto Financiero para esta cuenta de prueba. El límite se restablecerá mañana.';
+      return '⚠️ Has alcanzado el límite de 50 consultas diarias con tu Asistente Financiero para esta cuenta de prueba. El límite se restablecerá mañana.';
     }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      return '⚠️ El Copiloto Fiscal no está activo. Configure la variable `GEMINI_API_KEY` para iniciar el chat con inteligencia artificial.';
+      return '⚠️ El Asistente Fiscal no está activo. Configure la variable `GEMINI_API_KEY` para iniciar el chat con inteligencia artificial.';
     }
 
     try {
@@ -48,16 +48,15 @@ export class TaxCopilotService {
       let contextString = '';
 
       const isTaxRelated = 
-        lowercaseQuestion.includes('dgii') ||
-        lowercaseQuestion.includes('retencion') ||
         lowercaseQuestion.includes('itbis') ||
         lowercaseQuestion.includes('isr') ||
-        lowercaseQuestion.includes('ley') ||
-        lowercaseQuestion.includes('norma') ||
+        lowercaseQuestion.includes('ncf') ||
+        lowercaseQuestion.includes('dgii') ||
+        lowercaseQuestion.includes('retencion') ||
+        lowercaseQuestion.includes('606') ||
+        lowercaseQuestion.includes('607') ||
         lowercaseQuestion.includes('impuesto') ||
-        lowercaseQuestion.includes('comprobante') ||
-        lowercaseQuestion.includes('rst') ||
-        lowercaseQuestion.includes('fiscal');
+        lowercaseQuestion.includes('factura');
 
       if (isTaxRelated) {
         this.logger.log('Query matches tax topics. Retrieving DGII RAG context...');
@@ -77,10 +76,10 @@ export class TaxCopilotService {
         ? `Empresa activa: ${company.name} (RNC: ${company.rnc}). `
         : '';
 
-      const systemPrompt = `Eres un Copiloto Fiscal y Financiero experto para la República Dominicana integrado en el software ERP CMHub.
-Tu rol es responder preguntas de contabilidad, impuestos y finanzas de forma profesional, clara y amigable en español.
+      const systemPrompt = `Eres el Asistente Fiscal y Financiero experto para la República Dominicana integrado en el software ERP CMHub.
+Tu rol es identificarte siempre como "Asistente Fiscal y Financiero de CMHub" y responder preguntas de contabilidad, impuestos y finanzas de forma profesional, clara y amigable en español.
 ${companyContext}
-Cuando te pregunten sobre la finanzas (ingresos, gastos o bancos), debes utilizar obligatoriamente las herramientas (functions) provistas. No intentes adivinar o inventar cifras.
+Cuando te pregunten sobre las finanzas (ingresos, gastos o bancos), debes utilizar obligatoriamente las herramientas (functions) provistas. No intentes adivinar o inventar cifras.
 Si usas leyes provistas en el contexto, cítalas indicando el fragmento o artículo específico.
 ${contextString}`;
 
