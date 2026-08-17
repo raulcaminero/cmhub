@@ -36,6 +36,7 @@ import {
   Search,
   Landmark,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import {
   Select,
@@ -855,30 +856,55 @@ export function ReconciliationView() {
               </div>
             </div>
 
-            {/* Smart File Dropzone */}
-            <div className="mb-4">
-              <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-4 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
-                <input
-                  id="unified-file-input"
-                  type="file"
-                  accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleUnifiedFileSelect(f);
-                  }}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                />
-                
-                {isPollingOcr ? (
-                  <div className="py-2 space-y-2">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                    <p className="text-xs font-semibold">Analizando documento con Inteligencia Artificial (Gemini)...</p>
-                    <p className="text-[10px] text-muted-foreground">Extrayendo transacciones y formateando tabla.</p>
-                  </div>
-                ) : (
+            {/* Smart File Dropzone / Compact Bar */}
+            {isPollingOcr ? (
+              <div className="mb-4 border-2 border-dashed border-primary/40 rounded-xl p-4 bg-muted/20 text-center flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                <p className="text-xs font-semibold">Analizando documento con Inteligencia Artificial (Gemini)...</p>
+                <p className="text-[10px] text-muted-foreground">Extrayendo transacciones y formateando tabla.</p>
+              </div>
+            ) : parsedCsvRows.length > 0 ? (
+              <div className="mb-3 flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-2.5 text-xs">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-200 truncate">
+                    {parsedCsvRows.length} transacciones listas para revisión
+                  </span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                    (puedes anexar más archivos)
+                  </span>
+                </div>
+                <label htmlFor="unified-file-input-compact" className="cursor-pointer font-semibold text-primary hover:underline flex items-center gap-1 text-xs shrink-0 bg-background px-2.5 py-1 rounded-md border shadow-2xs">
+                  <Plus className="w-3.5 h-3.5 text-primary" />
+                  Añadir archivo
+                  <input
+                    id="unified-file-input-compact"
+                    type="file"
+                    accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUnifiedFileSelect(f);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-5 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
+                  <input
+                    id="unified-file-input"
+                    type="file"
+                    accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUnifiedFileSelect(f);
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                  />
                   <div className="flex items-center justify-center gap-3 py-1 z-0">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Sparkles className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Sparkles className="w-4.5 h-4.5" />
                     </div>
                     <div className="text-left">
                       <span className="font-semibold text-xs text-primary group-hover:underline block">
@@ -889,9 +915,9 @@ export function ReconciliationView() {
                       </span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
             <form onSubmit={handleImportCsv} className="space-y-3">
               {importTab === 'preview' ? (
@@ -902,7 +928,7 @@ export function ReconciliationView() {
                       <span>Hay filas con datos obligatorios incompletos (Fecha/Monto/Concepto). Quítalas con 🗑️ para poder continuar.</span>
                     </div>
                   )}
-                  <div className="border rounded-lg max-h-[240px] overflow-y-auto bg-card">
+                  <div className="border rounded-lg max-h-[300px] overflow-y-auto bg-card">
                     {parsedCsvRows.length > 0 ? (
                       <Table>
                         <TableHeader className="bg-muted/50 sticky top-0 z-10">
