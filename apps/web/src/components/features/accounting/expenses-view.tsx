@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -93,6 +93,37 @@ export function ExpensesView() {
   const [csvText, setCsvText] = useState('');
   const [importError, setImportError] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
+
+  const parsedExpensesCsvRows = useMemo(() => {
+    if (!csvText) return [];
+    const lines = csvText.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [];
+
+    const hasHeader = lines[0].toLowerCase().includes('fecha') || lines[0].toLowerCase().includes('rnc') || lines[0].toLowerCase().includes('ncf');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    return dataLines.map((line, idx) => {
+      const parts = line.split(',').map((p) => p.trim());
+      return {
+        id: idx,
+        date: parts[0] || '',
+        rnc: parts[1] || '',
+        name: parts[2] || 'Proveedor Desconocido',
+        ncf: parts[3] || '',
+        paymentMethod: parts[4] || 'EFECTIVO',
+        expenseType: parts[5] || '02',
+        amount: parseFloat(parts[6]) || 0,
+        itbis: parseFloat(parts[7]) || 0,
+        lineIndex: hasHeader ? idx + 1 : idx,
+      };
+    });
+  }, [csvText]);
+
+  const handleRemoveExpensesCsvRow = (lineIndex: number) => {
+    const lines = csvText.split('\n');
+    lines.splice(lineIndex, 1);
+    setCsvText(lines.join('\n'));
+  };
 
   const [providerRnc, setProviderRnc] = useState('');
   const [providerName, setProviderName] = useState('');
@@ -1016,7 +1047,7 @@ export function ExpensesView() {
       {/* Modal Importar Excel / CSV */}
       {isExcelOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-xl shadow-2xl border relative">
             <button
               type="button"
               onClick={() => setIsExcelOpen(false)}
@@ -1027,10 +1058,10 @@ export function ExpensesView() {
             </button>
             <h3 className="text-sm font-bold flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4 text-primary shrink-0" />
-              Carga Masiva de Gastos (CSV / Excel)
+              Carga Masiva de Gastos (Formulario DGII 606)
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5 mb-4">
-              Puedes cargar múltiples compras y gastos desde un archivo CSV o pegando directamente los datos.
+              Sube tu archivo CSV/Excel o revisa la previsualización de facturas detectadas.
             </p>
 
             {importError && (
@@ -1045,7 +1076,7 @@ export function ExpensesView() {
                 <Label className="text-xs font-semibold text-muted-foreground block">
                   Archivo de Gastos (CSV / TXT / Excel) *
                 </Label>
-                <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-6 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
+                <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-4 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
                   <input
                     id="excelFileInput"
                     type="file"
@@ -1062,7 +1093,7 @@ export function ExpensesView() {
                           {selectedFileName}
                         </span>
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium block">
-                          ✓ Archivo cargado correctamente
+                          ✓ {parsedExpensesCsvRows.length} comprobantes detectados
                         </span>
                       </div>
                       <Button
@@ -1080,68 +1111,96 @@ export function ExpensesView() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-2 z-0">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-5 h-5" />
+                    <div className="flex flex-col items-center gap-1 z-0 py-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-4 h-4" />
                       </div>
-                      <div>
-                        <span className="font-semibold text-xs text-primary group-hover:underline block">
-                          Haz clic aquí para seleccionar tu archivo CSV o Excel
-                        </span>
-                        <span className="text-[11px] text-muted-foreground block mt-0.5">
-                          Soporta archivos .csv, .txt y hojas de cálculo
-                        </span>
-                      </div>
+                      <span className="font-semibold text-xs text-primary group-hover:underline block">
+                        Haz clic aquí para seleccionar tu archivo CSV o Excel
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Option Divider */}
-              <div className="relative flex items-center justify-center my-2">
-                <div className="border-t w-full border-border"></div>
-                <span className="bg-card px-2 text-[10px] uppercase font-bold text-muted-foreground shrink-0 absolute">
-                  O pega el contenido manualmente
-                </span>
-              </div>
+              {/* Parsed Table Preview */}
+              {parsedExpensesCsvRows.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground">
+                    <span>Previsualización de Facturas ({parsedExpensesCsvRows.length})</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">Puedes quitar cualquier fila errónea antes de importar</span>
+                  </div>
+                  <div className="border rounded-lg max-h-[200px] overflow-y-auto bg-card">
+                    <Table>
+                      <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                        <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          <TableHead className="w-24">Fecha</TableHead>
+                          <TableHead>Proveedor / RNC</TableHead>
+                          <TableHead>NCF</TableHead>
+                          <TableHead className="text-right">Monto (RD$)</TableHead>
+                          <TableHead className="text-right w-10">Quitar</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {parsedExpensesCsvRows.map((row) => (
+                          <TableRow key={row.id} className="hover:bg-accent/50 text-[11px]">
+                            <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
+                              {row.date}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <p className="text-foreground">{row.name}</p>
+                              {row.rnc && <span className="text-[10px] text-muted-foreground font-mono">RNC: {row.rnc}</span>}
+                            </TableCell>
+                            <TableCell className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                              {row.ncf || '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold text-foreground">
+                              {formatCurrency(row.amount)}
+                            </TableCell>
+                            <TableCell className="text-right p-1">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                                onClick={() => handleRemoveExpensesCsvRow(row.lineIndex)}
+                                title="Descartar esta factura"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
 
-              {/* Manual Text Area */}
-              <div className="space-y-1">
-                <Label htmlFor="csvText" className="text-xs font-semibold text-muted-foreground">
-                  Formato de Columnas (CSV)
-                </Label>
-                <textarea
-                  id="csvText"
-                  rows={4}
-                  value={csvText}
-                  onChange={(e) => setCsvText(e.target.value)}
-                  placeholder="Fecha,RNC,Nombre,NCF,FormaPago,TipoGasto,Monto,ITBIS,ITBISRet,ISRRet&#10;2026-05-10,101010101,Claro,B0100000001,02,02,1500.00,270.00,0,0"
-                  className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t mt-4">
+              <div className="flex justify-between items-center pt-3 border-t mt-4">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs font-medium"
-                  onClick={() => {
-                    setIsExcelOpen(false);
-                    setSelectedFileName('');
-                    setCsvText('');
-                  }}
+                  onClick={() => setIsExcelOpen(false)}
+                  disabled={isImporting}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isImporting || parsedExpensesCsvRows.length === 0}
+                  className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
                   {isImporting ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Procesando...
+                      Importando Comprobantes...
                     </>
                   ) : (
-                    'Procesar Importación'
+                    `Confirmar e Importar Comprobantes (${parsedExpensesCsvRows.length})`
                   )}
                 </Button>
               </div>
