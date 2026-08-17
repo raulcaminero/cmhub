@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
 import { IBankTransactionRepository } from '@domain/repositories/bank-transaction.repository.interface';
 import { IAccountRepository } from '@domain/repositories/account.repository.interface';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
@@ -569,5 +569,22 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
         tx
       );
     });
+  }
+
+  async deleteTransaction(companyId: string, transactionId: string) {
+    const transaction = await this.bankTransactionRepository.findById(transactionId, companyId);
+    if (!transaction) {
+      throw new NotFoundException('Transacción bancaria no encontrada.');
+    }
+
+    if (transaction.reconciled) {
+      throw new BadRequestException('No se puede eliminar una transacción bancaria que ya está conciliada. Desconcíliela primero.');
+    }
+
+    await this.prisma.bankTransaction.delete({
+      where: { id: transactionId },
+    });
+
+    return { success: true, message: 'Transacción bancaria eliminada del extracto.' };
   }
 }

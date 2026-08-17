@@ -13,6 +13,7 @@ import {
   useLazyGetStatementOcrStatusQuery,
   useGetAiSuggestionQuery,
   useReconcileWithAccountMutation,
+  useDeleteBankTransactionMutation,
   BankTransaction,
   LedgerLine,
 } from '@/services/bank-reconciliation.api';
@@ -34,6 +35,7 @@ import {
   Loader2,
   Search,
   Landmark,
+  Trash2,
 } from 'lucide-react';
 import {
   Select,
@@ -93,9 +95,11 @@ export function ReconciliationView() {
   const [autoMatch, { isLoading: isMatching }] = useAutoMatchReconciliationMutation();
   const [matchManual] = useMatchReconciliationMutation();
   const [unmatch] = useUnmatchReconciliationMutation();
+  const [deleteTx, { isLoading: isDeletingTx }] = useDeleteBankTransactionMutation();
 
   const [isPollingOcr, setIsPollingOcr] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [txToDelete, setTxToDelete] = useState<BankTransaction | null>(null);
 
   const filteredUnmatchedBank = useMemo(() => {
     if (!report?.unreconciledBankTransactions) return [];
@@ -279,6 +283,31 @@ export function ReconciliationView() {
         type: 'error',
         title: 'Error al Conciliar',
         description: err.data?.message || 'No se pudo vincular los movimientos seleccionados.',
+      });
+    }
+  }
+
+  async function handleConfirmDeleteTx() {
+    if (!companyId || !txToDelete) return;
+    try {
+      await deleteTx({ companyId, id: txToDelete.id }).unwrap();
+      if (selectedBankTx?.id === txToDelete.id) {
+        setSelectedBankTx(null);
+      }
+      setTxToDelete(null);
+      refetch();
+      setResultModal({
+        isOpen: true,
+        type: 'success',
+        title: 'Movimiento Eliminado',
+        description: `La transacción "${txToDelete.description}" fue eliminada del extracto bancario.`,
+      });
+    } catch (err: any) {
+      setResultModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al Eliminar',
+        description: err.data?.message || 'No se pudo eliminar la transacción del extracto bancario.',
       });
     }
   }
@@ -497,23 +526,38 @@ export function ReconciliationView() {
                       <TableRow
                         key={tx.id}
                         onClick={() => setSelectedBankTx(selectedBankTx?.id === tx.id ? null : tx)}
-                        className={`cursor-pointer ${selectedBankTx?.id === tx.id ? 'bg-indigo-100/50 hover:bg-indigo-100 dark:bg-indigo-950/40' : 'hover:bg-accent'}`}
+                        className={`cursor-pointer group ${selectedBankTx?.id === tx.id ? 'bg-indigo-100/50 hover:bg-indigo-100 dark:bg-indigo-950/40' : 'hover:bg-accent'}`}
                       >
                         <TableCell className="font-mono text-[11px] whitespace-nowrap text-muted-foreground">
                           {new Date(tx.date).toISOString().split('T')[0]}
                         </TableCell>
-                        <TableCell className="text-[11px] max-w-[200px] truncate">
+                        <TableCell className="text-[11px] max-w-[180px] truncate">
                           <p className="font-medium text-foreground">{tx.description}</p>
                           {tx.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {tx.reference}</span>}
                         </TableCell>
                         <TableCell className={`text-right font-mono text-[11px] font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {formatCurrency(tx.amount)}
                         </TableCell>
+                        <TableCell className="text-right w-8 p-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTxToDelete(tx);
+                            }}
+                            title="Eliminar transacción del extracto"
+                            aria-label="Eliminar transacción"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                     {report.unreconciledBankTransactions.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-xs text-muted-foreground py-6">
+                        <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
                           No hay transacciones bancarias pendientes de conciliación.
                         </TableCell>
                       </TableRow>
@@ -615,6 +659,17 @@ export function ReconciliationView() {
                 </div>
 
                 <div className="flex gap-2">
+                  {selectedBankTx && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50 gap-1.5"
+                      onClick={() => setTxToDelete(selectedBankTx)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Eliminar del Extracto
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -915,6 +970,53 @@ export function ReconciliationView() {
             >
               Entendido
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Eliminación de Movimiento Bancario */}
+      {txToDelete && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative text-center flex flex-col items-center">
+            <button
+              type="button"
+              onClick={() => setTxToDelete(null)}
+              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cerrar</span>
+            </button>
+
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-foreground">
+              ¿Eliminar Movimiento del Extracto?
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">
+              ¿Estás seguro de que deseas eliminar la transacción <strong className="text-foreground">"{txToDelete.description}"</strong> ({formatCurrency(txToDelete.amount)}) importada por error?
+            </p>
+
+            <div className="flex gap-3 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setTxToDelete(null)}
+                className="flex-1 h-9 text-xs font-medium"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmDeleteTx}
+                disabled={isDeletingTx}
+                className="flex-1 h-9 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white gap-2"
+              >
+                {isDeletingTx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Sí, Eliminar Movimiento
+              </Button>
+            </div>
           </div>
         </div>
       )}
