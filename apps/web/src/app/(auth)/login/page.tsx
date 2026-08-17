@@ -46,8 +46,8 @@ export default function LoginPage() {
           </div>
           <span className="font-semibold text-lg">CMHub</span>
         </div>
-        <CardTitle className="text-2xl">{t('auth.loginTitle')}</CardTitle>
-        <CardDescription>{t('auth.loginSubtitle')}</CardDescription>
+        <CardTitle className="text-2xl" suppressHydrationWarning>{t('auth.loginTitle')}</CardTitle>
+        <CardDescription suppressHydrationWarning>{t('auth.loginSubtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

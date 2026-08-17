@@ -48,8 +48,8 @@ export default function RegisterPage() {
           </div>
           <span className="font-semibold text-lg">CMHub</span>
         </div>
-        <CardTitle className="text-2xl">{t('auth.registerTitle')}</CardTitle>
-        <CardDescription>{t('auth.registerSubtitle')}</CardDescription>
+        <CardTitle className="text-2xl" suppressHydrationWarning>{t('auth.registerTitle')}</CardTitle>
+        <CardDescription suppressHydrationWarning>{t('auth.registerSubtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
