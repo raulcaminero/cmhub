@@ -19,7 +19,8 @@ import {
   X,
   Bot,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Square
 } from 'lucide-react';
 
 interface Message {
@@ -31,23 +32,23 @@ interface Message {
 
 const QUICK_PROMPTS = [
   {
-    label: 'Ingresos de este mes',
     icon: TrendingUp,
-    text: '¿Cómo van mis ingresos de este mes?',
+    label: 'Resumen de Ingresos',
+    text: '¿Podrías darme un resumen de los ingresos y gastos registrados en este período?',
   },
   {
-    label: 'Balance de Bancos',
     icon: Landmark,
-    text: '¿Cuáles son los balances actuales de mis cuentas bancarias?',
+    label: 'Bancos',
+    text: '¿Cuáles son los saldos actuales en libros de nuestras cuentas de banco y caja?',
   },
   {
-    label: 'Retención ITBIS Honorarios',
     icon: FileText,
-    text: '¿Qué retención de ITBIS aplica a un servicio de honorarios profesionales de diseño gráfico?',
+    label: 'Retención ITBIS',
+    text: '¿Cuál es la tasa de retención del ITBIS aplicable cuando contratamos servicios profesionales a personas físicas?',
   },
   {
-    label: '¿Qué es el RST?',
     icon: HelpCircle,
+    label: 'RST DGII',
     text: '¿Qué requisitos y beneficios tiene el Régimen Simplificado de Tributación (RST) de la DGII?',
   },
 ];
@@ -68,6 +69,7 @@ export function CopilotFloatingWidget() {
   ]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeQueryRef = useRef<any>(null);
   
   const [askCopilot, { isLoading }] = useAskCopilotMutation();
 
@@ -109,8 +111,11 @@ export function CopilotFloatingWidget() {
     setInput('');
 
     try {
-      // 2. Call backend Copilot API
-      const res = await askCopilot({ companyId, question: userMsgText }).unwrap();
+      // 2. Call backend Copilot API with abort handle
+      const query = askCopilot({ companyId, question: userMsgText });
+      activeQueryRef.current = query;
+      const res = await query.unwrap();
+      activeQueryRef.current = null;
 
       // 3. Add assistant response
       setMessages((prev) => [
@@ -123,15 +128,35 @@ export function CopilotFloatingWidget() {
         },
       ]);
     } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `err-${Date.now()}`,
-          sender: 'assistant',
-          text: '⚠️ **Ocurrió un error al consultar al Asistente.** Por favor verifica tu conexión o intenta nuevamente.',
-          timestamp: new Date(),
-        },
-      ]);
+      activeQueryRef.current = null;
+      if (err?.name === 'AbortError' || err?.status === 'FETCH_ERROR') {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `abort-${Date.now()}`,
+            sender: 'assistant',
+            text: '⏹️ *Generación de respuesta detenida por el usuario.*',
+            timestamp: new Date(),
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            sender: 'assistant',
+            text: '⚠️ **Ocurrió un error al consultar al Asistente.** Por favor verifica tu conexión o intenta nuevamente.',
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    }
+  }
+
+  function handleStopGenerating() {
+    if (activeQueryRef.current) {
+      activeQueryRef.current.abort();
+      activeQueryRef.current = null;
     }
   }
 
@@ -322,15 +347,27 @@ export function CopilotFloatingWidget() {
                     disabled={isLoading}
                     className="text-xs h-10 rounded-xl"
                   />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    disabled={isLoading || !input.trim()}
-                    className="w-10 h-10 rounded-xl shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                    title={isLoading ? 'El asistente está pensando...' : 'Enviar consulta'}
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  </Button>
+                  {isLoading ? (
+                    <Button
+                      type="button"
+                      onClick={handleStopGenerating}
+                      className="h-10 px-3 rounded-xl shrink-0 bg-rose-600 hover:bg-rose-700 text-white text-xs gap-1 font-semibold animate-in fade-in"
+                      title="Detener respuesta de la IA"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-current" />
+                      Detener
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={!input.trim()}
+                      className="w-10 h-10 rounded-xl shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                      title="Enviar consulta"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  )}
                 </form>
               </div>
             </>
