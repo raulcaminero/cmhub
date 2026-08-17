@@ -57,6 +57,9 @@ const baseQueryWithReauth: BaseQueryFn<
           }
         }
         apiInstance.dispatch(logout());
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
         resolve(null);
       }).finally(() => {
         isRefreshing = false;
