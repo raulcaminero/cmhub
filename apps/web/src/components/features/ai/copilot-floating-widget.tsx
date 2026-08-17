@@ -326,7 +326,8 @@ export function CopilotFloatingWidget() {
                     type="submit"
                     size="icon"
                     disabled={isLoading || !input.trim()}
-                    className="w-10 h-10 rounded-xl shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="w-10 h-10 rounded-xl shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                    title={isLoading ? 'El asistente está pensando...' : 'Enviar consulta'}
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
