@@ -88,6 +88,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
               responseSchema: {
                 type: 'OBJECT',
                 properties: {
+                  isInvoice: { type: 'BOOLEAN' },
                   providerRnc: { type: 'STRING' },
                   providerName: { type: 'STRING' },
                   ncf: { type: 'STRING' },
@@ -96,7 +97,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
                   itbis: { type: 'NUMBER' },
                   expenseType: { type: 'STRING' },
                 },
-                required: ['providerRnc', 'providerName', 'ncf', 'date', 'amount', 'itbis', 'expenseType'],
+                required: ['isInvoice', 'providerRnc', 'providerName', 'ncf', 'date', 'amount', 'itbis', 'expenseType'],
               },
             },
           }),
@@ -116,15 +117,19 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
 
       const parsed = JSON.parse(text);
 
+      if (parsed.isInvoice === false) {
+        throw new BadRequestException('El documento subido parece ser un Estado de Cuenta Bancario en lugar de una factura de gasto.');
+      }
+
       OcrService.dailyRequestCount++;
 
       return {
-        providerRnc: parsed.providerRnc,
-        providerName: parsed.providerName,
-        ncf: parsed.ncf,
-        date: new Date(parsed.date),
-        amount: parsed.amount,
-        itbis: parsed.itbis,
+        providerRnc: parsed.providerRnc || '',
+        providerName: parsed.providerName || 'PROVEEDOR DESCONOCIDO',
+        ncf: parsed.ncf || '',
+        date: parsed.date ? new Date(parsed.date) : new Date(),
+        amount: Number(parsed.amount) || 0,
+        itbis: Number(parsed.itbis) || 0,
         expenseType: parsed.expenseType || '02',
       };
     } catch (error: any) {
@@ -211,6 +216,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
               responseSchema: {
                 type: 'OBJECT',
                 properties: {
+                  isBankStatement: { type: 'BOOLEAN' },
                   transactions: {
                     type: 'ARRAY',
                     items: {
@@ -224,7 +230,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
                     },
                   },
                 },
-                required: ['transactions'],
+                required: ['isBankStatement', 'transactions'],
               },
             },
           }),
@@ -244,12 +250,16 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
 
       const parsed = JSON.parse(text);
 
+      if (parsed.isBankStatement === false) {
+        throw new BadRequestException('El documento subido no parece ser un Estado de Cuenta Bancario (parece una factura de compra individual). Por favor sube un extracto bancario.');
+      }
+
       OcrService.dailyRequestCount++;
 
-      return parsed.transactions.map((t: any) => ({
-        date: new Date(t.date),
-        description: t.description,
-        amount: t.amount,
+      return (parsed.transactions || []).map((t: any) => ({
+        date: t.date ? new Date(t.date) : new Date(),
+        description: t.description || 'SIN CONCEPTO',
+        amount: Number(t.amount) || 0,
       }));
     } catch (error: any) {
       this.logger.error(`Failed to run real bank statement OCR: ${error.message}. Falling back to simulation.`, error.stack);
