@@ -54,7 +54,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: '¡Hola! Soy tu **Copiloto Fiscal y Financiero**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio (ingresos, gastos y balances). ¿De qué te gustaría hablar hoy?',
+      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio (ingresos, gastos y balances). ¿En qué te puedo colaborar hoy?',
       timestamp: new Date(),
     },
   ]);
@@ -122,7 +122,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
         {
           id: 'welcome',
           sender: 'assistant',
-          text: 'Conversación reiniciada. ¿En qué te puedo asesorar ahora?',
+          text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio (ingresos, gastos y balances). ¿En qué te puedo colaborar hoy?',
           timestamp: new Date(),
         },
       ]);
@@ -135,7 +135,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
         <div>
           <CardTitle className="text-md font-bold flex items-center gap-2 text-foreground">
             <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-            Copiloto Fiscal y Financiero
+            Asistente Fiscal y Financiero
           </CardTitle>
           <CardDescription className="text-xs">
             Asesor inteligente RAG con leyes de la DGII e información contable de tu negocio.

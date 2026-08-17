@@ -62,7 +62,7 @@ export function CopilotFloatingWidget() {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio en tiempo real. ¿En qué puedo ayudarte hoy?',
+      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio en tiempo real. ¿En qué te puedo colaborar hoy?',
       timestamp: new Date(),
     },
   ]);
