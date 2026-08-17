@@ -1031,58 +1031,58 @@ export function ExpensesView() {
             )}
 
             <form onSubmit={handleCsvImport} className="space-y-4">
-              {/* Drag and Drop Zone */}
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-muted-foreground block">
-                  Seleccionar Archivo (CSV, Excel, Foto o PDF) *
-                </Label>
-                <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-4 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
-                  <input
-                    id="excelFileInput"
-                    type="file"
-                    accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handleUnifiedExpenseFileSelect(f);
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                  />
-                  
-                  {isPollingOcr ? (
-                    <div className="py-2 space-y-2">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                      <p className="text-xs font-semibold">Procesando y analizando factura con Inteligencia Artificial (Gemini)...</p>
-                      <p className="text-[10px] text-muted-foreground">Por favor espera unos segundos mientras se autocompleta el formulario.</p>
-                    </div>
-                  ) : selectedFileName ? (
-                    <div className="flex items-center gap-3 bg-card border px-4 py-2.5 rounded-lg text-xs shadow-2xs z-0">
-                      <FileSpreadsheet className="w-5 h-5 text-emerald-600 shrink-0" />
-                      <div className="text-left overflow-hidden">
-                        <span className="font-semibold text-foreground truncate block max-w-[240px]">
-                          {selectedFileName}
-                        </span>
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium block">
-                          ✓ {parsedExpensesCsvRows.length} comprobantes detectados
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground ml-2 z-20"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedFileName('');
-                          setCsvText('');
-                        }}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 z-0 py-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Sparkles className="w-4 h-4" />
+              {/* Drag and Drop Zone / Compact Status Bar */}
+              {isPollingOcr ? (
+                <div className="border-2 border-dashed border-primary/40 rounded-xl p-4 bg-muted/20 text-center flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  <p className="text-xs font-semibold">Procesando y analizando factura con Inteligencia Artificial (Gemini)...</p>
+                  <p className="text-[10px] text-muted-foreground">Por favor espera unos segundos mientras se autocompleta la información.</p>
+                </div>
+              ) : parsedExpensesCsvRows.length > 0 ? (
+                <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-2.5 text-xs">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-semibold text-emerald-900 dark:text-emerald-200 truncate">
+                      {parsedExpensesCsvRows.length} comprobantes detectados
+                    </span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                      (puedes anexar más archivos)
+                    </span>
+                  </div>
+                  <label htmlFor="excelFileInputCompact" className="cursor-pointer font-semibold text-primary hover:underline flex items-center gap-1 text-xs shrink-0 bg-background px-2.5 py-1 rounded-md border shadow-2xs">
+                    <Plus className="w-3.5 h-3.5 text-primary" />
+                    Añadir archivo
+                    <input
+                      id="excelFileInputCompact"
+                      type="file"
+                      accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUnifiedExpenseFileSelect(f);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground block">
+                    Seleccionar Archivo (CSV, Excel, Foto o PDF) *
+                  </Label>
+                  <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-5 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
+                    <input
+                      id="excelFileInput"
+                      type="file"
+                      accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUnifiedExpenseFileSelect(f);
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    />
+                    <div className="flex flex-col items-center gap-1 z-0 py-1">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Sparkles className="w-4.5 h-4.5" />
                       </div>
                       <span className="font-semibold text-xs text-primary group-hover:underline block">
                         Haz clic o arrastra tu archivo aquí (CSV, Excel, Foto o PDF)
@@ -1091,9 +1091,9 @@ export function ExpensesView() {
                         Soporta archivos masivos CSV/Excel o imágenes/PDFs escaneados por IA
                       </span>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Parsed Table Preview */}
               {parsedExpensesCsvRows.length > 0 && (
@@ -1108,7 +1108,7 @@ export function ExpensesView() {
                     <span>Previsualización de Facturas ({parsedExpensesCsvRows.length})</span>
                     <span className="text-[10px] text-muted-foreground font-normal">Puedes quitar cualquier fila errónea antes de importar</span>
                   </div>
-                  <div className="border rounded-lg max-h-[200px] overflow-y-auto bg-card">
+                  <div className="border rounded-lg max-h-[280px] overflow-y-auto bg-card">
                     <Table>
                       <TableHeader className="bg-muted/50 sticky top-0 z-10">
                         <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
