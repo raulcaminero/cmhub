@@ -249,10 +249,7 @@ export function ReconciliationView() {
   if (!mounted) return null;
   if (!companyId) return null;
 
-  const defaultCsvTemplate = `Fecha,Descripcion,Referencia,Monto
-2026-07-01,Deposito Factura NCF-B0100000001,DEP-001,5900.00
-2026-07-15,Retencion TSS e Impuesto Nomina,, -15822.42
-2026-07-15,Pago Sueldos Netos Periodo 202607,, -125000.00`;
+  const defaultCsvTemplate = `Fecha,Descripcion,Referencia,Monto`;
 
   async function handleImportCsv(e: React.FormEvent) {
     e.preventDefault();
@@ -980,17 +977,7 @@ export function ReconciliationView() {
                 <p className="text-xs text-destructive font-semibold mt-2">{importError}</p>
               )}
 
-              <div className="flex justify-between items-center pt-3 border-t mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  onClick={() => setCsvContent(defaultCsvTemplate)}
-                  title="Inserta transacciones de ejemplo para probar la conciliación bancaria"
-                >
-                  Cargar Datos de Prueba
-                </Button>
+              <div className="flex justify-end items-center pt-3 border-t mt-4">
                 <div className="flex gap-2">
                   <Button
                     type="button"

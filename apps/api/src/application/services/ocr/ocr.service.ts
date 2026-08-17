@@ -27,9 +27,7 @@ export class OcrService {
     }
 
     if (OcrService.dailyRequestCount >= OcrService.DAILY_LIMIT) {
-      this.logger.warn(
-        `Safeguard triggered: Daily OCR limit of ${OcrService.DAILY_LIMIT} reached. Falling back to simulation to prevent charges.`
-      );
+      this.logger.warn(`Safeguard triggered: Daily OCR limit of ${OcrService.DAILY_LIMIT} reached.`);
       return false;
     }
 
@@ -40,21 +38,21 @@ export class OcrService {
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
     if (!apiKey) {
-      this.logger.log('GEMINI_API_KEY not configured. Running in local simulation mode.');
-      return this.simulateOcrResult();
+      throw new BadRequestException('La clave de API de Inteligencia Artificial (GEMINI_API_KEY) no está configurada.');
     }
 
     if (!this.checkSafeguards()) {
-      return this.simulateOcrResult();
+      throw new BadRequestException('Se ha alcanzado el límite diario de análisis con IA. Por favor intenta más tarde.');
     }
 
     try {
-      this.logger.log(`Invoking Gemini 1.5 Flash for Receipt OCR. Current daily count: ${OcrService.dailyRequestCount}`);
+      this.logger.log(`Invoking Gemini 3.5 Flash for Receipt OCR. Current daily count: ${OcrService.dailyRequestCount}`);
       const base64Data = imageBuffer.toString('base64');
 
       const prompt = `Analiza la imagen de la factura dominicana y extrae los campos clave.
-Responde estrictamente en formato JSON utilizando el siguiente esquema:
+Responde strictly en formato JSON utilizando el siguiente esquema:
 {
+  "isInvoice": true si el documento es una factura o comprobante fiscal de gasto/compra (si es un extracto/estado de cuenta bancario pon false),
   "providerRnc": "RNC del proveedor (sólo dígitos, sin guiones)",
   "providerName": "Nombre comercial del proveedor en mayúsculas",
   "ncf": "NCF (Número de Comprobante Fiscal) de 11 o 13 caracteres (ej: B0100000001, E3100000001)",
@@ -105,14 +103,14 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
       );
 
       if (!res.ok) {
-        throw new Error(`Google API returned status ${res.status}`);
+        throw new BadRequestException(`El servicio de IA devolvió código de respuesta ${res.status}`);
       }
 
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!text) {
-        throw new Error('Empty response from Gemini OCR');
+        throw new BadRequestException('No se pudo leer el contenido del documento.');
       }
 
       const parsed = JSON.parse(text);
@@ -134,32 +132,9 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
       };
     } catch (error: any) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error(`Failed to run real OCR through Gemini: ${error.message}. Falling back to simulation.`, error.stack);
-      return this.simulateOcrResult();
+      this.logger.error(`Failed to run OCR through Gemini: ${error.message}`, error.stack);
+      throw new BadRequestException(error.message || 'Error al procesar la factura con Inteligencia Artificial.');
     }
-  }
-
-  private simulateOcrResult(): OcrResult {
-    const rncs = ['131792751', '101010632', '130862035'];
-    const providers = ['CLARO DOMINICANA', 'SUPERMERCADOS NACIONAL', 'ALTICE DOMINICANA'];
-    const expenseTypes = ['02', '05', '02'];
-    
-    const index = Math.floor(Math.random() * rncs.length);
-    const amount = Number((1500 + Math.random() * 3000).toFixed(2));
-    const itbis = Number((amount * 0.18).toFixed(2));
-
-    const randomSeq = Math.floor(100 + Math.random() * 900);
-    const ncf = `B0100000${randomSeq}`;
-
-    return {
-      providerRnc: rncs[index],
-      providerName: providers[index],
-      ncf,
-      date: new Date(),
-      amount,
-      itbis,
-      expenseType: expenseTypes[index],
-    };
   }
 
   async scanBankStatement(
@@ -169,21 +144,21 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 
     if (!apiKey) {
-      this.logger.log('GEMINI_API_KEY not configured. Running in local statement simulation.');
-      return this.simulateBankStatementResult();
+      throw new BadRequestException('La clave de API de Inteligencia Artificial (GEMINI_API_KEY) no está configurada.');
     }
 
     if (!this.checkSafeguards()) {
-      return this.simulateBankStatementResult();
+      throw new BadRequestException('Se ha alcanzado el límite diario de análisis con IA. Por favor intenta más tarde.');
     }
 
     try {
-      this.logger.log(`Invoking Gemini 1.5 Flash for Statement OCR. Current daily count: ${OcrService.dailyRequestCount}`);
+      this.logger.log(`Invoking Gemini 3.5 Flash for Statement OCR. Current daily count: ${OcrService.dailyRequestCount}`);
       const base64Data = imageBuffer.toString('base64');
 
       const prompt = `Analiza la imagen o PDF del estado de cuenta/extracto bancario y extrae la lista de transacciones/movimientos en una tabla.
 Responde estrictamente en formato JSON utilizando el siguiente esquema:
 {
+  "isBankStatement": true si el documento es un estado de cuenta o extracto bancario (si es una factura individual o recibo de compra pon false),
   "transactions": [
     {
       "date": "Fecha del movimiento en formato ISO YYYY-MM-DD",
@@ -239,14 +214,14 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
       );
 
       if (!res.ok) {
-        throw new Error(`Google API returned status ${res.status}`);
+        throw new BadRequestException(`El servicio de IA devolvió código de respuesta ${res.status}`);
       }
 
       const data = await res.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!text) {
-        throw new Error('Empty response from Gemini Statement OCR');
+        throw new BadRequestException('No se pudo leer el contenido del extracto bancario.');
       }
 
       const parsed = JSON.parse(text);
@@ -264,34 +239,8 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
       }));
     } catch (error: any) {
       if (error instanceof BadRequestException) throw error;
-      this.logger.error(`Failed to run real bank statement OCR: ${error.message}. Falling back to simulation.`, error.stack);
-      return this.simulateBankStatementResult();
+      this.logger.error(`Failed to run bank statement OCR: ${error.message}`, error.stack);
+      throw new BadRequestException(error.message || 'Error al procesar el extracto bancario con Inteligencia Artificial.');
     }
-  }
-
-  private simulateBankStatementResult(): Array<{ date: Date; description: string; amount: number }> {
-    const today = new Date();
-    return [
-      {
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10),
-        description: 'DEPOSIT / TRANSFERENCIA RECIBIDA CLIENTE',
-        amount: 25000.00,
-      },
-      {
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8),
-        description: 'RET / COMISION BANCARIA RETENCION 0.15%',
-        amount: -37.50,
-      },
-      {
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5),
-        description: 'PAYMENT / CLARO DOMINICANA COMPRAS',
-        amount: -2360.00,
-      },
-      {
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2),
-        description: 'DEPOSIT / ABONO FACTURA CLIENTE MULTIPLES NCF',
-        amount: 15400.00,
-      },
-    ];
   }
 }

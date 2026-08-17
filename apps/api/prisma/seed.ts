@@ -385,15 +385,7 @@ async function main() {
     },
   });
 
-  // 14. Crear Transacciones Bancarias (para Conciliación)
-  console.log('🏦 Creando transacciones bancarias...');
-  await prisma.bankTransaction.createMany({
-    data: [
-      { companyId: company.id, accountId: createdAccounts['1101'].id, date: new Date('2026-08-01'), description: 'Depósito Transferencia Constructora del Caribe (INV-2026-001)', amount: 59000, reference: 'TRF-9011', reconciled: true },
-      { companyId: company.id, accountId: createdAccounts['1101'].id, date: new Date('2026-08-02'), description: 'Cheque Renta Local Comercial (B0100005511)', amount: -47200, reference: 'CH-4091', reconciled: true },
-      { companyId: company.id, accountId: createdAccounts['1101'].id, date: new Date('2026-08-05'), description: 'Transferencia Inversiones Plaza Real (INV-2026-002)', amount: 29500, reference: 'TRF-9088', reconciled: false },
-    ],
-  });
+  // 14. Transacciones bancarias iniciarías limpias (sin movimientos demo)
 
   console.log('');
   console.log('🎉 ¡Siembra de datos completada exitosamente!');
