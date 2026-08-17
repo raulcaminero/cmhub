@@ -1,10 +1,22 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/lib/use-translation';
 import { Languages } from 'lucide-react';
 
 export function LanguageSwitcher() {
   const { locale, changeLanguage, t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border text-xs h-7 w-20 animate-pulse" />
+    );
+  }
 
   return (
     <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg border text-xs">
