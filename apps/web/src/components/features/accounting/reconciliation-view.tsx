@@ -936,10 +936,11 @@ export function ReconciliationView() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs font-medium"
+                  className="h-8 text-xs font-medium text-muted-foreground hover:text-foreground"
                   onClick={() => setCsvContent(defaultCsvTemplate)}
+                  title="Inserta transacciones de ejemplo para probar la conciliación bancaria"
                 >
-                  Ejemplo Demo
+                  Cargar Datos de Prueba
                 </Button>
                 <div className="flex gap-2">
                   <Button
