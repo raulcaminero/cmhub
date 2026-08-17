@@ -164,77 +164,67 @@ export function ReconciliationView() {
   );
   const [reconcileWithAccount, { isLoading: isReconcilingAi }] = useReconcileWithAccountMutation();
 
-  async function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleUnifiedFileSelect(file: File) {
     if (!file || !companyId) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const isImageOrPdf = file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.endsWith('.pdf');
 
-    try {
+    if (isImageOrPdf) {
+      setImportError('');
       setIsPollingOcr(true);
-      const uploadRes = await importStatementOcr({
-        companyId,
-        body: formData,
-      }).unwrap();
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const jobId = uploadRes.jobId;
+      try {
+        const uploadRes = await importStatementOcr({
+          companyId,
+          body: formData,
+        }).unwrap();
 
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusRes = await getStatementOcrStatus({ companyId, jobId }).unwrap();
-          if (statusRes.status === 'completed' || statusRes.status === 'finished') {
-            clearInterval(pollInterval);
-            setIsPollingOcr(false);
-            
-            const result = statusRes.result;
-            if (result && Array.isArray(result)) {
-              const header = 'Fecha,Descripcion,Referencia,Monto\n';
-              const rows = result.map(
-                (r) => `${new Date(r.date).toISOString().split('T')[0]},${r.description},,${r.amount}`
-              ).join('\n');
+        const jobId = uploadRes.jobId;
 
-              setCsvContent(header + rows);
-              setIsOcrOpen(false);
-              setIsImportOpen(true);
-            } else {
-              setResultModal({
-                isOpen: true,
-                type: 'error',
-                title: 'Error en Escaneo',
-                description: 'No se pudo leer el contenido del estado de cuenta.',
-              });
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await getStatementOcrStatus({ companyId, jobId }).unwrap();
+            if (statusRes.status === 'completed' || statusRes.status === 'finished') {
+              clearInterval(pollInterval);
+              setIsPollingOcr(false);
+              
+              const result = statusRes.result;
+              if (result && Array.isArray(result)) {
+                const header = 'Fecha,Descripcion,Referencia,Monto\n';
+                const rows = result.map(
+                  (r) => `${new Date(r.date).toISOString().split('T')[0]},${r.description},,${r.amount}`
+                ).join('\n');
+
+                setCsvContent(header + rows);
+                setImportTab('preview');
+              } else {
+                setImportError('No se pudieron extraer transacciones de la imagen/PDF.');
+              }
+            } else if (statusRes.status === 'failed') {
+              clearInterval(pollInterval);
+              setIsPollingOcr(false);
+              setImportError(statusRes.result || 'Error durante el análisis inteligente del documento.');
             }
-          } else if (statusRes.status === 'failed') {
+          } catch (err: any) {
             clearInterval(pollInterval);
             setIsPollingOcr(false);
-            setResultModal({
-              isOpen: true,
-              type: 'error',
-              title: 'Error de Análisis OCR',
-              description: statusRes.result || 'Ocurrió un error durante el análisis del estado de cuenta.',
-            });
+            setImportError('No se pudo consultar el estado del escaneo inteligente.');
           }
-        } catch (err: any) {
-          clearInterval(pollInterval);
-          setIsPollingOcr(false);
-          setResultModal({
-            isOpen: true,
-            type: 'error',
-            title: 'Error de Conexión',
-            description: 'No se pudo consultar el estado del escaneo inteligente.',
-          });
-        }
-      }, 1000);
-
-    } catch (err: any) {
-      setIsPollingOcr(false);
-      setResultModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Error al Subir Archivo',
-        description: err.data?.message || 'Ocurrió un error al subir el estado de cuenta.',
-      });
+        }, 1000);
+      } catch (err: any) {
+        setIsPollingOcr(false);
+        setImportError(err.data?.message || 'Error al procesar el archivo con Inteligencia Artificial.');
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setCsvContent(text);
+        setImportTab('preview');
+      };
+      reader.readAsText(file);
     }
   }
 
@@ -410,27 +400,15 @@ export function ReconciliationView() {
         </div>
 
         <div className="flex gap-2 items-center">
-          <Tooltip content="Escanear estado de cuenta con IA">
+          <Tooltip content="Importar CSV/Excel o escanear foto/PDF con IA">
             <Button
               size="sm"
-              className="h-9 gap-2 text-xs font-medium shadow-2xs"
-              onClick={() => setIsOcrOpen(true)}
-              disabled={!selectedAccountId}
-            >
-              <Camera className="w-4 h-4" />
-              Escanear Estado (OCR)
-            </Button>
-          </Tooltip>
-
-          <Tooltip content="Importar archivo CSV o Excel">
-            <Button
-              size="sm"
-              className="h-9 gap-2 text-xs font-medium shadow-2xs"
+              className="h-9 gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
               onClick={() => setIsImportOpen(true)}
               disabled={!selectedAccountId}
             >
               <Upload className="w-4 h-4" />
-              Importar Extracto
+              Importar / Escanear Extracto
             </Button>
           </Tooltip>
 
@@ -814,10 +792,10 @@ export function ReconciliationView() {
         </div>
       )}
 
-      {/* Import CSV Modal */}
+      {/* Modal Unificado de Importación y Escaneo */}
       {isImportOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-lg shadow-2xl border relative">
+          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-xl shadow-2xl border relative">
             <button
               type="button"
               onClick={() => setIsImportOpen(false)}
@@ -830,10 +808,10 @@ export function ReconciliationView() {
               <div>
                 <h3 className="text-sm font-bold flex items-center gap-2">
                   <Upload className="w-4 h-4 text-primary shrink-0" />
-                  Previsualización e Importación del Extracto
+                  Importar / Escanear Extracto Bancario
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Verifica las transacciones detectadas antes de confirmarlas en el extracto bancario.
+                  Sube cualquier archivo (CSV, Excel, Foto o PDF). El sistema detectará el formato automáticamente.
                 </p>
               </div>
               <div className="flex bg-muted/60 p-1 rounded-lg border text-xs shrink-0">
@@ -862,9 +840,47 @@ export function ReconciliationView() {
               </div>
             </div>
 
+            {/* Smart File Dropzone */}
+            <div className="mb-4">
+              <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-4 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
+                <input
+                  id="unified-file-input"
+                  type="file"
+                  accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleUnifiedFileSelect(f);
+                  }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                />
+                
+                {isPollingOcr ? (
+                  <div className="py-2 space-y-2">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                    <p className="text-xs font-semibold">Analizando documento con Inteligencia Artificial (Gemini)...</p>
+                    <p className="text-[10px] text-muted-foreground">Extrayendo transacciones y formateando tabla.</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-3 py-1 z-0">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-semibold text-xs text-primary group-hover:underline block">
+                        Haz clic o arrastra aquí tu archivo (CSV, Excel, Foto o PDF)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Detección automática: CSV/Excel directo o escaneo OCR por IA
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <form onSubmit={handleImportCsv} className="space-y-3">
               {importTab === 'preview' ? (
-                <div className="border rounded-lg max-h-[280px] overflow-y-auto bg-card">
+                <div className="border rounded-lg max-h-[240px] overflow-y-auto bg-card">
                   {parsedCsvRows.length > 0 ? (
                     <Table>
                       <TableHeader className="bg-muted/50 sticky top-0 z-10">
@@ -906,7 +922,7 @@ export function ReconciliationView() {
                     </Table>
                   ) : (
                     <div className="p-8 text-center text-xs text-muted-foreground">
-                      No hay transacciones detectadas. Pega texto CSV en la pestaña "Texto CSV" o escanea una foto.
+                      No hay transacciones cargadas. Selecciona un archivo en la zona de carga superior.
                     </div>
                   )}
                 </div>
@@ -917,7 +933,7 @@ export function ReconciliationView() {
                   </Label>
                   <textarea
                     id="csv-data"
-                    rows={8}
+                    rows={6}
                     className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     placeholder={defaultCsvTemplate}
                     value={csvContent}
@@ -966,67 +982,6 @@ export function ReconciliationView() {
                 </div>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Escaneo Estado de Cuenta (OCR) */}
-      {isOcrOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
-            <button
-              type="button"
-              onClick={() => setIsOcrOpen(false)}
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
-            </button>
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <Camera className="w-4 h-4 text-primary shrink-0" />
-              Escanear Estado de Cuenta (OCR)
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
-              Sube la imagen o el PDF de tu extracto bancario. El motor de IA extraerá las filas de transacciones automáticamente para conciliarlas.
-            </p>
-            
-            <div className="border border-dashed border-primary/50 rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
-              <Camera className="w-8 h-8 text-primary animate-pulse" />
-              {isScanning || isPollingOcr ? (
-                <div className="space-y-2">
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary" />
-                  <p className="text-xs font-semibold">Analizando extracto bancario con IA...</p>
-                  <p className="text-[10px] text-muted-foreground">Extrayendo movimientos contables.</p>
-                </div>
-              ) : (
-                <>
-                  <Label htmlFor="statement-ocr-file" className="cursor-pointer font-semibold hover:underline text-primary text-xs">
-                    Sube una foto o PDF del extracto
-                  </Label>
-                  <span className="text-[10px] text-muted-foreground">Formatos soportados: JPG, PNG, PDF</span>
-                  <Input
-                    id="statement-ocr-file"
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={handleOcrUpload}
-                  />
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs font-medium"
-                onClick={() => setIsOcrOpen(false)}
-                disabled={isScanning || isPollingOcr}
-              >
-                Cerrar
-              </Button>
-            </div>
           </div>
         </div>
       )}

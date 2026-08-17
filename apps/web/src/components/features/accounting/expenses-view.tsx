@@ -208,72 +208,69 @@ export function ExpensesView() {
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSelectedFileName(file.name);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      setCsvText(text);
-    };
-    reader.readAsText(file);
-  }
-
-  async function handleOcrUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleUnifiedExpenseFileSelect(file: File) {
     if (!file || !companyId) return;
 
-    setErrorMessage('');
-    const formData = new FormData();
-    formData.append('file', file);
+    const isImageOrPdf = file.type.startsWith('image/') || file.type === 'application/pdf' || file.name.endsWith('.pdf');
 
-    try {
+    if (isImageOrPdf) {
+      setImportError('');
       setIsPollingOcr(true);
-      const uploadRes = await importOcr({
-        companyId,
-        body: formData,
-      }).unwrap();
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const jobId = uploadRes.jobId;
+      try {
+        const uploadRes = await importOcr({
+          companyId,
+          body: formData,
+        }).unwrap();
 
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusRes = await getOcrStatus({ companyId, jobId: jobId! }).unwrap();
-          if (statusRes.status === 'completed' || statusRes.status === 'finished') {
-            clearInterval(pollInterval);
-            setIsPollingOcr(false);
-            
-            const result = statusRes.result;
-            if (result) {
-              setProviderRnc(result.providerRnc);
-              setProviderName(result.providerName);
-              setNcf(result.ncf);
-              setExpenseType(result.expenseType);
-              setAmount(result.amount);
-              setItbis(result.itbis);
-              setDate(new Date(result.date).toISOString().split('T')[0]);
-              setIsOcrOpen(false);
-              setIsOpen(true);
-            } else {
-              alert('Error al leer el contenido de la factura.');
+        const jobId = uploadRes.jobId;
+
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await getOcrStatus({ companyId, jobId: jobId! }).unwrap();
+            if (statusRes.status === 'completed' || statusRes.status === 'finished') {
+              clearInterval(pollInterval);
+              setIsPollingOcr(false);
+              
+              const result = statusRes.result;
+              if (result) {
+                setProviderRnc(result.providerRnc);
+                setProviderName(result.providerName);
+                setNcf(result.ncf);
+                setExpenseType(result.expenseType || '02');
+                setAmount(result.amount || 0);
+                setItbis(result.itbis || 0);
+                if (result.date) setDate(new Date(result.date).toISOString().split('T')[0]);
+                setIsExcelOpen(false);
+                setIsOpen(true);
+              } else {
+                setImportError('Error al leer los datos de la factura.');
+              }
+            } else if (statusRes.status === 'failed') {
+              clearInterval(pollInterval);
+              setIsPollingOcr(false);
+              setImportError(statusRes.result || 'Error durante el análisis inteligente.');
             }
-          } else if (statusRes.status === 'failed') {
+          } catch (err: any) {
             clearInterval(pollInterval);
             setIsPollingOcr(false);
-            alert(statusRes.result || 'Error durante el análisis del documento.');
+            setImportError('Error de conexión al consultar el estado del análisis.');
           }
-        } catch (err: any) {
-          clearInterval(pollInterval);
-          setIsPollingOcr(false);
-          alert('Error de conexión al consultar estado del escaneo.');
-        }
-      }, 1000);
-
-    } catch (err: any) {
-      setIsPollingOcr(false);
-      alert(err.data?.message || 'Error al subir la factura para escaneo.');
+        }, 1000);
+      } catch (err: any) {
+        setIsPollingOcr(false);
+        setImportError(err.data?.message || 'Error al subir la factura para escaneo.');
+      }
+    } else {
+      setSelectedFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        setCsvText(text);
+      };
+      reader.readAsText(file);
     }
   }
 
@@ -446,19 +443,11 @@ export function ExpensesView() {
         </Button>
         <Button
           size="sm"
-          className="gap-2 text-xs font-semibold shadow-xs"
-          onClick={() => setIsOcrOpen(true)}
-        >
-          <Camera className="w-3.5 h-3.5" />
-          Escanear OCR
-        </Button>
-        <Button
-          size="sm"
-          className="gap-2 text-xs font-semibold shadow-xs"
+          className="gap-2 text-xs font-semibold shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => setIsExcelOpen(true)}
         >
-          <FileSpreadsheet className="w-3.5 h-3.5" />
-          Importar Excel
+          <Upload className="w-3.5 h-3.5" />
+          Importar / Escanear Facturas
         </Button>
         <Button size="sm" className="gap-2 text-xs font-semibold shadow-xs" onClick={() => setIsOpen(true)}>
           <Plus className="w-3.5 h-3.5" />
@@ -996,62 +985,6 @@ export function ExpensesView() {
         </div>
       )}
 
-      {/* Modal Escaneo OCR */}
-      {isOcrOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground p-6 rounded-xl w-full max-w-md shadow-2xl border relative">
-            <button
-              type="button"
-              onClick={() => setIsOcrOpen(false)}
-              className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
-            </button>
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <Camera className="w-4 h-4 text-primary shrink-0" />
-              Escaneo Inteligente de Facturas (OCR)
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
-              Sube la imagen o foto (JPG, PNG) de tu factura o recibo. El sistema extraerá automáticamente el RNC, NCF, Fecha y Montos para autocompletar el registro.
-            </p>
-
-            <div className="border-2 border-dashed border-primary/50 rounded-lg p-6 bg-muted/20 text-center flex flex-col items-center gap-3">
-              {isPollingOcr ? (
-                <div className="py-2 space-y-2">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                  <p className="text-xs font-semibold">Procesando y analizando factura con Inteligencia Artificial...</p>
-                  <p className="text-[10px] text-muted-foreground">Por favor espera unos segundos.</p>
-                </div>
-              ) : (
-                <>
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
-                  <div>
-                    <label htmlFor="ocrFileInput" className="cursor-pointer font-semibold text-primary hover:underline text-xs">
-                      Haz clic para seleccionar una factura
-                    </label>
-                    <input
-                      id="ocrFileInput"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleOcrUpload}
-                      className="hidden"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">Soporta imágenes JPG, PNG</p>
-                </>
-              )}
-            </div>
-
-            <div className="flex justify-end pt-3 border-t mt-4">
-              <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setIsOcrOpen(false)} disabled={isPollingOcr}>
-                Cerrar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal Importar Excel / CSV */}
       {isExcelOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -1082,18 +1015,27 @@ export function ExpensesView() {
               {/* Drag and Drop Zone */}
               <div className="space-y-1">
                 <Label className="text-xs font-semibold text-muted-foreground block">
-                  Archivo de Gastos (CSV / TXT / Excel) *
+                  Seleccionar Archivo (CSV, Excel, Foto o PDF) *
                 </Label>
                 <div className="border-2 border-dashed border-primary/40 hover:border-primary rounded-xl p-4 bg-muted/20 hover:bg-muted/30 transition-all text-center flex flex-col items-center justify-center gap-2 cursor-pointer relative group">
                   <input
                     id="excelFileInput"
                     type="file"
-                    accept=".csv, .txt, .xlsx, .xls"
-                    onChange={handleFileChange}
+                    accept=".csv,.txt,.xlsx,.xls,image/*,.pdf"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleUnifiedExpenseFileSelect(f);
+                    }}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                   />
                   
-                  {selectedFileName ? (
+                  {isPollingOcr ? (
+                    <div className="py-2 space-y-2">
+                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                      <p className="text-xs font-semibold">Procesando y analizando factura con Inteligencia Artificial (Gemini)...</p>
+                      <p className="text-[10px] text-muted-foreground">Por favor espera unos segundos mientras se autocompleta el formulario.</p>
+                    </div>
+                  ) : selectedFileName ? (
                     <div className="flex items-center gap-3 bg-card border px-4 py-2.5 rounded-lg text-xs shadow-2xs z-0">
                       <FileSpreadsheet className="w-5 h-5 text-emerald-600 shrink-0" />
                       <div className="text-left overflow-hidden">
@@ -1121,10 +1063,13 @@ export function ExpensesView() {
                   ) : (
                     <div className="flex flex-col items-center gap-1 z-0 py-2">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-4 h-4" />
+                        <Sparkles className="w-4 h-4" />
                       </div>
                       <span className="font-semibold text-xs text-primary group-hover:underline block">
-                        Haz clic aquí para seleccionar tu archivo CSV o Excel
+                        Haz clic o arrastra tu archivo aquí (CSV, Excel, Foto o PDF)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Soporta archivos masivos CSV/Excel o imágenes/PDFs escaneados por IA
                       </span>
                     </div>
                   )}
