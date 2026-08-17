@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2 } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2, Sparkles } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -683,9 +683,16 @@ export function ExpensesView() {
               <Receipt className="w-4 h-4 text-primary shrink-0" />
               Registrar Nuevo Gasto / Compra NCF
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
+            <p className="text-xs text-muted-foreground mt-0.5 mb-3">
               Ingresa los datos de la factura o comprobante fiscal para el reporte 606.
             </p>
+
+            {providerName && (
+              <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-3 py-2 rounded-lg text-xs font-medium mb-3">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 animate-pulse" />
+                <span>Datos autocompletados desde el escaneo inteligente (OCR). Verifica los campos antes de guardar.</span>
+              </div>
+            )}
 
             {errorMessage && (
               <div className="p-3 text-xs bg-rose-100 text-rose-700 rounded border border-rose-200 font-semibold mb-3">
@@ -696,11 +703,11 @@ export function ExpensesView() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="contactSelect" className="text-xs font-semibold text-muted-foreground">Seleccionar Contacto (Opcional)</Label>
+                  <Label htmlFor="contactSelect" className="text-xs font-semibold text-muted-foreground block mb-1">Seleccionar Contacto (Opcional)</Label>
                   <select
                     id="contactSelect"
                     onChange={(e) => handleSelectContact(e.target.value)}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                   >
                     <option value="">-- Seleccionar de Contactos --</option>
                     {contacts?.map((c) => (
@@ -712,19 +719,19 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="providerName" className="text-xs font-semibold text-muted-foreground">Nombre o Razón Social Proveedor *</Label>
+                  <Label htmlFor="providerName" className="text-xs font-semibold text-muted-foreground block mb-1">Nombre o Razón Social Proveedor *</Label>
                   <Input
                     id="providerName"
                     value={providerName}
                     onChange={(e) => setProviderName(e.target.value)}
                     required
                     placeholder="Ej. Claro Dominicana"
-                    className="h-9 text-xs"
+                    className="h-9 text-xs font-medium"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="providerRnc" className="text-xs font-semibold text-muted-foreground">RNC / Cédula Proveedor *</Label>
+                  <Label htmlFor="providerRnc" className="text-xs font-semibold text-muted-foreground block mb-1">RNC / Cédula Proveedor *</Label>
                   <Input
                     id="providerRnc"
                     value={providerRnc}
@@ -736,7 +743,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="ncf" className="text-xs font-semibold text-muted-foreground">NCF (Comprobante Fiscal) *</Label>
+                  <Label htmlFor="ncf" className="text-xs font-semibold text-muted-foreground block mb-1">NCF (Comprobante Fiscal) *</Label>
                   <Input
                     id="ncf"
                     value={ncf}
@@ -748,7 +755,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="expenseType" className="text-xs font-semibold text-muted-foreground">Tipo de Bienes y Servicios (606) *</Label>
+                  <Label htmlFor="expenseType" className="text-xs font-semibold text-muted-foreground block mb-1">Tipo de Bienes y Servicios (606) *</Label>
                   <select
                     id="expenseType"
                     value={expenseType}
@@ -764,12 +771,12 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="date" className="text-xs font-semibold text-muted-foreground">Fecha Comprobante *</Label>
+                  <Label htmlFor="date" className="text-xs font-semibold text-muted-foreground block mb-1">Fecha Comprobante *</Label>
                   <Input id="date" type="date" aria-label="Fecha Comprobante" value={date} onChange={(e) => setDate(e.target.value)} required className="h-9 text-xs font-medium" />
                 </div>
 
                 <div>
-                  <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground">Monto Total Facturado *</Label>
+                  <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground block mb-1">Monto Total Facturado *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -777,12 +784,12 @@ export function ExpensesView() {
                     value={amount || ''}
                     onChange={(e) => setAmount(Number(e.target.value))}
                     required
-                    className="h-9 text-xs font-mono"
+                    className="h-9 text-xs font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="itbis" className="text-xs font-semibold text-muted-foreground">ITBIS Facturado</Label>
+                  <Label htmlFor="itbis" className="text-xs font-semibold text-muted-foreground block mb-1">ITBIS Facturado</Label>
                   <Input
                     id="itbis"
                     type="number"
@@ -794,7 +801,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="paymentMethod" className="text-xs font-semibold text-muted-foreground">Forma de Pago *</Label>
+                  <Label htmlFor="paymentMethod" className="text-xs font-semibold text-muted-foreground block mb-1">Forma de Pago *</Label>
                   <select
                     id="paymentMethod"
                     value={paymentMethod}
@@ -811,7 +818,7 @@ export function ExpensesView() {
 
                 {paymentMethod !== '04' && (
                   <div>
-                    <Label htmlFor="bankAccountId" className="text-xs font-semibold text-muted-foreground">Cuenta de Banco / Caja de Origen</Label>
+                    <Label htmlFor="bankAccountId" className="text-xs font-semibold text-muted-foreground block mb-1">Cuenta de Banco / Caja de Origen</Label>
                     <select
                       id="bankAccountId"
                       value={bankAccountId}
@@ -830,33 +837,33 @@ export function ExpensesView() {
               </div>
 
               {/* Checkbox Pago al Exterior */}
-              <div className="border-t border-border pt-3 space-y-3">
+              <div className="border-t border-border pt-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="isForeignPayment"
                     checked={isForeignPayment}
                     onChange={(e) => setIsForeignPayment(e.target.checked)}
-                    className="rounded border-input text-primary"
+                    className="rounded border-input text-primary h-4 w-4"
                   />
-                  <Label htmlFor="isForeignPayment" className="text-xs font-semibold cursor-pointer">
+                  <Label htmlFor="isForeignPayment" className="text-xs font-semibold cursor-pointer text-foreground">
                     ¿Es un Pago o Compra Realizada al Exterior (Proveedores no residentes)?
                   </Label>
                 </div>
 
                 {isForeignPayment && (
-                  <div className="p-3 bg-muted/40 rounded-md border border-border space-y-3">
+                  <div className="p-3 bg-muted/40 rounded-lg border border-border space-y-3">
                     <p className="text-[11px] text-muted-foreground">
                       Los pagos al exterior requieren información adicional para la retención del ISR y el reporte 606.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
-                        <Label htmlFor="foreignCountry">País de Origen *</Label>
+                        <Label htmlFor="foreignCountry" className="text-xs font-semibold text-muted-foreground block mb-1">País de Origen *</Label>
                         <select
                           id="foreignCountry"
                           value={foreignCountry}
                           onChange={(e) => setForeignCountry(e.target.value)}
-                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                         >
                           <option value="US">Estados Unidos (US)</option>
                           <option value="ES">España (ES)</option>
@@ -868,23 +875,24 @@ export function ExpensesView() {
                       </div>
 
                       <div>
-                        <Label htmlFor="foreignTaxId">Tax ID / Identificación Fiscal *</Label>
+                        <Label htmlFor="foreignTaxId" className="text-xs font-semibold text-muted-foreground block mb-1">Tax ID / Identificación Fiscal *</Label>
                         <Input
                           id="foreignTaxId"
                           value={foreignTaxId}
                           onChange={(e) => setForeignTaxId(e.target.value)}
                           placeholder="Ej. EIN / SSN / NIF"
                           required={isForeignPayment}
+                          className="h-9 text-xs font-mono"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="foreignPaymentType">Tipo de Pago Exterior</Label>
+                        <Label htmlFor="foreignPaymentType" className="text-xs font-semibold text-muted-foreground block mb-1">Tipo de Pago Exterior</Label>
                         <select
                           id="foreignPaymentType"
                           value={foreignPaymentType}
                           onChange={(e) => setForeignPaymentType(e.target.value)}
-                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                          className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs font-medium"
                         >
                           <option value="01">01 - Servicios Renta Presunta</option>
                           <option value="02">02 - Intereses y Financiamiento</option>
