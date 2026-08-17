@@ -133,6 +133,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
         expenseType: parsed.expenseType || '02',
       };
     } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
       this.logger.error(`Failed to run real OCR through Gemini: ${error.message}. Falling back to simulation.`, error.stack);
       return this.simulateOcrResult();
     }
@@ -262,6 +263,7 @@ Responde estrictamente en formato JSON utilizando el siguiente esquema:
         amount: Number(t.amount) || 0,
       }));
     } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
       this.logger.error(`Failed to run real bank statement OCR: ${error.message}. Falling back to simulation.`, error.stack);
       return this.simulateBankStatementResult();
     }
