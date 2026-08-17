@@ -238,10 +238,10 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           <Button 
             type="submit" 
             disabled={!input.trim() || isLoading}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 px-4 text-xs gap-1.5"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 px-4 text-xs gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-            Enviar
+            {isLoading ? 'Pensando...' : 'Enviar'}
           </Button>
         </form>
       </div>
