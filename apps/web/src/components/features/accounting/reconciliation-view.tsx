@@ -100,6 +100,34 @@ export function ReconciliationView() {
   const [isPollingOcr, setIsPollingOcr] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [txToDelete, setTxToDelete] = useState<BankTransaction | null>(null);
+  const [importTab, setImportTab] = useState<'preview' | 'raw'>('preview');
+  const [csvContent, setCsvContent] = useState('');
+  const [importError, setImportError] = useState('');
+
+  const parsedCsvRows = useMemo(() => {
+    if (!csvContent) return [];
+    const lines = csvContent.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return [];
+    
+    const hasHeader = lines[0].toLowerCase().includes('fecha') || lines[0].toLowerCase().includes('date');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    
+    return dataLines.map((line, idx) => {
+      const parts = line.split(',');
+      const date = parts[0]?.trim() || '';
+      const description = parts[1]?.trim() || 'Sin descripción';
+      const reference = parts[2]?.trim() || '';
+      const amountStr = parts[3]?.trim() || '0';
+      const amount = parseFloat(amountStr) || 0;
+      return { id: idx, date, description, reference, amount, lineIndex: hasHeader ? idx + 1 : idx };
+    });
+  }, [csvContent]);
+
+  const handleRemoveCsvRow = (lineIndex: number) => {
+    const lines = csvContent.split('\n');
+    lines.splice(lineIndex, 1);
+    setCsvContent(lines.join('\n'));
+  };
 
   const filteredUnmatchedBank = useMemo(() => {
     if (!report?.unreconciledBankTransactions) return [];
@@ -116,8 +144,6 @@ export function ReconciliationView() {
   // Import Dialog
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
-  const [csvContent, setCsvContent] = useState('');
-  const [importError, setImportError] = useState('');
 
   // Row selection for manual match
   const [selectedBankTx, setSelectedBankTx] = useState<BankTransaction | null>(null);
@@ -800,29 +826,106 @@ export function ReconciliationView() {
               <X className="h-4 w-4" />
               <span className="sr-only">Cerrar</span>
             </button>
-            <h3 className="text-sm font-bold flex items-center gap-2">
-              <Upload className="w-4 h-4 text-primary shrink-0" />
-              Importar Extracto Bancario
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5 mb-4">
-              Pega el contenido CSV del extracto de tu banco dominicano.
-            </p>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-primary shrink-0" />
+                  Previsualización e Importación del Extracto
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Verifica las transacciones detectadas antes de confirmarlas en el extracto bancario.
+                </p>
+              </div>
+              <div className="flex bg-muted/60 p-1 rounded-lg border text-xs shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setImportTab('preview')}
+                  className={`px-2.5 py-1 rounded font-medium transition-all ${
+                    importTab === 'preview'
+                      ? 'bg-background text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Tabla ({parsedCsvRows.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportTab('raw')}
+                  className={`px-2.5 py-1 rounded font-medium transition-all ${
+                    importTab === 'raw'
+                      ? 'bg-background text-foreground shadow-xs font-semibold'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Texto CSV
+                </button>
+              </div>
+            </div>
 
             <form onSubmit={handleImportCsv} className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="csv-data" className="text-xs font-semibold text-muted-foreground">
-                  Datos CSV (Delimitado por coma o punto y coma) *
-                </Label>
-                <textarea
-                  id="csv-data"
-                  rows={7}
-                  className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder={defaultCsvTemplate}
-                  value={csvContent}
-                  onChange={(e) => setCsvContent(e.target.value)}
-                  required
-                />
-              </div>
+              {importTab === 'preview' ? (
+                <div className="border rounded-lg max-h-[280px] overflow-y-auto bg-card">
+                  {parsedCsvRows.length > 0 ? (
+                    <Table>
+                      <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                        <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          <TableHead className="w-24">Fecha</TableHead>
+                          <TableHead>Concepto / Transacción</TableHead>
+                          <TableHead className="text-right">Monto (RD$)</TableHead>
+                          <TableHead className="text-right w-10">Quitar</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {parsedCsvRows.map((row) => (
+                          <TableRow key={row.id} className="hover:bg-accent/50 text-[11px]">
+                            <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
+                              {row.date}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <p className="text-foreground">{row.description}</p>
+                              {row.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {row.reference}</span>}
+                            </TableCell>
+                            <TableCell className={`text-right font-mono font-bold ${row.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {formatCurrency(row.amount)}
+                            </TableCell>
+                            <TableCell className="text-right p-1">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                                onClick={() => handleRemoveCsvRow(row.lineIndex)}
+                                title="Descartar esta fila"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No hay transacciones detectadas. Pega texto CSV en la pestaña "Texto CSV" o escanea una foto.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label htmlFor="csv-data" className="text-xs font-semibold text-muted-foreground">
+                    Edición de Texto CSV (Delimitado por coma) *
+                  </Label>
+                  <textarea
+                    id="csv-data"
+                    rows={8}
+                    className="w-full rounded-md border border-input bg-background p-2.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder={defaultCsvTemplate}
+                    value={csvContent}
+                    onChange={(e) => setCsvContent(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
 
               {importError && (
                 <p className="text-xs text-destructive font-semibold mt-2">{importError}</p>
@@ -836,7 +939,7 @@ export function ReconciliationView() {
                   className="h-8 text-xs font-medium"
                   onClick={() => setCsvContent(defaultCsvTemplate)}
                 >
-                  Cargar Plantilla Ejemplo
+                  Ejemplo Demo
                 </Button>
                 <div className="flex gap-2">
                   <Button
@@ -849,14 +952,14 @@ export function ReconciliationView() {
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" size="sm" disabled={isImporting} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Button type="submit" size="sm" disabled={isImporting || parsedCsvRows.length === 0} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isImporting ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Importando...
                       </>
                     ) : (
-                      'Importar'
+                      `Confirmar e Importar (${parsedCsvRows.length})`
                     )}
                   </Button>
                 </div>
