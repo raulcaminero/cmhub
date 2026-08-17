@@ -73,6 +73,15 @@ export class BankReconciliationController {
     return this.reconciliationService.unreconcile(companyId, id);
   }
 
+  @Delete('transactions/:id')
+  @ApiOperation({ summary: 'Delete an unreconciled bank statement transaction' })
+  deleteTransaction(
+    @Param('companyId') companyId: string,
+    @Param('id') id: string
+  ) {
+    return this.reconciliationService.deleteTransaction(companyId, id);
+  }
+
   @Get('report/:accountId')
   @ApiOperation({ summary: 'Get reconciliation comparison report' })
   getReport(

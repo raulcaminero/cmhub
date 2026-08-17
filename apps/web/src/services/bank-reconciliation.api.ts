@@ -114,6 +114,12 @@ export const reconciliationApi = api.injectEndpoints({
       }),
       invalidatesTags: ['JournalEntry', 'Account'],
     }),
+    deleteBankTransaction: builder.mutation<{ success: boolean; message: string }, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/reconciliation/transactions/${id}`,
+        method: 'DELETE',
+      }),
+    }),
   }),
 });
 
@@ -129,4 +135,5 @@ export const {
   useGetAiSuggestionQuery,
   useLazyGetAiSuggestionQuery,
   useReconcileWithAccountMutation,
+  useDeleteBankTransactionMutation,
 } = reconciliationApi;
