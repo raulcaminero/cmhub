@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2, Sparkles, AlertTriangle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -104,20 +104,39 @@ export function ExpensesView() {
 
     return dataLines.map((line, idx) => {
       const parts = line.split(',').map((p) => p.trim());
+      const date = parts[0] || '';
+      const rnc = parts[1] || '';
+      const name = parts[2] || '';
+      const ncf = parts[3] || '';
+      const paymentMethod = parts[4] || 'EFECTIVO';
+      const expenseType = parts[5] || '02';
+      const amount = parseFloat(parts[6]);
+      const itbis = parseFloat(parts[7]) || 0;
+
+      const isValidDate = Boolean(date && date.length >= 8 && !isNaN(Date.parse(date)));
+      const isValidAmount = !isNaN(amount) && amount > 0;
+      const isValidNcfOrRnc = Boolean(ncf || rnc || name);
+      const isValid = isValidDate && isValidAmount && isValidNcfOrRnc;
+
       return {
         id: idx,
-        date: parts[0] || '',
-        rnc: parts[1] || '',
-        name: parts[2] || 'Proveedor Desconocido',
-        ncf: parts[3] || '',
-        paymentMethod: parts[4] || 'EFECTIVO',
-        expenseType: parts[5] || '02',
-        amount: parseFloat(parts[6]) || 0,
-        itbis: parseFloat(parts[7]) || 0,
+        date: date || 'FECHA INVÁLIDA',
+        rnc,
+        name: name || 'PROVEEDOR DESCONOCIDO',
+        ncf,
+        paymentMethod,
+        expenseType,
+        amount: isNaN(amount) ? 0 : amount,
+        itbis,
         lineIndex: hasHeader ? idx + 1 : idx,
+        isValid,
       };
     });
   }, [csvText]);
+
+  const hasInvalidExpensesCsvRows = useMemo(() => {
+    return parsedExpensesCsvRows.some((r) => !r.isValid);
+  }, [parsedExpensesCsvRows]);
 
   const handleRemoveExpensesCsvRow = (lineIndex: number) => {
     const lines = csvText.split('\n');
@@ -1079,6 +1098,12 @@ export function ExpensesView() {
               {/* Parsed Table Preview */}
               {parsedExpensesCsvRows.length > 0 && (
                 <div className="space-y-1.5 pt-1">
+                  {hasInvalidExpensesCsvRows && (
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 font-medium">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                      <span>Hay comprobantes con datos obligatorios incompletos (Fecha/Monto/NCF). Quítalos con 🗑️ para continuar.</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground">
                     <span>Previsualización de Facturas ({parsedExpensesCsvRows.length})</span>
                     <span className="text-[10px] text-muted-foreground font-normal">Puedes quitar cualquier fila errónea antes de importar</span>
@@ -1096,12 +1121,19 @@ export function ExpensesView() {
                       </TableHeader>
                       <TableBody>
                         {parsedExpensesCsvRows.map((row) => (
-                          <TableRow key={row.id} className="hover:bg-accent/50 text-[11px]">
+                          <TableRow key={row.id} className={`text-[11px] ${!row.isValid ? 'bg-amber-50/70 dark:bg-amber-950/30' : 'hover:bg-accent/50'}`}>
                             <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
                               {row.date}
                             </TableCell>
                             <TableCell className="font-medium">
-                              <p className="text-foreground">{row.name}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-foreground">{row.name}</p>
+                                {!row.isValid && (
+                                  <span className="text-[9px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.5 rounded border border-amber-300">
+                                    ⚠️ Incompleto
+                                  </span>
+                                )}
+                              </div>
                               {row.rnc && <span className="text-[10px] text-muted-foreground font-mono">RNC: {row.rnc}</span>}
                             </TableCell>
                             <TableCell className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">
@@ -1144,7 +1176,7 @@ export function ExpensesView() {
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={isImporting || parsedExpensesCsvRows.length === 0}
+                  disabled={isImporting || parsedExpensesCsvRows.length === 0 || hasInvalidExpensesCsvRows}
                   className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {isImporting ? (

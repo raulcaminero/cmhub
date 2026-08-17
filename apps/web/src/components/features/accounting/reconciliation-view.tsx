@@ -115,13 +115,31 @@ export function ReconciliationView() {
     return dataLines.map((line, idx) => {
       const parts = line.split(',');
       const date = parts[0]?.trim() || '';
-      const description = parts[1]?.trim() || 'Sin descripción';
+      const description = parts[1]?.trim() || '';
       const reference = parts[2]?.trim() || '';
       const amountStr = parts[3]?.trim() || '0';
-      const amount = parseFloat(amountStr) || 0;
-      return { id: idx, date, description, reference, amount, lineIndex: hasHeader ? idx + 1 : idx };
+      const amount = parseFloat(amountStr);
+
+      const isValidDate = Boolean(date && date.length >= 8 && !isNaN(Date.parse(date)));
+      const isValidAmount = !isNaN(amount) && amount !== 0;
+      const isValidDesc = Boolean(description && description.length >= 2);
+      const isValid = isValidDate && isValidAmount && isValidDesc;
+
+      return {
+        id: idx,
+        date: date || 'FECHA INVÁLIDA',
+        description: description || 'SIN CONCEPTO',
+        reference,
+        amount: isNaN(amount) ? 0 : amount,
+        lineIndex: hasHeader ? idx + 1 : idx,
+        isValid,
+      };
     });
   }, [csvContent]);
+
+  const hasInvalidCsvRows = useMemo(() => {
+    return parsedCsvRows.some((r) => !r.isValid);
+  }, [parsedCsvRows]);
 
   const handleRemoveCsvRow = (lineIndex: number) => {
     const lines = csvContent.split('\n');
@@ -880,51 +898,66 @@ export function ReconciliationView() {
 
             <form onSubmit={handleImportCsv} className="space-y-3">
               {importTab === 'preview' ? (
-                <div className="border rounded-lg max-h-[240px] overflow-y-auto bg-card">
-                  {parsedCsvRows.length > 0 ? (
-                    <Table>
-                      <TableHeader className="bg-muted/50 sticky top-0 z-10">
-                        <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <TableHead className="w-24">Fecha</TableHead>
-                          <TableHead>Concepto / Transacción</TableHead>
-                          <TableHead className="text-right">Monto (RD$)</TableHead>
-                          <TableHead className="text-right w-10">Quitar</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {parsedCsvRows.map((row) => (
-                          <TableRow key={row.id} className="hover:bg-accent/50 text-[11px]">
-                            <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
-                              {row.date}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <p className="text-foreground">{row.description}</p>
-                              {row.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {row.reference}</span>}
-                            </TableCell>
-                            <TableCell className={`text-right font-mono font-bold ${row.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {formatCurrency(row.amount)}
-                            </TableCell>
-                            <TableCell className="text-right p-1">
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
-                                onClick={() => handleRemoveCsvRow(row.lineIndex)}
-                                title="Descartar esta fila"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
-                      No hay transacciones cargadas. Selecciona un archivo en la zona de carga superior.
+                <div className="space-y-2">
+                  {hasInvalidCsvRows && (
+                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 font-medium">
+                      <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+                      <span>Hay filas con datos obligatorios incompletos (Fecha/Monto/Concepto). Quítalas con 🗑️ para poder continuar.</span>
                     </div>
                   )}
+                  <div className="border rounded-lg max-h-[240px] overflow-y-auto bg-card">
+                    {parsedCsvRows.length > 0 ? (
+                      <Table>
+                        <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                          <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <TableHead className="w-24">Fecha</TableHead>
+                            <TableHead>Concepto / Transacción</TableHead>
+                            <TableHead className="text-right">Monto (RD$)</TableHead>
+                            <TableHead className="text-right w-10">Quitar</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {parsedCsvRows.map((row) => (
+                            <TableRow key={row.id} className={`text-[11px] ${!row.isValid ? 'bg-amber-50/70 dark:bg-amber-950/30' : 'hover:bg-accent/50'}`}>
+                              <TableCell className="font-mono text-muted-foreground whitespace-nowrap">
+                                {row.date}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-foreground">{row.description}</p>
+                                  {!row.isValid && (
+                                    <span className="text-[9px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.5 rounded border border-amber-300">
+                                      ⚠️ Incompleto
+                                    </span>
+                                  )}
+                                </div>
+                                {row.reference && <span className="text-[10px] text-muted-foreground font-mono">Ref: {row.reference}</span>}
+                              </TableCell>
+                              <TableCell className={`text-right font-mono font-bold ${row.amount > 0 ? 'text-emerald-600' : row.amount < 0 ? 'text-rose-600' : 'text-amber-600'}`}>
+                                {formatCurrency(row.amount)}
+                              </TableCell>
+                              <TableCell className="text-right p-1">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                                  onClick={() => handleRemoveCsvRow(row.lineIndex)}
+                                  title="Descartar esta fila"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="p-8 text-center text-xs text-muted-foreground">
+                        No hay transacciones cargadas. Selecciona un archivo en la zona de carga superior.
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -969,7 +1002,7 @@ export function ReconciliationView() {
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" size="sm" disabled={isImporting || parsedCsvRows.length === 0} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Button type="submit" size="sm" disabled={isImporting || parsedCsvRows.length === 0 || hasInvalidCsvRows} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isImporting ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
