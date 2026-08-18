@@ -18,7 +18,6 @@ async function bootstrap() {
       const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'];
       const isAllowed = allowedOrigins.includes(origin) ||
                         allowedOrigins.includes('*') ||
-                        origin.endsWith('.vercel.app') ||
                         origin.startsWith('http://localhost:');
       if (isAllowed) {
         callback(null, origin); // Echoes back the requesting origin (needed for credentials: true)
