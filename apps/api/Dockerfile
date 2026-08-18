@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for NestJS API (@cmhub/api)
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Stage 1: Build
