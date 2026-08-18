@@ -17,6 +17,7 @@ import InvoiceLineEditor, { EditableLine } from '@/components/features/sales/inv
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
 import { ClientAutocomplete } from '@/components/features/sales/client-autocomplete';
+import { MobileDesktopNotice } from '@/components/ui/mobile-desktop-notice';
 import {
   Select,
   SelectContent,
@@ -171,6 +172,8 @@ export default function NewInvoicePage() {
 
   return (
     <div className="w-full space-y-6 pb-12">
+      <MobileDesktopNotice message="La emisión de comprobantes fiscales NCF requiere completar múltiples renglones. Para llenar facturas de venta complejas con mayor comodidad, te recomendamos usar una computadora." />
+
       {/* Header */}
       <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">

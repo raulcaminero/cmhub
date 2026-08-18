@@ -249,8 +249,8 @@ export default function DashboardPage() {
             <CardTitle>{t('dashboard.chartTitle')}</CardTitle>
             <CardDescription>{t('dashboard.chartDesc')}</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="relative w-full h-[240px] flex items-end justify-between border-b pb-6 px-4">
+          <CardContent className="pt-4 overflow-x-auto pb-4">
+            <div className="relative min-w-[480px] md:min-w-0 w-full h-[240px] flex items-end justify-between border-b pb-6 px-4">
               {/* Grid Lines */}
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
                 <div className="border-t border-muted/50 w-full"></div>

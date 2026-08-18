@@ -204,8 +204,8 @@ export function CopilotFloatingWidget() {
         <div 
           className={`fixed z-50 bg-card text-card-foreground border shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ${
             isMaximized 
-              ? 'inset-3 sm:inset-6 max-w-5xl mx-auto h-[calc(100vh-3rem)] rounded-2xl' 
-              : 'bottom-22 right-6 w-[calc(100vw-3rem)] sm:w-[440px] h-[590px] max-h-[calc(100vh-7rem)] rounded-2xl'
+              ? 'inset-0 md:inset-6 max-w-5xl mx-auto h-full md:h-[calc(100vh-3rem)] rounded-none md:rounded-2xl' 
+              : 'inset-0 md:inset-auto md:bottom-20 md:right-6 w-full md:w-[440px] h-full md:h-[590px] rounded-none md:rounded-2xl'
           }`}
         >
           {/* Header */}
