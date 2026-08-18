@@ -38,6 +38,7 @@ import {
   Trash2,
   Plus,
 } from 'lucide-react';
+import { MobileDesktopNotice } from '@/components/ui/mobile-desktop-notice';
 import {
   Select,
   SelectContent,
@@ -382,6 +383,8 @@ export function ReconciliationView() {
 
   return (
     <div className="space-y-3">
+      <MobileDesktopNotice message="La conciliación bancaria incluye herramientas de alta precisión. En celular puedes consultar el reporte y extracto; para conciliar e importar archivos con mayor comodidad, te recomendamos usar una computadora." />
+
       {/* Header Description Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">

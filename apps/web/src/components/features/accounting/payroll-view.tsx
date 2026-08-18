@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { useCurrency } from '@/hooks/use-company';
+import { MobileDesktopNotice } from '@/components/ui/mobile-desktop-notice';
 import {
   Table,
   TableBody,
@@ -263,6 +264,8 @@ export function PayrollView() {
 
   return (
     <div className="space-y-3">
+      <MobileDesktopNotice message="El módulo de nómina te permite consultar el historial de pagos y empleados. Para el cálculo y procesamiento masivo de TSS y retenciones, te recomendamos usar una computadora." />
+
       {/* Header Description Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Loader2, FileSpreadsheet, Upload, Camera, Info, Receipt, Search, Download, CreditCard, ShoppingBag, DollarSign, TrendingDown, CheckCircle2, X, Trash2, Sparkles, AlertTriangle } from 'lucide-react';
+import { MobileDesktopNotice } from '@/components/ui/mobile-desktop-notice';
 import {
   Table,
   TableBody,
@@ -445,6 +446,8 @@ export function ExpensesView() {
 
   return (
     <div className="space-y-3">
+      <MobileDesktopNotice message="El módulo de gastos y Formato 606 te permite consultar todas tus compras registradas. Para importaciones masivas de Excel o escaneo OCR pesado, te recomendamos usar una computadora." />
+
       {/* Action Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">

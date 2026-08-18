@@ -6,10 +6,10 @@ import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { useRouter } from 'next/navigation';
 import { useGetProfileQuery } from '@/services/auth.api';
-import { LogOut, User, Settings, Shield, Palette } from 'lucide-react';
+import { LogOut, User, Settings, Shield, Palette, Menu } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { data: profile } = useGetProfileQuery();
@@ -43,8 +43,17 @@ export function Header() {
     : 'U';
 
   return (
-    <header className="h-14 border-b flex items-center justify-between px-6 bg-background shrink-0 relative z-30">
-      <CompanySwitcher />
+    <header className="h-14 border-b flex items-center justify-between px-4 md:px-6 bg-background shrink-0 relative z-30">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-1.5 rounded-lg hover:bg-muted text-foreground transition-colors outline-none"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <CompanySwitcher />
+      </div>
 
       {/* User profile section */}
       <div className="flex items-center gap-3 relative" ref={dropdownRef}>
