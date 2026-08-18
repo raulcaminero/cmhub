@@ -1,0 +1,23 @@
+# Environment Selection (e.g. production, staging, development)
+environment = "production"
+
+# GitHub Settings
+github_repo_url = "https://github.com/raulcaminero/cmhub"
+github_branch   = "main"
+
+# Supabase Project settings
+supabase_project_ref = "rzumdrqyerlwdiftxzxb"
+supabase_db_password = "your_supabase_database_password"
+
+# Third-Party Integrations
+gemini_api_key = "your_gemini_api_key_here"
+resend_api_key = "your_resend_api_key_here"
+
+# Vercel Auth Token (Create at vercel.com -> Account Settings -> Tokens)
+vercel_api_token = "your_vercel_api_token_here"
+
+# Render API Key (Create at dashboard.render.com -> Account Settings -> API Keys)
+render_api_key = "your_render_api_key_here"
+
+# Render Owner / Team ID (Optional, find in your Render profile settings)
+render_owner_id = ""
