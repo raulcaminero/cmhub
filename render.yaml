@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: cmhub-api
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: apps/api/Dockerfile
+    plan: free # Can be upgraded to starter/standard in Render UI
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Set this in Render Dashboard (with ?pgbouncer=true)
+      - key: DIRECT_URL
+        sync: false # Set this in Render Dashboard (direct connection)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false # Set your Gemini Key
+      - key: RESEND_API_KEY
+        sync: false # Set your Resend Key
+      - key: ALLOWED_ORIGINS
+        value: "*"
