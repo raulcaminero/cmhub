@@ -60,7 +60,46 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* 1. Desktop Sidebar */}
+      <aside className="group/sidebar hidden md:flex w-16 hover:w-56 transition-all duration-300 ease-in-out flex-col bg-sidebar text-sidebar-foreground shrink-0 z-30 border-r border-sidebar-border shadow-sm overflow-hidden">
+        <div className="flex items-center gap-3 px-3.5 py-4 border-b border-sidebar-border shrink-0">
+          <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0 shadow-sm">
+            <Building2 className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
+            <p className="font-semibold text-sm leading-tight">CMHub</p>
+            <p className="text-[11px] text-sidebar-foreground/60 leading-tight">{t('nav.companyManagement')}</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 px-2.5 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+            const targetHref = getTargetHref(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={targetHref as any}
+                onClick={handleNavClick}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                )}
+                title={item.label}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* 2. Mobile Drawer Sidebar */}
       {isOpen && (
         <div
           onClick={onClose}
@@ -70,12 +109,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
 
       <aside
         className={cn(
-          'bg-sidebar text-sidebar-foreground shrink-0 border-r border-sidebar-border shadow-sm flex flex-col transition-all duration-300 ease-in-out',
-          // Desktop styles
-          'hidden md:flex w-16 hover:w-56 group/sidebar z-30 overflow-hidden',
-          // Mobile Drawer styles
-          'md:hidden fixed top-0 bottom-0 left-0 w-64 z-50 overflow-hidden',
-          isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+          'md:hidden fixed top-0 bottom-0 left-0 w-64 z-50 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden',
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex items-center justify-between px-3.5 py-4 border-b border-sidebar-border shrink-0">
@@ -83,14 +118,15 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
             <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0 shadow-sm">
               <Building2 className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div className="opacity-100 md:opacity-0 md:group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
+            <div className="whitespace-nowrap overflow-hidden">
               <p className="font-semibold text-sm leading-tight">CMHub</p>
               <p className="text-[11px] text-sidebar-foreground/60 leading-tight">{t('nav.companyManagement')}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="md:hidden p-1 rounded-md text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            className="p-1 rounded-md text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -115,7 +151,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 title={item.label}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
-                <span className="opacity-100 md:opacity-0 md:group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
+                <span className="whitespace-nowrap overflow-hidden">
                   {item.label}
                 </span>
               </Link>

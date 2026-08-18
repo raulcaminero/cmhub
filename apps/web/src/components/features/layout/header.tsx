@@ -46,6 +46,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     <header className="h-14 border-b flex items-center justify-between px-4 md:px-6 bg-background shrink-0 relative z-30">
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onMenuClick}
           className="md:hidden p-1.5 rounded-lg hover:bg-muted text-foreground transition-colors outline-none"
           aria-label="Abrir menú"
