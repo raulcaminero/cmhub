@@ -10,7 +10,22 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'];
+      const isAllowed = allowedOrigins.includes(origin) ||
+                        allowedOrigins.includes('*') ||
+                        origin.endsWith('.vercel.app') ||
+                        origin.startsWith('http://localhost:');
+      if (isAllowed) {
+        callback(null, origin); // Echoes back the requesting origin (needed for credentials: true)
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
   app.useGlobalPipes(
