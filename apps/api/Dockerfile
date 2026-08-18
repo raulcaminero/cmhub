@@ -13,7 +13,6 @@ RUN npm ci
 COPY packages/shared-types ./packages/shared-types
 COPY apps/api ./apps/api
 
-RUN npm run build --workspace=@cmhub/shared-types
 RUN npm run build --workspace=@cmhub/api
 
 # Stage 2: Production Dependencies
@@ -27,7 +26,7 @@ COPY packages/shared-types/package*.json ./packages/shared-types/
 
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
+COPY --from=builder /app/packages/shared-types ./packages/shared-types
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY --from=builder /app/apps/api/node_modules/.prisma ./apps/api/node_modules/.prisma
