@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/lib/use-translation';
 import { LanguageSwitcher } from '@/components/features/layout/language-switcher';
 
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const [login, { isLoading, error }] = useLoginMutation();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +29,7 @@ export default function LoginPage() {
     const result = await login({ email, password });
     if ('data' in result && result.data) {
       dispatch(setCredentials(result.data));
+      setIsRedirecting(true);
       router.push('/cmhub' as any);
     }
   }
@@ -60,6 +62,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading || isRedirecting}
             />
           </div>
           <div className="space-y-2">
@@ -78,12 +81,14 @@ export default function LoginPage() {
                 required
                 minLength={8}
                 className="pr-10"
+                disabled={isLoading || isRedirecting}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
                 tabIndex={-1}
+                disabled={isLoading || isRedirecting}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -97,8 +102,13 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" disabled={isLoading}>
-            {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
+          <Button 
+            type="submit" 
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2" 
+            disabled={isLoading || isRedirecting}
+          >
+            {(isLoading || isRedirecting) && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isLoading ? t('auth.loggingIn') : isRedirecting ? 'Cargando panel...' : t('auth.loginButton')}
           </Button>
 
           <div className="text-center text-xs text-muted-foreground pt-2">
