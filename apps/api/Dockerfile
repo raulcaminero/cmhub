@@ -13,6 +13,7 @@ RUN npm ci
 COPY packages/shared-types ./packages/shared-types
 COPY apps/api ./apps/api
 
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 RUN npm run build --workspace=@cmhub/api
 
 # Stage 2: Production Dependencies
