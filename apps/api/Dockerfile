@@ -30,7 +30,8 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/packages/shared-types ./packages/shared-types
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
-COPY --from=builder /app/apps/api/node_modules/.prisma ./apps/api/node_modules/.prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 EXPOSE 3001
 CMD ["node", "apps/api/dist/main"]
