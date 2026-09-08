@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import {
   useGetContactsQuery,
+  useLazyLookupDgiiRncQuery,
   useCreateContactMutation,
   useDeleteContactMutation,
   useUpdateContactMutation,
@@ -70,6 +71,26 @@ export default function ContactsPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [triggerRncLookup, { isLoading: isLookingUpRnc }] = useLazyLookupDgiiRncQuery();
+  const [dgiiStatus, setDgiiStatus] = useState<string | null>(null);
+
+  async function handleRncInputChange(val: string) {
+    setRnc(val);
+    const clean = val.replace(/\D/g, '');
+    if (clean.length === 9 || clean.length === 11) {
+      try {
+        const res = await triggerRncLookup({ companyId: companyId!, rnc: clean }).unwrap();
+        if (res.name) {
+          setName(res.name);
+        }
+        setDgiiStatus(res.status);
+      } catch {
+        setDgiiStatus(null);
+      }
+    } else {
+      setDgiiStatus(null);
+    }
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -553,10 +574,19 @@ export default function ContactsPage() {
                   id="contact-rnc"
                   placeholder="Ej. 101010101 o 00100000000"
                   value={rnc}
-                  onChange={(e) => setRnc(e.target.value)}
+                  onChange={(e) => handleRncInputChange(e.target.value)}
                   className="h-9 text-xs font-mono"
                   required
                 />
+                {isLookingUpRnc && (
+                  <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">Consultando padrón DGII...</p>
+                )}
+                {!isLookingUpRnc && dgiiStatus === 'ACTIVO' && (
+                  <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">✓ RNC Activo en DGII</p>
+                )}
+                {!isLookingUpRnc && dgiiStatus === 'INACTIVO' && (
+                  <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">⚠ RNC Inactivo/Suspendido en DGII</p>
+                )}
               </div>
 
               <div className="space-y-1">

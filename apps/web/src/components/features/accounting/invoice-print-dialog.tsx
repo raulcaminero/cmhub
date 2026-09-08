@@ -136,8 +136,36 @@ export function InvoicePrintDialog({ invoice, isOpen, onClose }: InvoicePrintDia
             </div>
           </div>
 
+          {/* e-CF DGII Metadata Footer */}
+          {invoice.ncfType?.startsWith('E') && (
+            <div className="border-t pt-4 mt-4 text-xs space-y-2 bg-gray-50 p-3 rounded">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-bold text-[10px] uppercase text-gray-500">Comprobante Fiscal Electrónico (e-CF)</p>
+                  <p className="text-gray-700 font-mono text-[11px]">Código de Seguridad: <strong>{invoice.ecfSecurityCode || 'N/A'}</strong></p>
+                  {invoice.ecfTrackId && (
+                    <p className="text-gray-500 font-mono text-[10px]">TrackID: {invoice.ecfTrackId}</p>
+                  )}
+                  <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                    {invoice.ecfStatus === 'ACCEPTED' ? '✓ Firmado digitalmente y Aceptado por DGII' : 'Transmitido a DGII'}
+                  </p>
+                </div>
+                {invoice.ecfQrUrl && (
+                  <div className="text-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(invoice.ecfQrUrl)}`}
+                      alt="Código QR DGII"
+                      className="w-16 h-16 border p-0.5 bg-white rounded"
+                    />
+                    <span className="text-[9px] text-gray-400 block mt-0.5">Validación DGII</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Footer Notice */}
-          <div className="text-center pt-8 space-y-1 text-xxs text-gray-400">
+          <div className="text-center pt-4 space-y-1 text-xxs text-gray-400">
             <p>Original Cliente</p>
             <p>Gracias por preferir nuestros servicios.</p>
           </div>

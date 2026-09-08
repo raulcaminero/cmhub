@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
-import { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation, Invoice } from '@/services/invoices.api';
-import { useGetContactsQuery } from '@/services/contacts.api';
+import { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation, useTransmitEcfMutation, Invoice } from '@/services/invoices.api';
+import { useGetContactsQuery, useLazyLookupDgiiRncQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType } from '@cmhub/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { validarDocFiscal } from '@/lib/validators';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Printer, Loader2, Receipt } from 'lucide-react';
+import { Plus, Printer, Loader2, Receipt, Send, CheckCircle2 } from 'lucide-react';
 import { NcfType } from '@cmhub/shared-types';
 import { InvoicePrintDialog } from './invoice-print-dialog';
 import InvoiceLineEditor, { EditableLine } from '../sales/invoice-line-editor';
@@ -96,6 +96,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
   const [createInvoice, { isLoading: isCreating }] = useCreateInvoiceMutation();
   const [collectInvoice, { isLoading: isCollecting }] = useCollectInvoiceMutation();
   const [voidInvoice, { isLoading: isVoiding }] = useVoidInvoiceMutation();
+  const [transmitEcf, { isLoading: isTransmitting }] = useTransmitEcfMutation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -154,14 +155,30 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
 
   const bankAccounts = accounts?.filter((a) => a.code.startsWith('1101') || a.name.toLowerCase().includes('banco') || a.name.toLowerCase().includes('caja')) || [];
 
-  function handleRncChange(val: string) {
+  const [triggerRncLookup, { isLoading: isLookingUpRnc }] = useLazyLookupDgiiRncQuery();
+  const [rncDgiiStatus, setRncDgiiStatus] = useState<string | null>(null);
+
+  async function handleRncChange(val: string) {
     setClientRnc(val);
     const clean = val.replace(/\D/g, '');
     const found = contacts?.find((c) => c.rnc === clean);
     if (found) {
       setClientName(found.name);
+      setRncDgiiStatus('REGISTRADO');
+    } else if (clean.length === 9 || clean.length === 11) {
+      try {
+        const res = await triggerRncLookup({ companyId: companyId!, rnc: clean }).unwrap();
+        if (res.name) {
+          setClientName(res.name);
+          setRncDgiiStatus(res.status === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO');
+        } else {
+          setRncDgiiStatus('NO_ENCONTRADO');
+        }
+      } catch {
+        setRncDgiiStatus(null);
+      }
     } else {
-      setClientName('');
+      setRncDgiiStatus(null);
     }
   }
   const [errorMessage, setErrorMessage] = useState('');
@@ -319,6 +336,35 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                     </TableCell>
                     <TableCell className="text-right text-[11px]">
                       <div className="flex justify-end gap-1">
+                        {inv.ncfType?.startsWith('E') && !inv.isVoided && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await transmitEcf({ companyId: companyId!, id: inv.id }).unwrap();
+                                alert('e-CF transmitido exitosamente a la DGII.');
+                              } catch (err: any) {
+                                alert(err.data?.message || 'Error al transmitir e-CF a la DGII.');
+                              }
+                            }}
+                            disabled={isTransmitting}
+                            className="gap-1 h-7 text-[11px] px-2 font-semibold border-indigo-500 text-indigo-600 hover:bg-indigo-50"
+                          >
+                            {inv.ecfStatus === 'ACCEPTED' ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600 mr-0.5" />
+                                DGII Ok
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3 h-3 mr-0.5" />
+                                Enviar DGII
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -421,6 +467,18 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                     list="client-rnc-list"
                     required
                   />
+                  {isLookingUpRnc && (
+                    <p className="text-[10px] text-muted-foreground animate-pulse">Consultando padrón de la DGII...</p>
+                  )}
+                  {!isLookingUpRnc && rncDgiiStatus === 'ACTIVO' && (
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">✓ RNC Activo en DGII</p>
+                  )}
+                  {!isLookingUpRnc && rncDgiiStatus === 'INACTIVO' && (
+                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1">⚠ RNC Inactivo/Suspendido en DGII</p>
+                  )}
+                  {!isLookingUpRnc && rncDgiiStatus === 'REGISTRADO' && (
+                    <p className="text-[10px] text-blue-600 font-semibold flex items-center gap-1">✓ Cliente registrado en contactos</p>
+                  )}
                   <datalist id="client-rnc-list">
                     {contacts
                       ?.filter((c) => c.type === 'CLIENT' || c.type === 'BOTH')

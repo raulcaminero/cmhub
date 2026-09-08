@@ -20,6 +20,9 @@ export interface Expense {
   foreignCountry: string | null;
   foreignTaxId: string | null;
   foreignPaymentType: string | null;
+  ncfValidationStatus?: 'NOT_VERIFIED' | 'VALID' | 'INVALID' | 'EXPIRED' | 'UNAUTHORIZED';
+  ncfValidationMsg?: string | null;
+  ncfValidatedAt?: string | null;
   createdAt: string;
 }
 
@@ -42,6 +45,16 @@ export interface CreateExpenseDto {
   foreignPaymentType?: string;
 }
 
+export interface DgiiNcfVerifyResponse {
+  providerRnc: string;
+  ncf: string;
+  status: 'NOT_VERIFIED' | 'VALID' | 'INVALID' | 'EXPIRED' | 'UNAUTHORIZED';
+  message: string;
+  isFormatValid: boolean;
+  ncfType?: string;
+  validatedAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   totalCount: number;
@@ -58,6 +71,19 @@ export const expensesApi = api.injectEndpoints({
         params: { page, limit, startDate, endDate },
       }),
       providesTags: ['Expense'],
+    }),
+    verifyNcf: builder.query<DgiiNcfVerifyResponse, { companyId: string; providerRnc: string; ncf: string }>({
+      query: ({ companyId, providerRnc, ncf }) => ({
+        url: `/companies/${companyId}/accounting/expenses/verify-ncf`,
+        params: { providerRnc, ncf },
+      }),
+    }),
+    verifyExpenseNcf: builder.mutation<Expense, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/expenses/${id}/verify-ncf`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Expense'],
     }),
     createExpense: builder.mutation<Expense, { companyId: string; body: CreateExpenseDto }>({
       query: ({ companyId, body }) => ({
@@ -107,6 +133,8 @@ export const expensesApi = api.injectEndpoints({
 
 export const {
   useGetExpensesQuery,
+  useLazyVerifyNcfQuery,
+  useVerifyExpenseNcfMutation,
   useCreateExpenseMutation,
   usePayExpenseMutation,
   useVoidExpenseMutation,
@@ -114,3 +142,4 @@ export const {
   useImportOcrMutation,
   useLazyGetOcrStatusQuery,
 } = expensesApi;
+

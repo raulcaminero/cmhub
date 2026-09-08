@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/store/hooks';
 import { useCreateInvoiceMutation } from '@/services/invoices.api';
-import { useGetContactsQuery } from '@/services/contacts.api';
+import { useGetContactsQuery, useLazyLookupDgiiRncQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType, NcfType } from '@cmhub/shared-types';
 import { validarDocFiscal } from '@/lib/validators';
@@ -105,11 +105,30 @@ export default function NewInvoicePage() {
     }
   }, [lines]);
 
-  function handleRncChange(val: string) {
+  const [triggerRncLookup, { isLoading: isLookingUpRnc }] = useLazyLookupDgiiRncQuery();
+  const [rncDgiiStatus, setRncDgiiStatus] = useState<string | null>(null);
+
+  async function handleRncChange(val: string) {
     setClientRnc(val);
-    const matched = contacts?.find((c) => c.rnc === val);
+    const clean = val.replace(/\D/g, '');
+    const matched = contacts?.find((c) => c.rnc === clean);
     if (matched) {
       setClientName(matched.name);
+      setRncDgiiStatus('REGISTRADO');
+    } else if (clean.length === 9 || clean.length === 11) {
+      try {
+        const res = await triggerRncLookup({ companyId: companyId!, rnc: clean }).unwrap();
+        if (res.name) {
+          setClientName(res.name);
+          setRncDgiiStatus(res.status === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO');
+        } else {
+          setRncDgiiStatus('NO_ENCONTRADO');
+        }
+      } catch {
+        setRncDgiiStatus(null);
+      }
+    } else {
+      setRncDgiiStatus(null);
     }
   }
 
@@ -235,6 +254,15 @@ export default function NewInvoicePage() {
                     className="text-xs h-10 font-mono"
                     required
                   />
+                  {isLookingUpRnc && (
+                    <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">Consultando DGII...</p>
+                  )}
+                  {!isLookingUpRnc && rncDgiiStatus === 'ACTIVO' && (
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">✓ RNC Activo en DGII</p>
+                  )}
+                  {!isLookingUpRnc && rncDgiiStatus === 'INACTIVO' && (
+                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">⚠ RNC Inactivo en DGII</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">

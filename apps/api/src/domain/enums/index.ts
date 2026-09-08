@@ -4,3 +4,8 @@ export { UserRole } from './user-role.enum';
 export { TaxRegime } from './tax-regime.enum';
 export { JournalEntryStatus } from './journal-entry-status.enum';
 export { PaymentMethod } from './payment-method.enum';
+export { DgiiEnvironment } from './dgii-environment.enum';
+export { EcfStatus } from './ecf-status.enum';
+export { NcfValidationStatus } from './ncf-validation-status.enum';
+
+

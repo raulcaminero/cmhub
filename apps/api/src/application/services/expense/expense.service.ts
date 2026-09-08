@@ -13,6 +13,8 @@ import { ContactType } from '@domain/entities/contact.entity';
 
 import { AuditLogService } from '../audit/audit-log.service';
 
+import { DgiiNcfVerifierService } from '../dgii-ncf-verifier/dgii-ncf-verifier.service';
+
 export const EXPENSE_REPOSITORY = 'EXPENSE_REPOSITORY';
 export const ACCOUNT_REPOSITORY = 'ACCOUNT_REPOSITORY';
 export const JOURNAL_ENTRY_REPOSITORY = 'JOURNAL_ENTRY_REPOSITORY';
@@ -26,7 +28,29 @@ export class ExpenseService {
     private readonly contactService: ContactService,
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly ncfVerifierService: DgiiNcfVerifierService,
   ) {}
+
+  async verifySupplierNcf(providerRnc: string, ncf: string) {
+    return this.ncfVerifierService.verifySupplierNcf(providerRnc, ncf);
+  }
+
+  async verifyExpenseNcf(companyId: string, expenseId: string) {
+    const expense = await this.prisma.expense.findFirst({
+      where: { id: expenseId, companyId },
+    });
+    if (!expense) throw new BadRequestException('Gasto no encontrado.');
+
+    const result = await this.ncfVerifierService.verifySupplierNcf(expense.providerRnc, expense.ncf);
+    return this.prisma.expense.update({
+      where: { id: expenseId },
+      data: {
+        ncfValidationStatus: result.status,
+        ncfValidationMsg: result.message,
+        ncfValidatedAt: result.validatedAt,
+      },
+    });
+  }
 
   async getExpenses(
     companyId: string,
@@ -93,6 +117,9 @@ export class ExpenseService {
         foreignCountry: e.foreignCountry,
         foreignTaxId: e.foreignTaxId,
         foreignPaymentType: e.foreignPaymentType,
+        ncfValidationStatus: e.ncfValidationStatus,
+        ncfValidationMsg: e.ncfValidationMsg,
+        ncfValidatedAt: e.ncfValidatedAt,
         createdAt: e.createdAt,
         updatedAt: e.updatedAt,
       })),

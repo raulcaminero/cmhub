@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { useCurrency } from '@/hooks/use-company';
-import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, useLazyGetOcrStatusQuery, Expense } from '@/services/expenses.api';
-import { useGetContactsQuery } from '@/services/contacts.api';
+import { useGetExpensesQuery, useCreateExpenseMutation, usePayExpenseMutation, useVoidExpenseMutation, useImportExpensesMutation, useImportOcrMutation, useLazyGetOcrStatusQuery, useLazyVerifyNcfQuery, useVerifyExpenseNcfMutation, Expense } from '@/services/expenses.api';
+import { useGetContactsQuery, useLazyLookupDgiiRncQuery } from '@/services/contacts.api';
 import { useGetAccountsQuery } from '@/services/accounting.api';
 import { AccountType } from '@cmhub/shared-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -147,7 +147,51 @@ export function ExpensesView() {
 
   const [providerRnc, setProviderRnc] = useState('');
   const [providerName, setProviderName] = useState('');
+  const [triggerRncLookup, { isLoading: isLookingUpRnc }] = useLazyLookupDgiiRncQuery();
+  const [providerDgiiStatus, setProviderDgiiStatus] = useState<string | null>(null);
+
+  async function handleProviderRncChange(val: string) {
+    setProviderRnc(val);
+    const clean = val.replace(/\D/g, '');
+    const found = contacts?.find((c) => c.rnc === clean);
+    if (found) {
+      setProviderName(found.name);
+      setProviderDgiiStatus('REGISTRADO');
+    } else if (clean.length === 9 || clean.length === 11) {
+      try {
+        const res = await triggerRncLookup({ companyId: companyId!, rnc: clean }).unwrap();
+        if (res.name) {
+          setProviderName(res.name);
+          setProviderDgiiStatus(res.status === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO');
+        } else {
+          setProviderDgiiStatus('NO_ENCONTRADO');
+        }
+      } catch {
+        setProviderDgiiStatus(null);
+      }
+    } else {
+      setProviderDgiiStatus(null);
+    }
+  }
   const [ncf, setNcf] = useState('');
+  const [triggerVerifyNcf, { isLoading: isVerifyingNcf }] = useLazyVerifyNcfQuery();
+  const [ncfStatus, setNcfStatus] = useState<string | null>(null);
+
+  async function handleNcfChange(val: string) {
+    setNcf(val);
+    const cleanNcf = val.trim().toUpperCase();
+    const cleanRnc = providerRnc.replace(/\D/g, '');
+    if ((cleanNcf.length === 11 || cleanNcf.length === 13) && cleanRnc) {
+      try {
+        const res = await triggerVerifyNcf({ companyId: companyId!, providerRnc: cleanRnc, ncf: cleanNcf }).unwrap();
+        setNcfStatus(res.status);
+      } catch {
+        setNcfStatus(null);
+      }
+    } else {
+      setNcfStatus(null);
+    }
+  }
   const [expenseType, setExpenseType] = useState('02');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [amount, setAmount] = useState(0);
@@ -746,11 +790,23 @@ export function ExpensesView() {
                   <Input
                     id="providerRnc"
                     value={providerRnc}
-                    onChange={(e) => setProviderRnc(e.target.value)}
+                    onChange={(e) => handleProviderRncChange(e.target.value)}
                     required
                     placeholder="Ej. 101010101"
                     className="h-9 text-xs font-mono"
                   />
+                  {isLookingUpRnc && (
+                    <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">Consultando padrón DGII...</p>
+                  )}
+                  {!isLookingUpRnc && providerDgiiStatus === 'ACTIVO' && (
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">✓ Proveedor Activo en DGII</p>
+                  )}
+                  {!isLookingUpRnc && providerDgiiStatus === 'INACTIVO' && (
+                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">⚠ Proveedor Inactivo/Suspendido en DGII</p>
+                  )}
+                  {!isLookingUpRnc && providerDgiiStatus === 'REGISTRADO' && (
+                    <p className="text-[10px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">✓ Proveedor registrado en contactos</p>
+                  )}
                 </div>
 
                 <div>
@@ -758,11 +814,20 @@ export function ExpensesView() {
                   <Input
                     id="ncf"
                     value={ncf}
-                    onChange={(e) => setNcf(e.target.value)}
+                    onChange={(e) => handleNcfChange(e.target.value)}
                     required
                     placeholder="Ej. B0100000001"
                     className="h-9 text-xs font-mono"
                   />
+                  {isVerifyingNcf && (
+                    <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">Verificando NCF con la DGII...</p>
+                  )}
+                  {!isVerifyingNcf && ncfStatus === 'VALID' && (
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">✓ NCF Válido y Autorizado en DGII</p>
+                  )}
+                  {!isVerifyingNcf && ncfStatus === 'INVALID' && (
+                    <p className="text-[10px] text-rose-600 font-semibold flex items-center gap-1 mt-0.5">⚠ NCF Inválido o Vencido en DGII</p>
+                  )}
                 </div>
 
                 <div>

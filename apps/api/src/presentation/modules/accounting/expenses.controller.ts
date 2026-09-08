@@ -24,6 +24,18 @@ export class ExpensesController {
     @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
   ) {}
 
+  @Get('verify-ncf')
+  @ApiOperation({ summary: 'Verify a supplier NCF or e-NCF validity with DGII' })
+  verifyNcf(@Query('providerRnc') providerRnc: string, @Query('ncf') ncf: string) {
+    return this.expenseService.verifySupplierNcf(providerRnc, ncf);
+  }
+
+  @Post(':id/verify-ncf')
+  @ApiOperation({ summary: 'Audit and verify an existing expense NCF with DGII' })
+  verifyExpenseNcf(@Param('companyId') companyId: string, @Param('id') id: string) {
+    return this.expenseService.verifyExpenseNcf(companyId, id);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List all company expenses (paginated and filtered by date)' })
   getExpenses(
