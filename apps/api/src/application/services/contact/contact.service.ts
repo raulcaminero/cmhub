@@ -4,6 +4,8 @@ import { CreateContactDto } from '../../dtos/contact/create-contact.dto';
 import { ContactType, ContactEntity } from '@domain/entities/contact.entity';
 import { PrismaService } from '@infrastructure/persistence/prisma/prisma.service';
 
+import { DgiiRncValidatorService } from '../dgii-rnc/dgii-rnc-validator.service';
+
 export const CONTACT_REPOSITORY = 'CONTACT_REPOSITORY';
 
 @Injectable()
@@ -11,7 +13,12 @@ export class ContactService {
   constructor(
     @Inject(CONTACT_REPOSITORY) private readonly contactRepository: IContactRepository,
     private readonly prisma: PrismaService,
+    private readonly dgiiRncValidatorService: DgiiRncValidatorService,
   ) {}
+
+  async lookupRnc(rnc: string) {
+    return this.dgiiRncValidatorService.lookupRnc(rnc);
+  }
 
   async getContacts(companyId: string) {
     return this.contactRepository.findByCompany(companyId);

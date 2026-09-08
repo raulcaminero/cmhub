@@ -1,0 +1,7 @@
+export enum NcfValidationStatus {
+  NOT_VERIFIED = 'NOT_VERIFIED',
+  VALID = 'VALID',
+  INVALID = 'INVALID',
+  EXPIRED = 'EXPIRED',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+}

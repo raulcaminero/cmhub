@@ -36,6 +36,12 @@ export interface Invoice {
   costOfGoodsSold?: number | null;
   itbisRetained?: number;
   isrRetained?: number;
+  ecfStatus?: 'NOT_APPLICABLE' | 'PENDING_SEND' | 'PROCESSING' | 'ACCEPTED' | 'REJECTED';
+  ecfSecurityCode?: string | null;
+  ecfTrackId?: string | null;
+  ecfQrUrl?: string | null;
+  ecfResponseMsg?: string | null;
+  ecfApprovedAt?: string | null;
   createdAt: string;
   lines?: InvoiceLineItem[];
 }
@@ -95,7 +101,28 @@ export const invoicesApi = api.injectEndpoints({
       }),
       invalidatesTags: ['JournalEntry', 'Account', 'Contact', 'Invoice'],
     }),
+    transmitEcf: builder.mutation<Invoice, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/invoices/${id}/transmit-ecf`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Invoice'],
+    }),
+    checkEcfStatus: builder.query<Invoice, { companyId: string; id: string }>({
+      query: ({ companyId, id }) => ({
+        url: `/companies/${companyId}/accounting/invoices/${id}/ecf-status`,
+      }),
+      providesTags: ['Invoice'],
+    }),
   }),
 });
 
-export const { useGetInvoicesQuery, useCreateInvoiceMutation, useCollectInvoiceMutation, useVoidInvoiceMutation } = invoicesApi;
+export const {
+  useGetInvoicesQuery,
+  useCreateInvoiceMutation,
+  useCollectInvoiceMutation,
+  useVoidInvoiceMutation,
+  useTransmitEcfMutation,
+  useLazyCheckEcfStatusQuery,
+} = invoicesApi;
+

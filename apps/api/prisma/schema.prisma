@@ -58,6 +58,28 @@ enum NcfType {
   E45
 }
 
+enum DgiiEnvironment {
+  TEST
+  CERTIFICATION
+  PRODUCTION
+}
+
+enum NcfValidationStatus {
+  NOT_VERIFIED
+  VALID
+  INVALID
+  EXPIRED
+  UNAUTHORIZED
+}
+
+enum EcfStatus {
+  NOT_APPLICABLE
+  PENDING_SEND
+  PROCESSING
+  ACCEPTED
+  REJECTED
+}
+
 enum JournalEntryStatus {
   DRAFT
   POSTED
@@ -101,6 +123,10 @@ model Company {
   currency         String            @default("DOP")  // ISO 4217: "DOP", "USD", "MXN"...
   locale           String            @default("es-DO") // BCP 47 locale tag
   enabledModules   String[]          @default(["DR_FISCAL"]) // Activated system modules: DR_FISCAL, US_ACCOUNTING, LATAM, INTERNATIONAL
+  // DGII e-CF configuration
+  dgiiEnvironment               DgiiEnvironment   @default(TEST)
+  digitalCertPath               String?
+  digitalCertPasswordEncrypted  String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   userRoles        UserCompanyRole[]
@@ -190,6 +216,14 @@ model Invoice {
   itbisRetained   Decimal       @default(0) @db.Decimal(18, 2)
   isrRetained     Decimal       @default(0) @db.Decimal(18, 2)
   costOfGoodsSold Decimal?      @db.Decimal(18, 2)
+  // DGII e-CF fields
+  ecfStatus       EcfStatus     @default(NOT_APPLICABLE)
+  ecfSecurityCode String?
+  ecfTrackId      String?
+  ecfSignedXml    String?       @db.Text
+  ecfResponseMsg  String?
+  ecfQrUrl        String?
+  ecfApprovedAt   DateTime?
   createdByUserId String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -224,6 +258,10 @@ model Expense {
   foreignCountry     String?
   foreignTaxId       String?
   foreignPaymentType String?
+  // DGII NCF verification fields
+  ncfValidationStatus NcfValidationStatus @default(NOT_VERIFIED)
+  ncfValidationMsg    String?
+  ncfValidatedAt      DateTime?
   createdByUserId    String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt

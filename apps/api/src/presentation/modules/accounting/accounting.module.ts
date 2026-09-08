@@ -41,6 +41,15 @@ import { EmployeeRepository } from '@infrastructure/persistence/repositories/emp
 import { PayrollRepository } from '@infrastructure/persistence/repositories/payroll.repository';
 import { BankTransactionRepository } from '@infrastructure/persistence/repositories/bank-transaction.repository';
 
+import { DgiiEcfController } from './dgii-ecf.controller';
+import { DgiiEcfService } from '@application/services/dgii-ecf/dgii-ecf.service';
+import { DgiiXmlBuilderService } from '@application/services/dgii-ecf/dgii-xml-builder.service';
+import { DgiiSignerService } from '@application/services/dgii-ecf/dgii-signer.service';
+import { DgiiApiClientService } from '@application/services/dgii-ecf/dgii-api-client.service';
+
+import { DgiiRncValidatorService } from '@application/services/dgii-rnc/dgii-rnc-validator.service';
+import { DgiiNcfVerifierService } from '@application/services/dgii-ncf-verifier/dgii-ncf-verifier.service';
+
 @Module({
   imports: [OcrQueueModule],
   controllers: [
@@ -53,6 +62,7 @@ import { BankTransactionRepository } from '@infrastructure/persistence/repositor
     EmployeesController,
     PayrollController,
     BankReconciliationController,
+    DgiiEcfController,
   ],
   providers: [
     AccountingService,
@@ -65,6 +75,12 @@ import { BankTransactionRepository } from '@infrastructure/persistence/repositor
     BankReconciliationService,
     OcrService,
     TaxEngineService,
+    DgiiEcfService,
+    DgiiXmlBuilderService,
+    DgiiSignerService,
+    DgiiApiClientService,
+    DgiiRncValidatorService,
+    DgiiNcfVerifierService,
     { provide: ACCOUNT_REPOSITORY, useClass: AccountRepository },
     { provide: JOURNAL_ENTRY_REPOSITORY, useClass: JournalEntryRepository },
     { provide: EXPENSE_REPOSITORY, useClass: ExpenseRepository },

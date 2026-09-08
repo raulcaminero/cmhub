@@ -23,12 +23,25 @@ export interface CreateContactDto {
   address?: string;
 }
 
+export interface DgiiRncLookupResponse {
+  rnc: string;
+  name: string;
+  tradeName?: string;
+  status: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'NO_ENCONTRADO';
+  taxRegime?: string;
+  isValidChecksum: boolean;
+  message?: string;
+}
+
 export const contactsApi = api.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
     getContacts: builder.query<Contact[], { companyId: string }>({
       query: ({ companyId }) => `/companies/${companyId}/accounting/contacts`,
       providesTags: ['Contact'],
+    }),
+    lookupDgiiRnc: builder.query<DgiiRncLookupResponse, { companyId: string; rnc: string }>({
+      query: ({ companyId, rnc }) => `/companies/${companyId}/accounting/contacts/dgii-lookup/${rnc}`,
     }),
     createContact: builder.mutation<Contact, { companyId: string; body: CreateContactDto }>({
       query: ({ companyId, body }) => ({
@@ -66,8 +79,10 @@ export const contactsApi = api.injectEndpoints({
 
 export const {
   useGetContactsQuery,
+  useLazyLookupDgiiRncQuery,
   useCreateContactMutation,
   useDeleteContactMutation,
   useUpdateContactMutation,
   useImportContactsMutation,
 } = contactsApi;
+

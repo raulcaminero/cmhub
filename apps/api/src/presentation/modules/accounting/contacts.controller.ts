@@ -11,6 +11,12 @@ import { UpdateContactDto } from '@application/dtos/contact/update-contact.dto';
 export class ContactsController {
   constructor(private readonly contactService: ContactService) {}
 
+  @Get('dgii-lookup/:rnc')
+  @ApiOperation({ summary: 'Lookup RNC / Cedula in DGII registry in real-time' })
+  lookupRnc(@Param('rnc') rnc: string) {
+    return this.contactService.lookupRnc(rnc);
+  }
+
   @Get()
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(300000) // 5 minutes cache in ms
