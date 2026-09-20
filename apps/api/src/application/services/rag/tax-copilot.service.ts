@@ -192,11 +192,10 @@ ${contextString}`;
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
     const endpoints = [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-      'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent',
     ];
 
     let lastError = '';
