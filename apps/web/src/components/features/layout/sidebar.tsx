@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
 import {
@@ -23,6 +23,7 @@ import { getStoredTabForPath } from '@/hooks/use-tab-memory';
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useTranslation();
   const { showTaxModule, showNcfModule } = useModules();
   const [mounted, setMounted] = useState(false);
@@ -47,16 +48,18 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     return storedTab ? `${baseHref}?tab=${storedTab}` : baseHref;
   };
 
-  const handleNavClick = (href: string) => {
-    console.log(`[Sidebar] Clicked on nav item. Target: ${href}, Current pathname: ${pathname}`);
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    console.log(`[Sidebar] Navigating to: ${href}, Current pathname: ${pathname}`);
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('cmhub_nav_from_sidebar', 'true');
-      } catch (e) {}
+      } catch (err) {}
     }
     if (onClose) {
       onClose();
     }
+    router.push(href as any);
   };
 
   return (
@@ -81,7 +84,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <Link
                 key={item.href}
                 href={targetHref as any}
-                onClick={() => handleNavClick(targetHref as string)}
+                onClick={(e) => handleNavClick(e, targetHref as string)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
@@ -142,7 +145,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <Link
                 key={item.href}
                 href={targetHref as any}
-                onClick={() => handleNavClick(targetHref as string)}
+                onClick={(e) => handleNavClick(e, targetHref as string)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
