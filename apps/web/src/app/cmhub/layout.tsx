@@ -10,17 +10,25 @@ import { AccessDeniedModal } from '@/components/features/layout/access-denied-mo
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const accessToken = useAppSelector((state) => state.auth.accessToken);
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
+    setMounted(true);
+  }, []);
+
+  // Redirect to login when auth expires — only after client mount to avoid hydration issues
+  useEffect(() => {
+    if (mounted && (!isAuthenticated || !accessToken)) {
       router.replace('/login');
     }
-  }, [isAuthenticated, accessToken, router]);
+  }, [mounted, isAuthenticated, accessToken, router]);
 
-  if (!isAuthenticated || !accessToken) {
+  // Before mount: render nothing (matches server HTML which also has no cookie access)
+  // After mount + not authenticated: render nothing while redirecting
+  if (!mounted || !isAuthenticated || !accessToken) {
     return null;
   }
 
