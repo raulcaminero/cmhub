@@ -216,10 +216,9 @@ ${contextString}`;
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
     const endpoints = [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
     ];
 
     let lastError = '';
