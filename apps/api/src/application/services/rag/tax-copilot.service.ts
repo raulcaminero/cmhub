@@ -186,7 +186,7 @@ ${contextString}`;
       return finalReply || 'Lo siento, no pude procesar la consulta fiscal en este momento.';
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
-      return '⚠️ Ocurrió un error al procesar tu consulta con la IA. Por favor intenta de nuevo en unos momentos.';
+      return `⚠️ Error en Tax Copilot: ${err.message}`;
     }
   }
 
