@@ -396,16 +396,16 @@ export function ReconciliationView() {
       <div className="flex flex-wrap gap-4 items-center justify-between bg-card p-4 rounded-xl border border-border/70 shadow-2xs">
         <div className="flex items-center gap-3 min-w-[280px]">
           <Label htmlFor="rec-account" className="font-semibold text-xs whitespace-nowrap">
-            Cuenta Bancaria:
+            {t('reconciliationView.bankAccount')}
           </Label>
           {bankAccounts.length === 0 ? (
             <span className="text-xs text-muted-foreground">
-              No hay cuentas de banco (1101) creadas.
+              {t('reconciliationView.noBankAccounts')}
             </span>
           ) : (
             <Select value={selectedAccountId} onValueChange={(val) => setSelectedAccountId(val)}>
               <SelectTrigger id="rec-account" className="h-9 min-w-[240px] text-xs">
-                <SelectValue placeholder="Seleccionar cuenta bancaria" />
+                <SelectValue placeholder={t('reconciliationView.selectBank')} />
               </SelectTrigger>
               <SelectContent>
                 {bankAccounts.map((a) => (
@@ -427,7 +427,7 @@ export function ReconciliationView() {
               disabled={!selectedAccountId}
             >
               <Upload className="w-4 h-4" />
-              Importar / Escanear Extracto
+              {t('reconciliationView.importScanStatement')}
             </Button>
           </Tooltip>
 
@@ -439,7 +439,7 @@ export function ReconciliationView() {
               disabled={!selectedAccountId || isMatching}
             >
               <Sparkles className="w-4 h-4 animate-pulse" />
-              Conciliación Inteligente
+              {t('reconciliationView.smartReconciliation')}
             </Button>
           </Tooltip>
 
