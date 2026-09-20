@@ -186,12 +186,12 @@ ${contextString}`;
       return finalReply || 'Lo siento, no pude procesar la consulta fiscal en este momento.';
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
-      return `⚠️ Ocurrió un error al procesar tu consulta con la IA (${err.message}). Por favor verifica la configuración o intenta de nuevo.`;
+      return '⚠️ Ocurrió un error al procesar tu consulta con la IA. Por favor intenta de nuevo en unos momentos.';
     }
   }
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
