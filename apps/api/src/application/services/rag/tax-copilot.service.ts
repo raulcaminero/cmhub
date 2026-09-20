@@ -240,7 +240,28 @@ ${contextString}`;
     }
 
     this.logger.error(`All Gemini model endpoints failed:\n${errors.join('\n')}`);
-    throw new Error(`Google Gemini API failed. Errors:\n${errors.join('\n')}`);
+    
+    // If we failed, let's try to fetch the available models to help debug
+    let availableModels = 'Could not fetch available models.';
+    try {
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (listRes.ok) {
+        const data = await listRes.json();
+        if (data.models) {
+          const names = data.models
+            .filter((m: any) => m.supportedGenerationMethods.includes('generateContent'))
+            .map((m: any) => m.name)
+            .join(', ');
+          availableModels = `Available models for your API key: ${names}`;
+        }
+      } else {
+        availableModels = `ListModels failed with status ${listRes.status}: ${await listRes.text()}`;
+      }
+    } catch (e: any) {
+      availableModels = `ListModels error: ${e.message}`;
+    }
+
+    throw new Error(`Google Gemini API failed. Errors:\n${errors.join('\n')}\n\nDEBUG INFO: ${availableModels}`);
   }
 
   // --- INTERNAL TOOLS FOR DATABASE FINANCIAL QUERIES ---
