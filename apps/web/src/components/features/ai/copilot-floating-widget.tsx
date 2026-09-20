@@ -34,7 +34,7 @@ const QUICK_PROMPTS = [
   {
     icon: TrendingUp,
     label: 'Resumen de Ingresos',
-    text: '¿Podrías darme un resumen de los ingresos y gastos registrados en este período?',
+    text: '¿Podrías darme un resumen de los ingresos y gastos registrados en el mes actual?',
   },
   {
     icon: Landmark,
