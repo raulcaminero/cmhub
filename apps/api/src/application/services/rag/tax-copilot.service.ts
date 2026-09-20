@@ -137,41 +137,52 @@ ${contextString}`;
       let response = await this.callGemini(apiKey, contents, tools);
 
       // 4. Process Function Call Loop (Gemini requesting DB data)
-      const candidatePart = response.candidates?.[0]?.content?.parts?.[0];
-      if (candidatePart?.functionCall) {
-        const { name, args } = candidatePart.functionCall;
-        this.logger.log(`Gemini requested function execution: "${name}" with args: ${JSON.stringify(args)}`);
+      const candidateParts = response.candidates?.[0]?.content?.parts || [];
+      const functionCalls = candidateParts.filter((p: any) => p.functionCall);
 
-        let toolResult: any = {};
-        if (name === 'getRevenueSummary') {
-          toolResult = await this.getRevenueSummary(companyId, args.year, args.month);
-        } else if (name === 'getExpenseSummary') {
-          toolResult = await this.getExpenseSummary(companyId, args.year, args.month);
-        } else if (name === 'getBankBalances') {
-          toolResult = await this.getBankBalances(companyId);
-        }
-
-        // Add the function call to context history
+      if (functionCalls.length > 0) {
+        // Add the function calls to context history
         contents.push(response.candidates[0].content);
 
-        // Add the response of the function execution to context history
+        const responseParts: any[] = [];
+        const now = new Date();
+
+        for (const callPart of functionCalls) {
+          const { name, args } = callPart.functionCall;
+          this.logger.log(`Gemini requested function execution: "${name}" with args: ${JSON.stringify(args)}`);
+
+          const year = Number(args?.year) || now.getFullYear();
+          const month = Number(args?.month) || (now.getMonth() + 1);
+
+          let toolResult: any = {};
+          if (name === 'getRevenueSummary') {
+            toolResult = await this.getRevenueSummary(companyId, year, month);
+          } else if (name === 'getExpenseSummary') {
+            toolResult = await this.getExpenseSummary(companyId, year, month);
+          } else if (name === 'getBankBalances') {
+            toolResult = await this.getBankBalances(companyId);
+          }
+
+          responseParts.push({
+            functionResponse: {
+              name,
+              response: toolResult,
+            },
+          });
+        }
+
+        // Add the responses of the function executions to context history
         contents.push({
           role: 'user', // Gemini REST API structure maps the function response as a return message
-          parts: [
-            {
-              functionResponse: {
-                name,
-                response: toolResult,
-              },
-            } as any,
-          ],
+          parts: responseParts,
         });
 
         // Recall Gemini with context and results to let it synthesize the final answer
         response = await this.callGemini(apiKey, contents, tools);
       }
 
-      const finalReply = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      const finalParts = response.candidates?.[0]?.content?.parts || [];
+      const finalReply = finalParts.find((p: any) => p.text)?.text;
       return finalReply || 'Lo siento, no pude procesar la consulta fiscal en este momento.';
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
@@ -181,7 +192,7 @@ ${contextString}`;
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
