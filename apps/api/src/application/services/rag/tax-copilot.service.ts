@@ -192,15 +192,15 @@ ${contextString}`;
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
     const endpoints = [
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+      'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
     ];
 
     let lastError = '';
+    const errors: string[] = [];
 
     for (const endpoint of endpoints) {
       try {
@@ -219,15 +219,28 @@ ${contextString}`;
         }
 
         const errText = await res.text();
-        lastError = `[${endpoint}] ${res.status}: ${errText}`;
-        this.logger.warn(`Gemini API endpoint failed (${res.status}): ${errText}`);
+        const errorMsg = `[${endpoint}] ${res.status}: ${errText}`;
+        lastError = errorMsg;
+        errors.push(errorMsg);
+        this.logger.warn(`Gemini API endpoint failed: ${errorMsg}`);
+
+        // If it's a 400 error (Bad Request), the payload is malformed. 
+        // Changing the model won't fix it, so throw immediately.
+        if (res.status === 400) {
+          throw new Error(`Bad Request (400) from Gemini API: ${errText}`);
+        }
       } catch (err: any) {
-        lastError = `[${endpoint}] ${err.message}`;
+        if (err.message.includes('Bad Request (400)')) {
+          throw err;
+        }
+        const errorMsg = `[${endpoint}] Fetch error: ${err.message}`;
+        lastError = errorMsg;
+        errors.push(errorMsg);
       }
     }
 
-    this.logger.error(`All Gemini model endpoints failed. Last error: ${lastError}`);
-    throw new Error(`Google Gemini API failed on all endpoints: ${lastError}`);
+    this.logger.error(`All Gemini model endpoints failed:\n${errors.join('\n')}`);
+    throw new Error(`Google Gemini API failed. Errors:\n${errors.join('\n')}`);
   }
 
   // --- INTERNAL TOOLS FOR DATABASE FINANCIAL QUERIES ---
