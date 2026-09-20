@@ -191,20 +191,20 @@ ${contextString}`;
   }
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
-    const models = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest',
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
+    const endpoints = [
+      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent',
     ];
 
     let lastError = '';
 
-    for (const model of models) {
+    for (const endpoint of endpoints) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const url = `${endpoint}?key=${apiKey}`;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -219,15 +219,15 @@ ${contextString}`;
         }
 
         const errText = await res.text();
-        lastError = `[${model}] ${res.status}: ${errText}`;
-        this.logger.warn(`Gemini API model ${model} failed (${res.status}): ${errText}`);
+        lastError = `[${endpoint}] ${res.status}: ${errText}`;
+        this.logger.warn(`Gemini API endpoint failed (${res.status}): ${errText}`);
       } catch (err: any) {
-        lastError = `[${model}] ${err.message}`;
+        lastError = `[${endpoint}] ${err.message}`;
       }
     }
 
     this.logger.error(`All Gemini model endpoints failed. Last error: ${lastError}`);
-    throw new Error(`Google Gemini API failed on all models: ${lastError}`);
+    throw new Error(`Google Gemini API failed on all endpoints: ${lastError}`);
   }
 
   // --- INTERNAL TOOLS FOR DATABASE FINANCIAL QUERIES ---
