@@ -137,10 +137,13 @@ ${contextString}`;
       let response = await this.callGemini(apiKey, contents, tools);
 
       // 4. Process Function Call Loop (Gemini requesting DB data)
-      const candidateParts = response.candidates?.[0]?.content?.parts || [];
-      const functionCalls = candidateParts.filter((p: any) => p.functionCall);
+      let candidateParts = response.candidates?.[0]?.content?.parts || [];
+      let functionCalls = candidateParts.filter((p: any) => p.functionCall);
+      let loopCount = 0;
+      const MAX_LOOPS = 5;
 
-      if (functionCalls.length > 0) {
+      while (functionCalls.length > 0 && loopCount < MAX_LOOPS) {
+        loopCount++;
         // Add the function calls to context history
         contents.push(response.candidates[0].content);
 
@@ -148,7 +151,7 @@ ${contextString}`;
         const now = new Date();
 
         for (const callPart of functionCalls) {
-          const { name, args } = callPart.functionCall;
+          const { name, args, id } = callPart.functionCall;
           this.logger.log(`Gemini requested function execution: "${name}" with args: ${JSON.stringify(args)}`);
 
           const year = Number(args?.year) || now.getFullYear();
@@ -166,6 +169,7 @@ ${contextString}`;
           responseParts.push({
             functionResponse: {
               name,
+              id, // Critical for Gemini 2.0+ and 3.5+
               response: toolResult,
             },
           });
@@ -179,6 +183,8 @@ ${contextString}`;
 
         // Recall Gemini with context and results to let it synthesize the final answer
         response = await this.callGemini(apiKey, contents, tools);
+        candidateParts = response.candidates?.[0]?.content?.parts || [];
+        functionCalls = candidateParts.filter((p: any) => p.functionCall);
       }
 
       const finalParts = response.candidates?.[0]?.content?.parts || [];
