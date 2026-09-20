@@ -26,18 +26,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [mounted, isAuthenticated, accessToken, router]);
 
-  // Before mount: render nothing (matches server HTML which also has no cookie access)
-  // After mount + not authenticated: render nothing while redirecting
-  if (!mounted || !isAuthenticated || !accessToken) {
-    return null;
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden relative">
         <Header onMenuClick={() => setIsSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+          {children}
+        </main>
         <CopilotFloatingWidget />
         <AccessDeniedModal />
       </div>
