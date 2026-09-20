@@ -183,7 +183,11 @@ ${contextString}`;
 
       const finalParts = response.candidates?.[0]?.content?.parts || [];
       const finalReply = finalParts.find((p: any) => p.text)?.text;
-      return finalReply || 'Lo siento, no pude procesar la consulta fiscal en este momento.';
+      if (!finalReply) {
+        this.logger.warn(`Gemini returned empty text. Raw response: ${JSON.stringify(response)}`);
+        return `Lo siento, no pude procesar la consulta fiscal en este momento. Raw response: ${JSON.stringify(response)}`;
+      }
+      return finalReply;
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
       return `⚠️ Error en Tax Copilot: ${err.message}`;
