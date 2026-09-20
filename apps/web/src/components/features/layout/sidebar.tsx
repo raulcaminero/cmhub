@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
+import { useTransition, useState } from 'react';
 import {
   LayoutDashboard,
   BookOpen,
@@ -21,23 +22,44 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
-  const { showTaxModule } = useModules();
+  const { isModuleActive } = useModules();
+  
+  const [isPending, startTransition] = useTransition();
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
 
+  // Define navigation items dynamically based on active modules
   const NAV_ITEMS = [
     { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
     { href: '/cmhub/sales', label: t('nav.sales'), icon: ShoppingCart },
-    { href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen },
+    ...(isModuleActive('accounting')
+      ? [{ href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen }]
+      : []),
     { href: '/cmhub/contacts', label: t('nav.contacts'), icon: Users },
-    ...(showTaxModule ? [{ href: '/cmhub/tax', label: t('nav.tax'), icon: Receipt }] : []),
     { href: '/cmhub/reports', label: t('nav.reports'), icon: BarChart3 },
+    { href: '/cmhub/ncf', label: t('nav.ncf'), icon: Receipt },
+    { href: '/cmhub/tax', label: t('nav.tax'), icon: Building2 },
     { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
   ];
 
-  // Let Next.js <Link> handle navigation naturally
-  const handleNavClick = () => {
+  useEffect(() => {
+    setPendingPath(null);
+  }, [pathname]);
+
+  // Manual programmatic navigation with React Transition
+  // This bypasses Next.js Link silent failures and provides visual feedback during cold starts
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
     if (onClose) {
       onClose();
     }
+    
+    // Don't navigate if we are already exactly on the path
+    if (pathname === href) return;
+    
+    setPendingPath(href);
+    startTransition(() => {
+      router.push(href);
+    });
   };
 
 
@@ -62,19 +84,24 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={handleNavClick}
+                prefetch={false}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                  isPending && pendingPath === item.href && 'opacity-50 pointer-events-none'
                 )}
                 title={item.label}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
-                <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
+                <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden flex-1">
                   {item.label}
                 </span>
+                {isPending && pendingPath === item.href && (
+                  <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                )}
               </Link>
             );
           })}
@@ -122,19 +149,24 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={handleNavClick}
+                prefetch={false}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                  isPending && pendingPath === item.href && 'opacity-50 pointer-events-none'
                 )}
                 title={item.label}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
-                <span className="whitespace-nowrap overflow-hidden">
+                <span className="whitespace-nowrap overflow-hidden flex-1">
                   {item.label}
                 </span>
+                {isPending && pendingPath === item.href && (
+                  <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                )}
               </Link>
             );
           })}
