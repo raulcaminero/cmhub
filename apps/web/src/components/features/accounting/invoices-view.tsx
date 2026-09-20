@@ -323,12 +323,12 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                     </TableCell>
                     <TableCell className="text-[11px]">
                       {inv.isVoided ? (
-                        <span className="text-rose-600 font-bold text-[11px]">ANULADA</span>
+                        <span className="text-rose-600 font-bold text-[11px]">{t('invoicesView.statusVoided')}</span>
                       ) : inv.paymentMethod === '04' ? (
                         inv.paymentDate ? (
-                          <span className="text-emerald-600 font-semibold text-[11px]">Cobrado ({new Date(inv.paymentDate).toLocaleDateString()})</span>
+                          <span className="text-emerald-600 font-semibold text-[11px]">{t('invoicesView.statusPaid')} ({new Date(inv.paymentDate).toLocaleDateString()})</span>
                         ) : (
-                          <span className="text-amber-600 font-semibold text-[11px]">Crédito Pendiente</span>
+                          <span className="text-amber-600 font-semibold text-[11px]">{t('invoicesView.statusPending')}</span>
                         )
                       ) : (
                         PAYMENT_METHODS.find((p) => p.code === inv.paymentMethod)?.label.split(' - ')[1] || inv.paymentMethod
@@ -375,7 +375,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                           className="gap-1 h-7 text-[11px] px-2 font-semibold"
                         >
                           <Printer className="w-3.5 h-3.5" />
-                          Imprimir
+                          {t('invoicesView.print')}
                         </Button>
                         {inv.paymentMethod === '04' && !inv.paymentDate && !inv.isVoided && (
                           <Button
@@ -388,7 +388,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                             }}
                             className="h-7 text-[11px] px-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
                           >
-                            Cobrar
+                            {t('invoicesView.collect')}
                           </Button>
                         )}
                         {!inv.isVoided && (
@@ -407,7 +407,7 @@ export function InvoicesView({ externalOpenModal, quotationToConvert, onCloseExt
                             }}
                             className="h-7 text-xs bg-red-600 hover:bg-red-700 text-white"
                           >
-                            Anular
+                            {t('invoicesView.void')}
                           </Button>
                         )}
                       </div>

@@ -216,11 +216,10 @@ ${contextString}`;
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
     const endpoints = [
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
     ];
 
     let lastError = '';
@@ -248,13 +247,18 @@ ${contextString}`;
         errors.push(errorMsg);
         this.logger.warn(`Gemini API endpoint failed: ${errorMsg}`);
 
-        // If it's a 400 error (Bad Request), the payload is malformed. 
-        // Changing the model won't fix it, so throw immediately.
+        // If it's a 400 error (Bad Request), the payload is malformed.
         if (res.status === 400) {
           throw new Error(`Bad Request (400) from Gemini API: ${errText}`);
         }
+
+        // If it's a 429 error (Too Many Requests / Quota Exceeded), we should stop looping
+        // and throw immediately so the user gets a clear rate limit message.
+        if (res.status === 429) {
+          throw new Error(`Rate Limit (429): ${errText}`);
+        }
       } catch (err: any) {
-        if (err.message.includes('Bad Request (400)')) {
+        if (err.message.includes('Bad Request (400)') || err.message.includes('Rate Limit (429)')) {
           throw err;
         }
         const errorMsg = `[${endpoint}] Fetch error: ${err.message}`;
