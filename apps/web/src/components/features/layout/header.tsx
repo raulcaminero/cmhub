@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { CompanySwitcher } from './company-switcher';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
-import { useRouter } from 'next/navigation';
 import { useGetProfileQuery } from '@/services/auth.api';
 import { LogOut, User, Settings, Shield, Palette, Menu } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const dispatch = useAppDispatch();
-  const router = useRouter();
   const { data: profile } = useGetProfileQuery();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -33,17 +32,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     window.location.href = '/login';
   }
 
-  function navigateTo(tab: string) {
-    setDropdownOpen(false);
-    const targetUrl = `/cmhub/settings?tab=${tab}`;
-    router.push(targetUrl as any);
-    // Fallback: if router.push silently fails, force navigation after 300ms
-    setTimeout(() => {
-      if (!window.location.pathname.startsWith('/cmhub/settings')) {
-        window.location.href = targetUrl;
-      }
-    }, 300);
-  }
 
   const initials = profile
     ? `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
@@ -93,8 +81,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
             {/* Navigation items */}
             <div className="py-1">
-              <button
-                onClick={() => navigateTo('profile')}
+              <Link
+                href="/cmhub/settings?tab=profile"
+                onClick={() => setDropdownOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
@@ -104,10 +93,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="font-medium text-sm leading-tight">Mi Perfil</p>
                   <p className="text-[10px] text-muted-foreground">Nombre, correo y datos</p>
                 </div>
-              </button>
+              </Link>
 
-              <button
-                onClick={() => navigateTo('preferences')}
+              <Link
+                href="/cmhub/settings?tab=preferences"
+                onClick={() => setDropdownOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center shrink-0">
@@ -117,10 +107,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="font-medium text-sm leading-tight">Preferencias</p>
                   <p className="text-[10px] text-muted-foreground">Tema e idioma</p>
                 </div>
-              </button>
+              </Link>
 
-              <button
-                onClick={() => navigateTo('security')}
+              <Link
+                href="/cmhub/settings?tab=security"
+                onClick={() => setDropdownOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0">
@@ -130,10 +121,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="font-medium text-sm leading-tight">Seguridad</p>
                   <p className="text-[10px] text-muted-foreground">Cambiar contraseña</p>
                 </div>
-              </button>
+              </Link>
 
-              <button
-                onClick={() => navigateTo('company')}
+              <Link
+                href="/cmhub/settings?tab=company"
+                onClick={() => setDropdownOpen(false)}
                 className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0">
@@ -143,7 +135,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="font-medium text-sm leading-tight">Configuraciones</p>
                   <p className="text-[10px] text-muted-foreground">Empresa y equipo</p>
                 </div>
-              </button>
+              </Link>
             </div>
 
             {/* Logout */}
