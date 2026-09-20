@@ -173,7 +173,7 @@ ${contextString}`;
 
         // Add the responses of the function executions to context history
         contents.push({
-          role: 'user', // Gemini REST API structure maps the function response as a return message
+          role: 'function',
           parts: responseParts,
         });
 
@@ -191,20 +191,20 @@ ${contextString}`;
   }
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents,
-          tools,
-        }),
-      }
-    );
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        tools,
+      }),
+    });
 
     if (!res.ok) {
-      throw new Error(`Google API returned code ${res.status}`);
+      const errText = await res.text();
+      this.logger.error(`Google Gemini API Error (${res.status}): ${errText}`);
+      throw new Error(`Google API returned code ${res.status}: ${errText}`);
     }
 
     return res.json();
