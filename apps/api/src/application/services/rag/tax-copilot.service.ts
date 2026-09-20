@@ -173,7 +173,7 @@ ${contextString}`;
 
         // Add the responses of the function executions to context history
         contents.push({
-          role: 'function',
+          role: 'user',
           parts: responseParts,
         });
 
@@ -191,23 +191,43 @@ ${contextString}`;
   }
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        tools,
-      }),
-    });
+    const models = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro-latest',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+    ];
 
-    if (!res.ok) {
-      const errText = await res.text();
-      this.logger.error(`Google Gemini API Error (${res.status}): ${errText}`);
-      throw new Error(`Google API returned code ${res.status}: ${errText}`);
+    let lastError = '';
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            tools,
+          }),
+        });
+
+        if (res.ok) {
+          return await res.json();
+        }
+
+        const errText = await res.text();
+        lastError = `[${model}] ${res.status}: ${errText}`;
+        this.logger.warn(`Gemini API model ${model} failed (${res.status}): ${errText}`);
+      } catch (err: any) {
+        lastError = `[${model}] ${err.message}`;
+      }
     }
 
-    return res.json();
+    this.logger.error(`All Gemini model endpoints failed. Last error: ${lastError}`);
+    throw new Error(`Google Gemini API failed on all models: ${lastError}`);
   }
 
   // --- INTERNAL TOOLS FOR DATABASE FINANCIAL QUERIES ---
