@@ -26,5 +26,6 @@ export function getCookie(name: string): string | null {
 export function eraseCookie(name: string): void {
   if (typeof document === 'undefined') return;
   const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax' + secure;
+  document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax' + secure;
+  document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT' + secure;
 }
