@@ -20,10 +20,10 @@ export class TaxCopilotController {
   @ApiOperation({ summary: 'Ask a tax or financial question to the AI Copilot' })
   async askCopilot(
     @Param('companyId') companyId: string,
-    @Body() body: { question: string },
+    @Body() body: { question: string; locale?: string },
     @CurrentUser() user: CurrentUserPayload
   ) {
-    const reply = await this.taxCopilotService.askCopilot(companyId, body.question, user.userId);
+    const reply = await this.taxCopilotService.askCopilot(companyId, body.question, user.userId, body.locale);
     return { reply };
   }
 

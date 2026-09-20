@@ -20,6 +20,8 @@ import {
   Square
 } from 'lucide-react';
 
+import { useTranslation } from '@/lib/use-translation';
+
 interface Message {
   id: string;
   sender: 'user' | 'assistant';
@@ -27,35 +29,37 @@ interface Message {
   timestamp: Date;
 }
 
-const QUICK_PROMPTS = [
-  {
-    icon: TrendingUp,
-    label: 'Resumen de Ingresos y Gastos',
-    text: '¿Podrías darme un resumen de los ingresos y gastos registrados en el mes actual?',
-  },
-  {
-    icon: Landmark,
-    label: 'Balance de Cuentas Bancarias',
-    text: '¿Cuáles son los saldos actuales en libros de nuestras cuentas de banco y caja?',
-  },
-  {
-    icon: FileText,
-    label: 'Retención de ITBIS en Servicios',
-    text: '¿Cuál es la tasa de retención del ITBIS aplicable cuando contratamos servicios profesionales a personas físicas?',
-  },
-  {
-    icon: HelpCircle,
-    label: 'Régimen Simplificado (RST)',
-    text: '¿Qué requisitos y beneficios tiene el Régimen Simplificado de Tributación (RST) de la DGII?',
-  },
-];
-
 export default function TaxCopilotView({ companyId }: { companyId: string }) {
+  const { t, locale } = useTranslation();
+  
+  const quickPrompts = [
+    {
+      icon: TrendingUp,
+      label: t('copilot.quickPrompts.revenue'),
+      text: t('copilot.quickPrompts.revenueText'),
+    },
+    {
+      icon: Landmark,
+      label: t('copilot.quickPrompts.banks'),
+      text: t('copilot.quickPrompts.banksText'),
+    },
+    {
+      icon: FileText,
+      label: t('copilot.quickPrompts.withholding'),
+      text: t('copilot.quickPrompts.withholdingText'),
+    },
+    {
+      icon: HelpCircle,
+      label: t('copilot.quickPrompts.rst'),
+      text: t('copilot.quickPrompts.rstText'),
+    },
+  ];
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       sender: 'assistant',
-      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio (ingresos, gastos y balances). ¿En qué te puedo colaborar hoy?',
+      text: t('copilot.welcome'),
       timestamp: new Date(),
     },
   ]);
@@ -64,6 +68,15 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
   const activeQueryRef = useRef<any>(null);
   
   const [askCopilot, { isLoading }] = useAskCopilotMutation();
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].sender === 'assistant') {
+        return [{ ...prev[0], text: t('copilot.welcome') }];
+      }
+      return prev;
+    });
+  }, [locale, t]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,8 +105,8 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
     setInput('');
 
     try {
-      // 2. Call backend Copilot API with abort handle
-      const query = askCopilot({ companyId, question: userMsgText });
+      // 2. Call backend Copilot API with locale & abort handle
+      const query = askCopilot({ companyId, question: userMsgText, locale });
       activeQueryRef.current = query;
       const res = await query.unwrap();
       activeQueryRef.current = null;
@@ -116,7 +129,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           {
             id: `abort-${Date.now()}`,
             sender: 'assistant',
-            text: '⏹️ *Generación de respuesta detenida por el usuario.*',
+            text: locale === 'en' ? '⏹️ *Response generation stopped by user.*' : '⏹️ *Generación de respuesta detenida por el usuario.*',
             timestamp: new Date(),
           },
         ]);
@@ -126,7 +139,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           {
             id: `err-${Date.now()}`,
             sender: 'assistant',
-            text: '⚠️ Ocurrió un error al procesar tu pregunta. Por favor verifica que tu clave de Gemini esté activa o intenta de nuevo.',
+            text: locale === 'en' ? '⚠️ An error occurred while processing your question. Please check your connection or try again.' : '⚠️ Ocurrió un error al procesar tu pregunta. Por favor verifica que tu clave de Gemini esté activa o intenta de nuevo.',
             timestamp: new Date(),
           },
         ]);
@@ -142,12 +155,12 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
   }
 
   function handleClearChat() {
-    if (confirm('¿Deseas reiniciar la conversación?')) {
+    if (confirm(t('copilot.clearConfirm'))) {
       setMessages([
         {
           id: 'welcome',
           sender: 'assistant',
-          text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio (ingresos, gastos y balances). ¿En qué te puedo colaborar hoy?',
+          text: t('copilot.welcome'),
           timestamp: new Date(),
         },
       ]);
@@ -160,10 +173,10 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
         <div>
           <CardTitle className="text-md font-bold flex items-center gap-2 text-foreground">
             <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-pulse" />
-            Asistente Fiscal y Financiero
+            {t('copilot.title')}
           </CardTitle>
           <CardDescription className="text-xs">
-            Asesor inteligente RAG con leyes de la DGII e información contable de tu negocio.
+            {t('copilot.subtitle')}
           </CardDescription>
         </div>
         <Button 
@@ -171,10 +184,10 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           size="sm" 
           onClick={handleClearChat}
           className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 gap-1.5"
-          title="Reiniciar chat"
+          title={t('copilot.clearHistory')}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          Limpiar
+          {t('common.close')}
         </Button>
       </CardHeader>
       
@@ -217,7 +230,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
             </div>
             <div className="bg-card border rounded-2xl rounded-tl-none px-4 py-2.5 text-xs text-muted-foreground flex items-center gap-2 shadow-2xs">
               <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
-              <span>Consultando fuentes y analizando datos contables...</span>
+              <span>{t('copilot.analyzing')}</span>
             </div>
           </div>
         )}
@@ -227,9 +240,11 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
       <div className="p-4 bg-white dark:bg-card border-t shrink-0 space-y-3">
         {messages.length === 1 && (
           <div className="space-y-2">
-            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">Sugerencias rápidas:</span>
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+              {locale === 'en' ? 'Quick Suggestions:' : 'Sugerencias rápidas:'}
+            </span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {QUICK_PROMPTS.map((prompt, idx) => {
+              {quickPrompts.map((prompt, idx) => {
                 const Icon = prompt.icon;
                 return (
                   <button
@@ -259,7 +274,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Haz una consulta fiscal (ej: retención ITBIS) o financiera (ej: mis gastos de nómina)..."
+            placeholder={t('copilot.placeholder')}
             disabled={isLoading}
             className="flex-1 text-xs h-9 bg-slate-50 dark:bg-slate-900 focus-visible:ring-indigo-600"
           />
@@ -268,10 +283,10 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
               type="button" 
               onClick={handleStopGenerating}
               className="bg-rose-600 hover:bg-rose-700 text-white h-9 px-4 text-xs gap-1.5 shadow-2xs font-semibold animate-in fade-in"
-              title="Detener respuesta de la IA"
+              title={t('copilot.stop')}
             >
               <Square className="w-3.5 h-3.5 fill-current" />
-              Detener
+              {t('copilot.stop')}
             </Button>
           ) : (
             <Button 
@@ -280,7 +295,7 @@ export default function TaxCopilotView({ companyId }: { companyId: string }) {
               className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 px-4 text-xs gap-1.5 transition-all"
             >
               <Send className="w-3.5 h-3.5" />
-              Enviar
+              {t('common.query')}
             </Button>
           )}
         </form>

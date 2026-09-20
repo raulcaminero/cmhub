@@ -23,6 +23,8 @@ import {
   Square
 } from 'lucide-react';
 
+import { useTranslation } from '@/lib/use-translation';
+
 interface Message {
   id: string;
   sender: 'user' | 'assistant';
@@ -30,32 +32,33 @@ interface Message {
   timestamp: Date;
 }
 
-const QUICK_PROMPTS = [
-  {
-    icon: TrendingUp,
-    label: 'Resumen de Ingresos',
-    text: '¿Podrías darme un resumen de los ingresos y gastos registrados en el mes actual?',
-  },
-  {
-    icon: Landmark,
-    label: 'Bancos',
-    text: '¿Cuáles son los saldos actuales en libros de nuestras cuentas de banco y caja?',
-  },
-  {
-    icon: FileText,
-    label: 'Retención ITBIS',
-    text: '¿Cuál es la tasa de retención del ITBIS aplicable cuando contratamos servicios profesionales a personas físicas?',
-  },
-  {
-    icon: HelpCircle,
-    label: 'RST DGII',
-    text: '¿Qué requisitos y beneficios tiene el Régimen Simplificado de Tributación (RST) de la DGII?',
-  },
-];
-
 export function CopilotFloatingWidget() {
+  const { t, locale } = useTranslation();
   const activeCompany = useAppSelector((state) => state.company.active);
   const companyId = activeCompany?.id;
+
+  const quickPrompts = [
+    {
+      icon: TrendingUp,
+      label: t('copilot.quickPrompts.revenue'),
+      text: t('copilot.quickPrompts.revenueText'),
+    },
+    {
+      icon: Landmark,
+      label: t('copilot.quickPrompts.banks'),
+      text: t('copilot.quickPrompts.banksText'),
+    },
+    {
+      icon: FileText,
+      label: t('copilot.quickPrompts.withholding'),
+      text: t('copilot.quickPrompts.withholdingText'),
+    },
+    {
+      icon: HelpCircle,
+      label: t('copilot.quickPrompts.rst'),
+      text: t('copilot.quickPrompts.rstText'),
+    },
+  ];
 
   const [isOpen, setIsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -63,7 +66,7 @@ export function CopilotFloatingWidget() {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: '¡Hola! Soy tu **Asistente Fiscal y Financiero de CMHub**. Puedo ayudarte a responder dudas sobre retenciones e impuestos dominicanos (DGII) o darte un resumen financiero de tu negocio en tiempo real. ¿En qué te puedo colaborar hoy?',
+      text: t('copilot.welcome'),
       timestamp: new Date(),
     },
   ]);
@@ -72,6 +75,15 @@ export function CopilotFloatingWidget() {
   const activeQueryRef = useRef<any>(null);
   
   const [askCopilot, { isLoading }] = useAskCopilotMutation();
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].sender === 'assistant') {
+        return [{ ...prev[0], text: t('copilot.welcome') }];
+      }
+      return prev;
+    });
+  }, [locale, t]);
 
   // Listen for custom global event to toggle Copilot widget (e.g. from Header button)
   useEffect(() => {
@@ -111,8 +123,8 @@ export function CopilotFloatingWidget() {
     setInput('');
 
     try {
-      // 2. Call backend Copilot API with abort handle
-      const query = askCopilot({ companyId, question: userMsgText });
+      // 2. Call backend Copilot API with locale & abort handle
+      const query = askCopilot({ companyId, question: userMsgText, locale });
       activeQueryRef.current = query;
       const res = await query.unwrap();
       activeQueryRef.current = null;
@@ -135,7 +147,7 @@ export function CopilotFloatingWidget() {
           {
             id: `abort-${Date.now()}`,
             sender: 'assistant',
-            text: '⏹️ *Generación de respuesta detenida por el usuario.*',
+            text: locale === 'en' ? '⏹️ *Response generation stopped by user.*' : '⏹️ *Generación de respuesta detenida por el usuario.*',
             timestamp: new Date(),
           },
         ]);
@@ -145,7 +157,7 @@ export function CopilotFloatingWidget() {
           {
             id: `err-${Date.now()}`,
             sender: 'assistant',
-            text: '⚠️ **Ocurrió un error al consultar al Asistente.** Por favor verifica tu conexión o intenta nuevamente.',
+            text: locale === 'en' ? '⚠️ **An error occurred while asking the Assistant.** Please check your connection or try again.' : '⚠️ **Ocurrió un error al consultar al Asistente.** Por favor verifica tu conexión o intenta nuevamente.',
             timestamp: new Date(),
           },
         ]);
@@ -165,7 +177,7 @@ export function CopilotFloatingWidget() {
       {
         id: 'welcome-reset',
         sender: 'assistant',
-        text: 'Historial reiniciado. ¿En qué más puedo ayudarte?',
+        text: t('copilot.welcome'),
         timestamp: new Date(),
       },
     ]);
@@ -216,10 +228,10 @@ export function CopilotFloatingWidget() {
               </div>
               <div>
                 <h3 className="font-bold text-sm leading-tight flex items-center gap-1.5 text-white">
-                  Asistente Fiscal & Financiero
+                  {t('copilot.title')}
                   <span className="text-[10px] bg-indigo-500/30 text-indigo-200 px-1.5 py-0.5 rounded-full border border-indigo-400/20 font-medium">IA</span>
                 </h3>
-                <p className="text-[11px] text-indigo-200/80">Leyes DGII + Datos de tu negocio en tiempo real</p>
+                <p className="text-[11px] text-indigo-200/80">{t('copilot.subtitle')}</p>
               </div>
             </div>
             
@@ -233,14 +245,14 @@ export function CopilotFloatingWidget() {
               </button>
               <button
                 onClick={handleClearHistory}
-                title="Limpiar conversación"
+                title={t('copilot.clearHistory')}
                 className="p-1.5 text-indigo-200/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                title="Cerrar"
+                title={t('common.close')}
                 className="p-1.5 text-indigo-200/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -250,7 +262,7 @@ export function CopilotFloatingWidget() {
 
           {!companyId ? (
             <div className="flex-1 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
-              Por favor selecciona una empresa activa para consultar al Asistente IA.
+              {t('common.selectCompany')}
             </div>
           ) : (
             <>
@@ -304,7 +316,7 @@ export function CopilotFloatingWidget() {
                     </div>
                     <div className="bg-card border rounded-2xl rounded-bl-none p-3 shadow-sm flex items-center gap-2 text-xs text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                      Analizando leyes DGII y datos financieros...
+                      {t('copilot.analyzing')}
                     </div>
                   </div>
                 )}
@@ -314,7 +326,7 @@ export function CopilotFloatingWidget() {
               {/* Quick Prompt Pills */}
               {messages.length <= 2 && (
                 <div className="px-3 py-2 border-t bg-card flex gap-1.5 overflow-x-auto scrollbar-none">
-                  {QUICK_PROMPTS.map((prompt, idx) => {
+                  {quickPrompts.map((prompt, idx) => {
                     const Icon = prompt.icon;
                     return (
                       <button
@@ -341,7 +353,7 @@ export function CopilotFloatingWidget() {
                   className="flex items-center gap-2"
                 >
                   <Input
-                    placeholder="Haz una pregunta financiera o fiscal..."
+                    placeholder={t('copilot.placeholder')}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     disabled={isLoading}
@@ -352,10 +364,10 @@ export function CopilotFloatingWidget() {
                       type="button"
                       onClick={handleStopGenerating}
                       className="h-10 px-3 rounded-xl shrink-0 bg-rose-600 hover:bg-rose-700 text-white text-xs gap-1 font-semibold animate-in fade-in"
-                      title="Detener respuesta de la IA"
+                      title={t('copilot.stop')}
                     >
                       <Square className="w-3.5 h-3.5 fill-current" />
-                      Detener
+                      {t('copilot.stop')}
                     </Button>
                   ) : (
                     <Button

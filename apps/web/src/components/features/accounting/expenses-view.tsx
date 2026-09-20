@@ -46,7 +46,10 @@ const PAYMENT_METHODS = [
   { code: '07', label: '07 - Mixto' },
 ];
 
+import { useTranslation } from '@/lib/use-translation';
+
 export function ExpensesView() {
+  const { t } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
   const [mounted, setMounted] = useState(false);
   const formatCurrency = useCurrency();
@@ -505,7 +508,7 @@ export function ExpensesView() {
           disabled={!expenses || expenses.length === 0}
         >
           <Download className="w-3.5 h-3.5" />
-          Exportar CSV (606)
+          {t('reports.exportCsv') || 'Exportar CSV (606)'}
         </Button>
         <Button
           size="sm"
@@ -513,11 +516,11 @@ export function ExpensesView() {
           onClick={() => setIsExcelOpen(true)}
         >
           <Upload className="w-3.5 h-3.5" />
-          Importar / Escanear Facturas
+          {t('expensesView.importExcel')}
         </Button>
         <Button size="sm" className="gap-2 text-xs font-semibold shadow-xs" onClick={() => setIsOpen(true)}>
           <Plus className="w-3.5 h-3.5" />
-          Nuevo Gasto
+          {t('expensesView.newExpense')}
         </Button>
         </div>
       </div>

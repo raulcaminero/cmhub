@@ -32,14 +32,20 @@ export class TaxCopilotService {
     return true;
   }
 
-  async askCopilot(companyId: string, question: string, userId: string): Promise<string> {
+  async askCopilot(companyId: string, question: string, userId: string, locale?: string): Promise<string> {
+    const isEnglish = locale === 'en' || (locale && locale.startsWith('en'));
+
     if (!this.checkSafeguards(userId)) {
-      return '⚠️ Has alcanzado el límite de 50 consultas diarias con tu Asistente Financiero para esta cuenta de prueba. El límite se restablecerá mañana.';
+      return isEnglish
+        ? '⚠️ You have reached the daily limit of 50 queries with your Financial AI Assistant for this trial account. The limit resets tomorrow.'
+        : '⚠️ Has alcanzado el límite de 50 consultas diarias con tu Asistente Financiero para esta cuenta de prueba. El límite se restablecerá mañana.';
     }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      return '⚠️ El Asistente Fiscal no está activo. Configure la variable `GEMINI_API_KEY` para iniciar el chat con inteligencia artificial.';
+      return isEnglish
+        ? '⚠️ The Tax AI Assistant is inactive. Please configure `GEMINI_API_KEY` to enable AI chat.'
+        : '⚠️ El Asistente Fiscal no está activo. Configure la variable `GEMINI_API_KEY` para iniciar el chat con inteligencia artificial.';
     }
 
     try {
@@ -53,6 +59,9 @@ export class TaxCopilotService {
         lowercaseQuestion.includes('ncf') ||
         lowercaseQuestion.includes('dgii') ||
         lowercaseQuestion.includes('retencion') ||
+        lowercaseQuestion.includes('withholding') ||
+        lowercaseQuestion.includes('tax') ||
+        lowercaseQuestion.includes('vat') ||
         lowercaseQuestion.includes('606') ||
         lowercaseQuestion.includes('607') ||
         lowercaseQuestion.includes('impuesto') ||
@@ -76,8 +85,12 @@ export class TaxCopilotService {
         ? `Empresa activa: ${company.name} (RNC: ${company.rnc}). `
         : '';
 
+      const langInstruction = isEnglish
+        ? 'CRITICAL LANGUAGE RULE: The user interface is set to ENGLISH. You MUST write your entire response in clear, professional English. Translate account names, status labels, and financial explanations to English while keeping Dominican tax terms (DGII, ITBIS, ISR, NCF, RNC) clear in context.'
+        : 'Responde preguntas de contabilidad, impuestos y finanzas de forma profesional, clara y amigable en español.';
+
       const systemPrompt = `Eres el Asistente Fiscal y Financiero experto para la República Dominicana integrado en el software ERP CMHub.
-Responde preguntas de contabilidad, impuestos y finanzas de forma profesional, clara y amigable en español.
+${langInstruction}
 IMPORTANTE: NO repitas el saludo ni tu nombre en cada mensaje. No digas "¡Hola! Soy el Asistente..." a menos que sea estrictamente necesario. Ve directo al grano y a la respuesta de forma conversacional.
 ${companyContext}
 Cuando te pregunten sobre las finanzas (ingresos, gastos o bancos), debes utilizar obligatoriamente las herramientas (functions) provistas. No intentes adivinar o inventar cifras.

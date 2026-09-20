@@ -144,7 +144,7 @@ function AccountingContent() {
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          Gastos y Compras (606)
+          {t('accounting.expensesTab')}
         </button>
         <button
           onClick={() => changeTab('payroll')}
