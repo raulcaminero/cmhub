@@ -30,12 +30,19 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   function handleLogout() {
     dispatch(logout());
-    router.push('/login' as any);
+    window.location.href = '/login';
   }
 
   function navigateTo(tab: string) {
     setDropdownOpen(false);
-    router.push(`/cmhub/settings?tab=${tab}` as any);
+    const targetUrl = `/cmhub/settings?tab=${tab}`;
+    router.push(targetUrl as any);
+    // Fallback: if router.push silently fails, force navigation after 300ms
+    setTimeout(() => {
+      if (!window.location.pathname.startsWith('/cmhub/settings')) {
+        window.location.href = targetUrl;
+      }
+    }, 300);
   }
 
   const initials = profile

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
 import {
@@ -18,19 +18,24 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getStoredTabForPath } from '@/hooks/use-tab-memory';
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { t } = useTranslation();
   const { showTaxModule, showNcfModule } = useModules();
   const [mounted, setMounted] = useState(false);
+  const lastClickRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // When pathname changes, clear any pending fallback
+  useEffect(() => {
+    lastClickRef.current = null;
+  }, [pathname]);
 
   const NAV_ITEMS = [
     { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
@@ -42,15 +47,10 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
   ];
 
-  const getTargetHref = (baseHref: string) => {
-    if (!mounted || baseHref === '/cmhub') return baseHref;
-    const storedTab = getStoredTabForPath(baseHref);
-    return storedTab ? `${baseHref}?tab=${storedTab}` : baseHref;
-  };
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    console.log(`[Sidebar] Navigating to: ${href}, Current pathname: ${pathname}`);
+  // Let <Link> handle navigation naturally (NO e.preventDefault).
+  // Add a fallback: if client-side nav silently fails after 400ms, force a hard navigation.
+  const handleNavClick = (href: string) => {
+    console.log(`[Sidebar] Nav click → ${href} (from ${pathname})`);
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.setItem('cmhub_nav_from_sidebar', 'true');
@@ -59,7 +59,17 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     if (onClose) {
       onClose();
     }
-    router.push(href as any);
+
+    // Safety-net: if Link's client-side navigation silently fails,
+    // force a full page navigation after 400ms.
+    const targetPath = href.split('?')[0];
+    lastClickRef.current = targetPath;
+    setTimeout(() => {
+      if (lastClickRef.current === targetPath && window.location.pathname !== targetPath) {
+        console.warn('[Sidebar] Client-side navigation failed, forcing page reload');
+        window.location.href = href;
+      }
+    }, 400);
   };
 
   return (
@@ -79,12 +89,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <nav className="flex-1 px-2.5 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            const targetHref = getTargetHref(item.href);
             return (
               <Link
                 key={item.href}
-                href={targetHref as any}
-                onClick={(e) => handleNavClick(e, targetHref as string)}
+                href={item.href}
+                onClick={() => handleNavClick(item.href)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
@@ -140,12 +149,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <nav className="flex-1 px-2.5 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            const targetHref = getTargetHref(item.href);
             return (
               <Link
                 key={item.href}
-                href={targetHref as any}
-                onClick={(e) => handleNavClick(e, targetHref as string)}
+                href={item.href}
+                onClick={() => handleNavClick(item.href)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
                   isActive
@@ -166,4 +174,3 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     </>
   );
 }
-
