@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
-import { useTransition, useState } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   BookOpen,
