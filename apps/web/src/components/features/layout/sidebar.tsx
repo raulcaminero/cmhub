@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
@@ -49,12 +50,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
-                onClick={(e) => { e.preventDefault(); window.location.href = item.href; }}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all ',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
@@ -65,7 +65,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
                   {item.label}
                 </span>
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -110,12 +110,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
-                onClick={(e) => { e.preventDefault(); onClose?.(); window.location.href = item.href; }}
+                onClick={onClose}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all ',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
@@ -126,7 +126,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 <span className="whitespace-nowrap overflow-hidden">
                   {item.label}
                 </span>
-              </a>
+              </Link>
             );
           })}
         </nav>

@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getCookie } from '@/lib/cookies';
 
-interface AuthState {
+export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
@@ -12,13 +11,12 @@ interface Credentials {
   refreshToken: string;
 }
 
-const initialAccessToken = getCookie('accessToken');
-const initialRefreshToken = getCookie('refreshToken');
-
+// NOTE: no cookie reads here. Initial auth state is provided by the server
+// (see app/layout.tsx -> Providers -> makeStore) so SSR and client render identically.
 const initialState: AuthState = {
-  accessToken: initialAccessToken,
-  refreshToken: initialRefreshToken,
-  isAuthenticated: !!initialAccessToken,
+  accessToken: null,
+  refreshToken: null,
+  isAuthenticated: false,
 };
 
 const authSlice = createSlice({

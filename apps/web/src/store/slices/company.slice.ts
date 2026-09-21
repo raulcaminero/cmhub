@@ -1,24 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getCookie } from '@/lib/cookies';
 import type { Company } from '@cmhub/shared-types';
 
-interface CompanyState {
+export interface CompanyState {
   active: Company | null;
   list: Company[];
 }
 
-const getActiveCompanyFromCookie = (): Company | null => {
-  const cookieVal = getCookie('activeCompany');
-  if (!cookieVal) return null;
-  try {
-    return JSON.parse(decodeURIComponent(cookieVal));
-  } catch (e) {
-    return null;
-  }
-};
-
+// NOTE: no cookie reads here. Initial company state is provided by the server
+// (see app/layout.tsx -> Providers -> makeStore) so SSR and client render identically.
 const initialState: CompanyState = {
-  active: getActiveCompanyFromCookie(),
+  active: null,
   list: [],
 };
 
