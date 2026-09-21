@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
@@ -16,6 +15,11 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+function navigate(href: string) {
+  console.log('[sidebar] navigating to', href);
+  window.location.href = href;
+}
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
@@ -50,11 +54,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
+                onClick={(e) => { e.preventDefault(); navigate(item.href); }}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
@@ -65,7 +70,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
                   {item.label}
                 </span>
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -110,12 +115,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
+                onClick={(e) => { e.preventDefault(); onClose?.(); navigate(item.href); }}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
@@ -126,7 +131,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
                 <span className="whitespace-nowrap overflow-hidden">
                   {item.label}
                 </span>
-              </Link>
+              </a>
             );
           })}
         </nav>
