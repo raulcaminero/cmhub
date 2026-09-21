@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Search, UserCheck, Check, Plus, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Contact } from '@/services/contacts.api';
+import { useTranslation } from '@/lib/use-translation';
 
 interface ClientAutocompleteProps {
   contacts: Contact[] | undefined;
@@ -23,6 +24,7 @@ export function ClientAutocomplete({
   onRncChange,
   onNameChange,
 }: ClientAutocompleteProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState(clientRnc || clientName || '');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,7 +84,7 @@ export function ClientAutocomplete({
       <div className="relative flex items-center">
         <Search className="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
         <Input
-          placeholder="Buscar por RNC, Cédula o Nombre del Cliente..."
+          placeholder={t('sales.searchClientPlaceholder')}
           value={search}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
@@ -96,7 +98,7 @@ export function ClientAutocomplete({
           {filtered.length > 0 ? (
             <div className="space-y-0.5">
               <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Clientes Registrados ({filtered.length})
+                {t('sales.registeredClients', { count: filtered.length })}
               </div>
               {filtered.map((c) => {
                 const isSelected = c.rnc === clientRnc;
@@ -119,7 +121,7 @@ export function ClientAutocomplete({
                       <div className="truncate">
                         <p className="font-semibold text-xs text-foreground truncate">{c.name}</p>
                         <p className="text-[11px] text-muted-foreground font-mono">
-                          RNC/Cédula: <span className="text-foreground font-medium">{c.rnc || 'Sin RNC'}</span>
+                          RNC/Cédula: <span className="text-foreground font-medium">{c.rnc || t('sales.noRnc')}</span>
                         </p>
                       </div>
                     </div>
@@ -131,10 +133,10 @@ export function ClientAutocomplete({
           ) : (
             <div className="py-4 px-3 text-center space-y-2">
               <p className="text-xs text-muted-foreground">
-                No se encontraron clientes con "<span className="font-semibold text-foreground">{search}</span>"
+                {t('sales.noClientsFound', { search })}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                Puedes completar los campos de RNC y Nombre manualmente arriba.
+                {t('sales.fillManually')}
               </p>
             </div>
           )}

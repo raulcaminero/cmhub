@@ -77,12 +77,12 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim()) {
-      setFormError('El nombre del cliente es obligatorio.');
+      setFormError(t('sales.quotationClientRequired'));
       return;
     }
     const validLines = lines.filter((l) => l.description.trim() && l.unitPrice > 0);
     if (validLines.length === 0) {
-      setFormError('Debes ingresar al menos una línea válida con descripción y precio.');
+      setFormError(t('sales.quotationLineRequired'));
       return;
     }
 
@@ -108,22 +108,22 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
       }).unwrap();
       setIsModalOpen(false);
     } catch (err: any) {
-      setFormError(err.data?.message || 'Error al crear la cotización.');
+      setFormError(err.data?.message || t('sales.quotationCreateError'));
     }
   };
 
   const getStatusBadge = (status: Quotation['status']) => {
     switch (status) {
       case 'DRAFT':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">BORRADOR</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{t('sales.draft').toUpperCase()}</span>;
       case 'SENT':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/20 dark:text-blue-400">ENVIADA</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/20 dark:text-blue-400">{t('sales.sent').toUpperCase()}</span>;
       case 'ACCEPTED':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400">ACEPTADA</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400">{t('sales.accepted').toUpperCase()}</span>;
       case 'REJECTED':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-400">RECHAZADA</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/20 dark:text-rose-400">{t('sales.rejected').toUpperCase()}</span>;
       case 'CONVERTED':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/20 dark:text-purple-400">FACTURADA</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/20 dark:text-purple-400">{t('sales.converted').toUpperCase()}</span>;
       default:
         return null;
     }
@@ -181,10 +181,10 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
                               onChange={(e) => updateStatus({ companyId, id: quot.id, status: e.target.value as any })}
                               className="text-[11px] h-7 border rounded bg-background px-2 font-medium text-foreground"
                             >
-                              <option value="DRAFT">Borrador</option>
-                              <option value="SENT">Enviada</option>
-                              <option value="ACCEPTED">Aceptada</option>
-                              <option value="REJECTED">Rechazada</option>
+                              <option value="DRAFT">{t('sales.draft')}</option>
+                              <option value="SENT">{t('sales.sent')}</option>
+                              <option value="ACCEPTED">{t('sales.accepted')}</option>
+                              <option value="REJECTED">{t('sales.rejected')}</option>
                             </select>
                             {onConvertQuotationToInvoice && (
                               <Button
@@ -192,7 +192,7 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
                                 onClick={() => onConvertQuotationToInvoice(quot)}
                                 className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
                               >
-                                Convertir a Factura <ArrowRight className="w-3 h-3" />
+                                {t('sales.convertToInvoice')} <ArrowRight className="w-3 h-3" />
                               </Button>
                             )}
                           </>
@@ -217,7 +217,7 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
 
             <div className="pr-6 mb-4 border-b pb-3 shrink-0">
@@ -226,14 +226,14 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
                 {t('sales.createQuotationTitle')}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Crea un presupuesto o cotización formal para enviar a tus clientes.
+                {t('sales.quotationSubtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="overflow-y-auto space-y-3 text-xs pr-1 flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-muted-foreground">Nombre / Razón Social Cliente *</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">{t('sales.clientNameRequired')}</Label>
                   <Input
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
@@ -243,7 +243,7 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-muted-foreground">RNC / Cédula Cliente (Opcional)</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">{t('sales.rncOptional')}</Label>
                   <Input
                     value={clientRnc}
                     onChange={(e) => setClientRnc(e.target.value)}
@@ -258,7 +258,7 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t pt-3">
                 <div className="space-y-1">
-                  <Label htmlFor="validUntilDate" className="text-xs font-semibold text-muted-foreground">Válida Hasta (Opcional)</Label>
+                  <Label htmlFor="validUntilDate" className="text-xs font-semibold text-muted-foreground">{t('sales.validUntilOptional')}</Label>
                   <div className="relative flex items-center">
                     <Input
                       id="validUntilDate"
@@ -277,14 +277,14 @@ export default function QuotationsView({ companyId, externalOpenModal, onCloseEx
                         input?.showPicker?.();
                       }}
                       className="absolute right-2.5 text-muted-foreground hover:text-primary p-0.5 rounded transition-colors"
-                      title="Seleccionar fecha del calendario"
+                      title={t('sales.validUntilOptional')}
                     >
                       <Calendar className="w-4 h-4 text-primary" />
                     </button>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-muted-foreground">Notas o Términos (Opcional)</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">{t('sales.notesOptional')}</Label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
