@@ -76,10 +76,15 @@ export function CopilotFloatingWidget() {
   
   const [askCopilot, { isLoading }] = useAskCopilotMutation();
 
+  // Re-translate the welcome message when the language changes.
+  // Must return `prev` (same reference) when nothing changed, otherwise this
+  // setState re-renders -> effect -> setState forever.
   useEffect(() => {
     setMessages((prev) => {
       if (prev.length === 1 && prev[0].sender === 'assistant') {
-        return [{ ...prev[0], text: t('copilot.welcome') }];
+        const text = t('copilot.welcome');
+        if (prev[0].text === text) return prev;
+        return [{ ...prev[0], text }];
       }
       return prev;
     });
