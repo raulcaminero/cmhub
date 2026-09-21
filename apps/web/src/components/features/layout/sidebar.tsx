@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslation } from '@/lib/use-translation';
 import { useModules } from '@/hooks/use-company';
 import {
@@ -18,7 +18,6 @@ import { cn } from '@/lib/utils';
 
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { t } = useTranslation();
   const { showTaxModule } = useModules();
 
@@ -53,10 +52,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <a
                 key={item.href}
                 href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push(item.href);
-                }}
+                onClick={(e) => { e.preventDefault(); window.location.href = item.href; }}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
                   isActive
@@ -117,11 +113,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
               <a
                 key={item.href}
                 href={item.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onClose?.();
-                  router.push(item.href);
-                }}
+                onClick={(e) => { e.preventDefault(); onClose?.(); window.location.href = item.href; }}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
                   isActive
