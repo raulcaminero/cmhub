@@ -508,7 +508,7 @@ export function ExpensesView() {
           disabled={!expenses || expenses.length === 0}
         >
           <Download className="w-3.5 h-3.5" />
-          {t('reports.exportCsv') || 'Exportar CSV (606)'}
+          {t('common.exportCsv')}
         </Button>
         <Button
           size="sm"
