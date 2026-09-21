@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { Providers } from '@/components/providers';
 import type { PreloadedAppState } from '@/store';
+import { LANG_COOKIE } from '@/store/slices/ui.slice';
 import type { Company } from '@cmhub/shared-types';
 import './globals.css';
 
@@ -28,6 +29,7 @@ async function getPreloadedState(): Promise<PreloadedAppState> {
   return {
     auth: { accessToken, refreshToken, isAuthenticated: !!accessToken },
     company: { active: activeCompany, list: [] },
+    ui: { language: jar.get(LANG_COOKIE)?.value === 'en' ? 'en' : 'es' },
   };
 }
 

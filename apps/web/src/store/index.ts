@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { api } from '@/services/api';
 import { authReducer, type AuthState } from './slices/auth.slice';
 import { companyReducer, type CompanyState } from './slices/company.slice';
-import uiReducer from './slices/ui.slice';
+import uiReducer, { type UiState } from './slices/ui.slice';
 import { cookieMiddleware } from './middleware/cookie.middleware';
 
 const rootReducer = combineReducers({
@@ -17,6 +17,7 @@ export type RootState = ReturnType<typeof rootReducer>;
 export interface PreloadedAppState {
   auth?: AuthState;
   company?: CompanyState;
+  ui?: UiState;
 }
 
 /**
