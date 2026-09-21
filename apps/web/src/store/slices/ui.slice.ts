@@ -6,8 +6,10 @@ interface UiState {
   language: Language;
 }
 
+const savedLang = typeof window !== 'undefined' ? localStorage.getItem('cmhub_lang') : null;
+
 const initialState: UiState = {
-  language: 'es',
+  language: savedLang === 'en' ? 'en' : 'es',
 };
 
 export const uiSlice = createSlice({
