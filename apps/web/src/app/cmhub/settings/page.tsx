@@ -82,10 +82,10 @@ function SettingsContent() {
         companyId: activeCompany.id,
         body: { lockDate: lockDate || null },
       }).unwrap();
-      setLockSuccess(lockDate ? 'Período contable bloqueado exitosamente.' : 'Período contable desbloqueado exitosamente.');
+      setLockSuccess(lockDate ? t('settings.periodLocked') : t('settings.periodUnlocked'));
       setTimeout(() => setLockSuccess(''), 3000);
     } catch (err: any) {
-      setLockError(err.data?.message || 'Error al actualizar el bloqueo de período.');
+      setLockError(err.data?.message || t('settings.periodLockError'));
     }
   }
 
@@ -109,12 +109,12 @@ function SettingsContent() {
     setPassError('');
 
     if (newPassword !== confirmPassword) {
-      setPassError('La nueva contraseña y su confirmación no coinciden.');
+      setPassError(t('settings.passwordMismatch'));
       return;
     }
 
     if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
-      setPassError('La nueva contraseña debe tener al menos 8 caracteres, incluir números y mayúsculas.');
+      setPassError(t('settings.passwordWeakError'));
       return;
     }
 
@@ -126,7 +126,7 @@ function SettingsContent() {
       setConfirmPassword('');
       setTimeout(() => setPassSuccess(''), 4000);
     } catch (err: any) {
-      setPassError(err.data?.message || 'Error al cambiar la contraseña. Verifica tu clave actual.');
+      setPassError(err.data?.message || t('settings.passwordChangeError'));
     }
   }
 
@@ -196,10 +196,10 @@ function SettingsContent() {
     try {
       const body: UpdateProfileRequest = { firstName: profFirstName, lastName: profLastName, email: profEmail };
       await updateProfile(body).unwrap();
-      setProfSuccess('Perfil actualizado correctamente.');
+      setProfSuccess(t('settings.profUpdated'));
       setTimeout(() => setProfSuccess(''), 3000);
     } catch (err: any) {
-      setProfError(err.data?.message || 'Error al actualizar el perfil.');
+      setProfError(err.data?.message || t('settings.profUpdateError'));
     }
   }
 
@@ -220,7 +220,7 @@ function SettingsContent() {
 
     const cleanRnc = compRnc.replace(/\D/g, '');
     if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
-      setCompError('El RNC debe tener 9 o 11 dígitos');
+      setCompError(t('settings.rncLengthError'));
       return;
     }
 
@@ -250,10 +250,10 @@ function SettingsContent() {
       }).unwrap();
 
       dispatch(setActiveCompany(updated));
-      setCompSuccess('Datos de la empresa actualizados correctamente');
+      setCompSuccess(t('settings.compUpdated'));
       setTimeout(() => setCompSuccess(''), 3000);
     } catch (err: any) {
-      setCompError(err.data?.message || 'Error al actualizar los datos de la empresa. Verifica que el RNC sea único.');
+      setCompError(err.data?.message || t('settings.compUpdateError'));
     }
   }
 
@@ -264,7 +264,7 @@ function SettingsContent() {
 
     const cleanRnc = newRnc.replace(/\D/g, '');
     if (cleanRnc.length !== 9 && cleanRnc.length !== 11) {
-      setNewError('El RNC debe tener 9 o 11 dígitos');
+      setNewError(t('settings.rncLengthError'));
       return;
     }
 
@@ -293,10 +293,10 @@ function SettingsContent() {
       setNewPhone('');
       setNewEmail('');
 
-      setNewSuccess('Nueva empresa registrada y activada correctamente');
+      setNewSuccess(t('settings.newCompCreated'));
       setTimeout(() => setNewSuccess(''), 3000);
     } catch (err: any) {
-      setNewError(err.data?.message || 'Error al registrar la empresa. Verifica que el RNC sea único.');
+      setNewError(err.data?.message || t('settings.newCompError'));
     }
   }
 
@@ -324,7 +324,7 @@ function SettingsContent() {
           }`}
         >
           <User className="w-3.5 h-3.5" />
-          Mi Perfil
+          {t('settings.profileTab')}
         </button>
         <button
           onClick={() => changeTab('company')}
@@ -368,7 +368,7 @@ function SettingsContent() {
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          Equipo y Accesos
+          {t('settings.teamTab')}
         </button>
         <button
           onClick={() => changeTab('accounts')}
@@ -401,7 +401,7 @@ function SettingsContent() {
           }`}
         >
           <KeyRound className="w-3.5 h-3.5" />
-          Seguridad
+          {t('settings.securityTab')}
         </button>
       </div>
 
@@ -411,9 +411,9 @@ function SettingsContent() {
             <CardHeader>
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <User className="w-4 h-4 text-primary" />
-                Mi Perfil
+                {t('settings.profileCardTitle')}
               </CardTitle>
-              <CardDescription className="text-[11px] mt-0.5">Actualiza tu nombre, apellido y correo electrónico de acceso.</CardDescription>
+              <CardDescription className="text-[11px] mt-0.5">{t('settings.profileCardDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Avatar display */}
@@ -424,14 +424,14 @@ function SettingsContent() {
                 <div>
                   <p className="font-bold text-sm">{profile?.firstName} {profile?.lastName}</p>
                   <p className="text-xs text-muted-foreground">{profile?.email}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Miembro desde {profile ? new Date(profile.createdAt ?? Date.now()).toLocaleDateString('es-DO', { month: 'long', year: 'numeric' }) : '—'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{t('settings.memberSince', { date: profile ? new Date(profile.createdAt ?? Date.now()).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '—' })}</p>
                 </div>
               </div>
 
               <form onSubmit={handleUpdateProfile} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label htmlFor="prof-firstname" className="text-[11px] font-semibold text-muted-foreground">Nombre *</Label>
+                    <Label htmlFor="prof-firstname" className="text-[11px] font-semibold text-muted-foreground">{t('settings.firstNameLabel')}</Label>
                     <Input
                       id="prof-firstname"
                       value={profFirstName}
@@ -441,7 +441,7 @@ function SettingsContent() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="prof-lastname" className="text-[11px] font-semibold text-muted-foreground">Apellido *</Label>
+                    <Label htmlFor="prof-lastname" className="text-[11px] font-semibold text-muted-foreground">{t('settings.lastNameLabel')}</Label>
                     <Input
                       id="prof-lastname"
                       value={profLastName}
@@ -453,7 +453,7 @@ function SettingsContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="prof-email" className="text-[11px] font-semibold text-muted-foreground">Correo Electrónico *</Label>
+                  <Label htmlFor="prof-email" className="text-[11px] font-semibold text-muted-foreground">{t('settings.emailLabel')}</Label>
                   <Input
                     id="prof-email"
                     type="email"
@@ -469,9 +469,9 @@ function SettingsContent() {
 
                 <div className="flex items-center gap-3 pt-1">
                   <Button type="submit" disabled={isUpdatingProfile} size="sm" className="h-8 text-xs font-semibold shadow-2xs">
-                    {isUpdatingProfile ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...</> : 'Guardar Cambios'}
+                    {isUpdatingProfile ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('common.saving')}</> : t('settings.saveProfileChanges')}
                   </Button>
-                  <p className="text-[11px] text-muted-foreground">Para cambiar la contraseña ve a la pestaña <strong>Seguridad</strong>.</p>
+                  <p className="text-[11px] text-muted-foreground">{t('settings.goToSecurity')}</p>
                 </div>
               </form>
             </CardContent>
@@ -642,34 +642,34 @@ function SettingsContent() {
                 <div className="pt-3 border-t space-y-2.5">
                   <h4 className="text-xs font-bold flex items-center gap-2 text-foreground">
                     <Globe className="w-3.5 h-3.5 text-primary" />
-                    Configuración Fiscal & Módulo Activo
+                    {t('settings.fiscalModuleSection')}
                   </h4>
                   <div className="p-3 rounded-lg border bg-muted/30 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
-                      <span className="text-muted-foreground block text-[11px] font-medium">País de Operación</span>
+                      <span className="text-muted-foreground block text-[11px] font-medium">{t('settings.operatingCountry')}</span>
                       <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 mt-0.5">
-                        {activeCompany?.country === 'US' ? '🇺🇸 Estados Unidos' :
-                         activeCompany?.country === 'MX' ? '🇲🇽 México' :
-                         activeCompany?.country === 'CO' ? '🇨🇴 Colombia' : '🇩🇴 República Dominicana'}
+                        {activeCompany?.country === 'US' ? '🇺🇸' :
+                         activeCompany?.country === 'MX' ? '🇲🇽' :
+                         activeCompany?.country === 'CO' ? '🇨🇴' : '🇩🇴'} {activeCompany?.country || 'DO'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[11px] font-medium">Moneda Principal</span>
+                      <span className="text-muted-foreground block text-[11px] font-medium">{t('settings.mainCurrency')}</span>
                       <span className="font-semibold text-foreground text-xs mt-0.5 block">
                         {activeCompany?.currency || 'DOP'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[11px] font-medium">Módulo Fiscal</span>
+                      <span className="text-muted-foreground block text-[11px] font-medium">{t('settings.fiscalModule')}</span>
                       <span className="font-semibold text-primary text-xs mt-0.5 block">
-                        {activeCompany?.enabledModules?.includes('US_ACCOUNTING') ? 'USA Accounting' :
-                         activeCompany?.enabledModules?.includes('LATAM') ? 'Latinoamérica' :
-                         'Módulo Fiscal RD (DGII)'}
+                        {activeCompany?.enabledModules?.includes('US_ACCOUNTING') ? t('settings.moduleUSA') :
+                         activeCompany?.enabledModules?.includes('LATAM') ? t('settings.moduleLATAM') :
+                         t('settings.moduleRD')}
                       </span>
                     </div>
                   </div>
                   <p className="text-[11px] text-muted-foreground italic">
-                    Nota: Los módulos fiscales y la moneda se asignan automáticamente al registrar la empresa según el país seleccionado.
+                    {t('settings.fiscalNote')}
                   </p>
                 </div>
 
@@ -753,17 +753,17 @@ function SettingsContent() {
                         size="sm"
                         className="h-8 text-xs font-semibold shadow-2xs"
                         onClick={async () => {
-                          if (confirm('¿Estás seguro de que deseas eliminar el bloqueo y reabrir todos los períodos?')) {
+                          if (confirm(t('settings.periodUnlockConfirm'))) {
                             setLockDate('');
                             try {
                               await updatePeriodLock({
                                 companyId: activeCompany.id,
                                 body: { lockDate: null },
                               }).unwrap();
-                              setLockSuccess('Período contable desbloqueado exitosamente.');
+                              setLockSuccess(t('settings.periodUnlocked'));
                               setTimeout(() => setLockSuccess(''), 3000);
                             } catch (err: any) {
-                              setLockError(err.data?.message || 'Error al eliminar el bloqueo.');
+                              setLockError(err.data?.message || t('settings.periodUnlockError'));
                             }
                           }
                         }}
@@ -820,8 +820,8 @@ function SettingsContent() {
                       </CardHeader>
                       <CardContent className="space-y-3 pb-4">
                         <div className="text-xs text-muted-foreground space-y-1">
-                          <p>Régimen: {comp.taxRegime === 'ORDINARIO' ? 'Ordinario' : 'RST (Simplificado)'}</p>
-                          {comp.tradeName && <p>Nombre C.: {comp.tradeName}</p>}
+                          <p>{t('settings.regimeLabel')} {comp.taxRegime === 'ORDINARIO' ? t('settings.ordinaryRegimeShort') : t('settings.rstShort')}</p>
+                          {comp.tradeName && <p>{t('settings.tradeNameShortLabel')} {comp.tradeName}</p>}
                         </div>
                         {!isActive && (
                           <Button
@@ -996,10 +996,10 @@ function SettingsContent() {
             <CardHeader>
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Moon className="w-4 h-4 text-primary" />
-                Tema Visual de la Aplicación
+                {t('settings.themeTitle')}
               </CardTitle>
               <CardDescription className="text-[11px] mt-0.5">
-                Personaliza la apariencia de la plataforma según tus preferencias o la luz del ambiente.
+                {t('settings.themeDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1014,16 +1014,16 @@ function SettingsContent() {
           <CardHeader>
             <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
               <KeyRound className="w-4 h-4 text-primary" />
-              Cambiar Contraseña de Acceso
+              {t('settings.securityCardTitle')}
             </CardTitle>
             <CardDescription className="text-[11px] mt-0.5">
-              Actualiza tu contraseña de usuario de forma segura.
+              {t('settings.securityCardDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
               <div className="space-y-1">
-                <Label htmlFor="current-pass" className="text-[11px] font-semibold text-muted-foreground">Contraseña Actual *</Label>
+                <Label htmlFor="current-pass" className="text-[11px] font-semibold text-muted-foreground">{t('settings.currentPasswordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="current-pass"
@@ -1045,7 +1045,7 @@ function SettingsContent() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="new-pass" className="text-[11px] font-semibold text-muted-foreground">Nueva Contraseña *</Label>
+                <Label htmlFor="new-pass" className="text-[11px] font-semibold text-muted-foreground">{t('settings.newPasswordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="new-pass"
@@ -1071,22 +1071,22 @@ function SettingsContent() {
                 <div className="p-2.5 bg-muted/40 border rounded-md text-[11px] space-y-1 text-muted-foreground">
                   <p className="font-bold text-foreground mb-1 flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-                    Criterios de seguridad:
+                    {t('settings.criteriaTitle')}
                   </p>
                   <div className={newPassword.length >= 8 ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
-                    {newPassword.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                    {newPassword.length >= 8 ? '✓' : '○'} {t('settings.criteria8Chars')}
                   </div>
                   <div className={/\d/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
-                    {/\d/.test(newPassword) ? '✓' : '○'} Al menos un número (0-9)
+                    {/\d/.test(newPassword) ? '✓' : '○'} {t('settings.criteriaNumber')}
                   </div>
                   <div className={/[A-Z]/.test(newPassword) ? 'text-emerald-600 font-semibold' : 'text-muted-foreground'}>
-                    {/[A-Z]/.test(newPassword) ? '✓' : '○'} Al menos una letra mayúscula (A-Z)
+                    {/[A-Z]/.test(newPassword) ? '✓' : '○'} {t('settings.criteriaUppercase')}
                   </div>
                 </div>
               )}
 
               <div className="space-y-1">
-                <Label htmlFor="confirm-pass" className="text-[11px] font-semibold text-muted-foreground">Confirmar Nueva Contraseña *</Label>
+                <Label htmlFor="confirm-pass" className="text-[11px] font-semibold text-muted-foreground">{t('settings.confirmPasswordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="confirm-pass"
@@ -1111,7 +1111,7 @@ function SettingsContent() {
               {passError && <p className="text-xs text-destructive font-bold">{passError}</p>}
 
               <Button type="submit" disabled={isChangingPassword} size="sm" className="h-8 text-xs font-semibold shadow-2xs gap-1.5">
-                {isChangingPassword ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Actualizando...</> : 'Actualizar Contraseña'}
+                {isChangingPassword ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('settings.updatingPassword')}</> : t('settings.updatePassword')}
               </Button>
             </form>
           </CardContent>

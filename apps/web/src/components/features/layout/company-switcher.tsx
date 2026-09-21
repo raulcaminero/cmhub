@@ -6,6 +6,7 @@ import { useGetCompaniesQuery } from '@/services/companies.api';
 import { setActiveCompany, setCompanies } from '@/store/slices/company.slice';
 import { Building2, ChevronDown, Check, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/lib/use-translation';
 
 const getCountryFlag = (country?: string) => {
   switch (country) {
@@ -20,6 +21,7 @@ const getCountryFlag = (country?: string) => {
 };
 
 export function CompanySwitcher() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const activeCompany = useAppSelector((state) => state.company.active);
@@ -59,7 +61,7 @@ export function CompanySwitcher() {
         <div className="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
           <Building2 className="w-4 h-4" />
         </div>
-        <span className="text-xs text-muted-foreground">Cargando...</span>
+        <span className="text-xs text-muted-foreground">{t('common.loading')}</span>
       </div>
     );
   }
@@ -77,9 +79,9 @@ export function CompanySwitcher() {
 
         <div className="text-left min-w-0">
           {isLoading ? (
-            <span className="text-xs text-muted-foreground animate-pulse">Cargando empresas...</span>
+            <span className="text-xs text-muted-foreground animate-pulse">{t('settings.loadingCompanies')}</span>
           ) : !activeCompany ? (
-            <span className="text-sm font-semibold text-muted-foreground">Seleccionar empresa</span>
+            <span className="text-sm font-semibold text-muted-foreground">{t('settings.selectCompanyPlaceholder')}</span>
           ) : (
             <div className="flex items-center gap-1.5 min-w-0">
               <p className="text-sm font-bold tracking-tight text-foreground truncate max-w-[150px] sm:max-w-[200px]">
@@ -103,13 +105,13 @@ export function CompanySwitcher() {
       {isOpen && (
         <div className="absolute left-0 top-full mt-2 w-72 bg-card text-card-foreground border rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="px-3 py-2 border-b">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Empresas disponibles</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('settings.availableCompanies')}</p>
           </div>
 
           <div className="max-h-60 overflow-y-auto py-1">
             {companyList.length === 0 ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                No tienes empresas registradas.
+                {t('settings.noCompaniesRegistered')}
               </div>
             ) : (
               companyList.map((comp) => {
@@ -153,7 +155,7 @@ export function CompanySwitcher() {
               className="w-full text-left px-3 py-2 text-xs font-semibold flex items-center gap-2 hover:bg-muted text-primary rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Registrar Nueva Empresa
+              {t('settings.registerNewCompany')}
             </button>
           </div>
         </div>
