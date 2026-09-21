@@ -14,8 +14,6 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
   const { pathname } = request.nextUrl;
 
-  console.log(`[proxy] ${request.method} ${pathname} — token: ${token ? 'YES' : 'NO'}`);
-
   // Root URL redirect
   if (pathname === '/') {
     return NextResponse.redirect(new URL(token ? '/cmhub' : '/login', request.url));
@@ -25,7 +23,6 @@ export function proxy(request: NextRequest) {
 
   // If user is NOT logged in and trying to access a private route (/cmhub/*)
   if (!token && !isPublicAuthPage) {
-    console.log(`[proxy] REDIRECT → /login (no token for ${pathname})`);
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
