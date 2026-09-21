@@ -2,7 +2,11 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { RagService } from './rag.service';
 
-class RateLimitError extends Error {}
+class RateLimitError extends Error {
+  constructor(public readonly retryAfterSec: number) {
+    super('Gemini quota exhausted for all configured models');
+  }
+}
 
 @Injectable()
 export class TaxCopilotService {
@@ -207,15 +211,24 @@ ${contextString}`;
       const finalReply = finalParts.find((p: any) => p.text)?.text;
       if (!finalReply) {
         this.logger.warn(`Gemini returned empty text. Raw response: ${JSON.stringify(response)}`);
-        return `Lo siento, no pude procesar la consulta fiscal en este momento. Raw response: ${JSON.stringify(response)}`;
+        return isEnglish
+          ? 'Sorry, I could not generate a response right now. Please try rephrasing your question.'
+          : 'Lo siento, no pude generar una respuesta en este momento. Intenta reformular tu pregunta.';
       }
       return finalReply;
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
       if (err instanceof RateLimitError) {
-        return `⏳ ${err.message}`;
+        const wait = err.retryAfterSec > 0 ? Math.ceil(err.retryAfterSec) : 0;
+        if (isEnglish) {
+          return `⏳ The AI Assistant has reached its maximum number of queries for today.${wait ? ` Please try again in ~${wait} seconds.` : ' Please try again later.'}`;
+        }
+        return `⏳ El Asistente IA alcanzó su cuota máxima de consultas por hoy.${wait ? ` Intenta de nuevo en ~${wait} segundos.` : ' Intenta de nuevo más tarde.'}`;
       }
-      return `⚠️ Error en Tax Copilot: ${err.message}`;
+      // Details are in the server logs; never surface raw provider payloads to the user.
+      return isEnglish
+        ? '⚠️ The AI Assistant is unavailable right now. Please try again in a few minutes.'
+        : '⚠️ El Asistente IA no está disponible en este momento. Intenta de nuevo en unos minutos.';
     }
   }
 
@@ -286,8 +299,7 @@ ${contextString}`;
     // Every model is out of quota: give the user a short, friendly message
     // (full Google payload stays in the server logs above).
     if (sawRateLimit) {
-      const wait = retryAfterSec > 0 ? ` Intenta de nuevo en ~${Math.ceil(retryAfterSec)} segundos.` : ' Intenta de nuevo más tarde.';
-      throw new RateLimitError(`Rate Limit (429): El Asistente IA alcanzó el límite de uso del plan gratuito de Gemini.${wait}`);
+      throw new RateLimitError(retryAfterSec);
     }
     
     // If we failed, let's try to fetch the available models to help debug
