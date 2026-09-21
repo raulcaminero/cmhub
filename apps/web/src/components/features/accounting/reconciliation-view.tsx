@@ -129,8 +129,8 @@ export function ReconciliationView() {
 
       return {
         id: idx,
-        date: date || 'FECHA INVÁLIDA',
-        description: description || 'SIN CONCEPTO',
+        date: date || t('reconciliationView.invalidDate'),
+        description: description || t('reconciliationView.noDescription'),
         reference,
         amount: isNaN(amount) ? 0 : amount,
         lineIndex: hasHeader ? idx + 1 : idx,
@@ -220,22 +220,22 @@ export function ReconciliationView() {
                 setCsvContent(header + rows);
                 setImportTab('preview');
               } else {
-                setImportError('No se pudieron extraer transacciones de la imagen/PDF.');
+                setImportError(t('reconciliationView.ocrExtractError'));
               }
             } else if (statusRes.status === 'failed') {
               clearInterval(pollInterval);
               setIsPollingOcr(false);
-              setImportError(statusRes.result || 'Error durante el análisis inteligente del documento.');
+              setImportError(statusRes.result || t('reconciliationView.ocrFailedError'));
             }
           } catch (err: any) {
             clearInterval(pollInterval);
             setIsPollingOcr(false);
-            setImportError('No se pudo consultar el estado del escaneo inteligente.');
+            setImportError(t('reconciliationView.ocrStatusError'));
           }
         }, 1000);
       } catch (err: any) {
         setIsPollingOcr(false);
-        setImportError(err.data?.message || 'Error al procesar el archivo con Inteligencia Artificial.');
+        setImportError(err.data?.message || t('reconciliationView.ocrUploadError'));
       }
     } else {
       const reader = new FileReader();
@@ -270,11 +270,11 @@ export function ReconciliationView() {
       setResultModal({
         isOpen: true,
         type: 'success',
-        title: 'Extracto Bancario Importado',
-        description: `Se importaron con éxito ${res.importedCount} transacciones bancarias en el sistema.`,
+        title: t('reconciliationView.importedTitle'),
+        description: t('reconciliationView.importedDesc', { count: res.importedCount }),
       });
     } catch (err: any) {
-      setImportError(err.data?.message || 'Error al importar extracto CSV.');
+      setImportError(err.data?.message || t('reconciliationView.importError'));
     }
   }
 
@@ -285,16 +285,16 @@ export function ReconciliationView() {
       setResultModal({
         isOpen: true,
         type: 'success',
-        title: 'Conciliación Inteligente Completada',
-        description: `El motor de IA analizó los movimientos y logró emparejar ${res.matchesCount} transacciones automáticas.`,
+        title: t('reconciliationView.autoMatchTitle'),
+        description: t('reconciliationView.autoMatchDesc', { count: res.matchesCount }),
         matchesCount: res.matchesCount,
       });
     } catch (err: any) {
       setResultModal({
         isOpen: true,
         type: 'error',
-        title: 'Error en Conciliación',
-        description: err.data?.message || 'Ocurrió un error al ejecutar la conciliación automática.',
+        title: t('reconciliationView.autoMatchErrorTitle'),
+        description: err.data?.message || t('reconciliationView.autoMatchError'),
       });
     }
   }
@@ -314,8 +314,8 @@ export function ReconciliationView() {
       setResultModal({
         isOpen: true,
         type: 'error',
-        title: 'Error al Conciliar',
-        description: err.data?.message || 'No se pudo vincular los movimientos seleccionados.',
+        title: t('reconciliationView.manualMatchErrorTitle'),
+        description: err.data?.message || t('reconciliationView.manualMatchError'),
       });
     }
   }
@@ -332,30 +332,30 @@ export function ReconciliationView() {
       setResultModal({
         isOpen: true,
         type: 'success',
-        title: 'Movimiento Eliminado',
-        description: `La transacción "${txToDelete.description}" fue eliminada del extracto bancario.`,
+        title: t('reconciliationView.deletedTitle'),
+        description: t('reconciliationView.deletedDesc', { desc: txToDelete.description }),
       });
     } catch (err: any) {
       setResultModal({
         isOpen: true,
         type: 'error',
-        title: 'Error al Eliminar',
-        description: err.data?.message || 'No se pudo eliminar la transacción del extracto bancario.',
+        title: t('reconciliationView.deleteErrorTitle'),
+        description: err.data?.message || t('reconciliationView.deleteError'),
       });
     }
   }
 
   async function handleUnmatch(id: string) {
     if (!companyId) return;
-    if (confirm('¿Deseas anular la conciliación de este movimiento?')) {
+    if (confirm(t('reconciliationView.unmatchConfirm'))) {
       try {
         await unmatch({ companyId, id }).unwrap();
       } catch (err: any) {
         setResultModal({
           isOpen: true,
           type: 'error',
-          title: 'Error al Desconciliar',
-          description: err.data?.message || 'No se pudo anular la conciliación del movimiento.',
+          title: t('reconciliationView.unmatchErrorTitle'),
+          description: err.data?.message || t('reconciliationView.unmatchError'),
         });
       }
     }
@@ -375,20 +375,20 @@ export function ReconciliationView() {
       setResultModal({
         isOpen: true,
         type: 'error',
-        title: 'Error en Sugerencia IA',
-        description: err.data?.message || 'Error al aplicar conciliación inteligente.',
+        title: t('reconciliationView.aiErrorTitle'),
+        description: err.data?.message || t('reconciliationView.aiError'),
       });
     }
   }
 
   return (
     <div className="space-y-3">
-      <MobileDesktopNotice message="La conciliación bancaria incluye herramientas de alta precisión. En celular puedes consultar el reporte y extracto; para conciliar e importar archivos con mayor comodidad, te recomendamos usar una computadora." />
+      <MobileDesktopNotice message={t('reconciliationView.mobileNotice')} />
 
       {/* Header Description Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">
-          Concilia los extractos bancarios con tus registros contables.
+          {t('reconciliationView.headerDesc')}
         </p>
       </div>
 
@@ -419,7 +419,7 @@ export function ReconciliationView() {
         </div>
 
         <div className="flex gap-2 items-center">
-          <Tooltip content="Importar CSV/Excel o escanear foto/PDF con IA">
+          <Tooltip content={t('reconciliationView.importTooltip')}>
             <Button
               size="sm"
               className="h-9 gap-2 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
@@ -431,7 +431,7 @@ export function ReconciliationView() {
             </Button>
           </Tooltip>
 
-          <Tooltip content="Emparejar transacciones con IA">
+          <Tooltip content={t('reconciliationView.smartTooltip')}>
             <Button
               size="sm"
               className="h-9 gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-xs transition-all text-white text-xs font-medium"
@@ -443,7 +443,7 @@ export function ReconciliationView() {
             </Button>
           </Tooltip>
 
-          <Tooltip content="Actualizar movimientos y saldos" align="end">
+          <Tooltip content={t('reconciliationView.refreshTooltip')} align="end">
             <Button size="sm" variant="ghost" className="h-9 w-9 p-0" onClick={refetch}>
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -452,53 +452,53 @@ export function ReconciliationView() {
       </div>
 
       {loadingReport ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Cargando reporte de conciliación...</p>
+        <p className="text-sm text-muted-foreground text-center py-6">{t('reconciliationView.loadingReport')}</p>
       ) : report ? (
         <div className="space-y-6">
           {/* Summary KPIs */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Saldo Según Libros</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reconciliationView.booksBalance')}</CardTitle>
                 <Info className="w-4 h-4 text-purple-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold tracking-tight font-mono text-purple-700 dark:text-purple-400">
                   {formatCurrency(report.booksBalance)}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Balance contable en sistema</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reconciliationView.booksBalanceDesc')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Saldo Extracto Banco</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reconciliationView.bankStatementBalance')}</CardTitle>
                 <RefreshCw className="w-4 h-4 text-indigo-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold tracking-tight font-mono text-indigo-700 dark:text-indigo-400">
                   {formatCurrency(report.bankBalance)}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Balance importado del banco</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reconciliationView.bankStatementDesc')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Conciliadas</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reconciliationView.reconciledCount')}</CardTitle>
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold tracking-tight font-mono text-emerald-600 dark:text-emerald-400">
                   {report.reconciledBankTransactions?.length || 0}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Transacciones pareadas</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reconciliationView.reconciledCountDesc')}</p>
               </CardContent>
             </Card>
 
             <Card className={Math.abs(report.difference) < 0.01 ? 'border-green-300 dark:border-green-800' : 'border-amber-300 dark:border-amber-800'}>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Diferencia</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reconciliationView.differenceTitle')}</CardTitle>
                 {Math.abs(report.difference) < 0.01 ? (
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                 ) : (
@@ -510,7 +510,7 @@ export function ReconciliationView() {
                   {formatCurrency(report.difference)}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {Math.abs(report.difference) < 0.01 ? 'Cuadrado perfecto' : 'Requiere revisión'}
+                  {Math.abs(report.difference) < 0.01 ? t('reconciliationView.balanced') : t('reconciliationView.requiresReview')}
                 </p>
               </CardContent>
             </Card>
@@ -523,12 +523,12 @@ export function ReconciliationView() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <h3 className="text-sm font-bold flex items-center gap-2">
                   <Landmark className="w-4 h-4 text-indigo-600 shrink-0" />
-                  Extracto Bancario ({report.unreconciledBankCount} pendientes)
+                  {t('reconciliationView.bankStatementPanel', { count: report.unreconciledBankCount })}
                 </h3>
                 <div className="relative w-full sm:w-56">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar en extracto..."
+                    placeholder={t('reconciliationView.searchStatement')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 h-8 text-xs font-medium"
@@ -539,9 +539,9 @@ export function ReconciliationView() {
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Concepto</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead>{t('reconciliationView.dateHeader')}</TableHead>
+                      <TableHead>{t('reconciliationView.descriptionHeader')}</TableHead>
+                      <TableHead className="text-right">{t('common.amount')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -570,8 +570,8 @@ export function ReconciliationView() {
                               e.stopPropagation();
                               setTxToDelete(tx);
                             }}
-                            title="Eliminar transacción del extracto"
-                            aria-label="Eliminar transacción"
+                            title={t('reconciliationView.deleteTxTooltip')}
+                            aria-label={t('reconciliationView.deleteTxTooltip')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -581,7 +581,7 @@ export function ReconciliationView() {
                     {report.unreconciledBankTransactions.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
-                          No hay transacciones bancarias pendientes de conciliación.
+                          {t('reconciliationView.noPendingBankTx')}
                         </TableCell>
                       </TableRow>
                     )}
@@ -589,7 +589,7 @@ export function ReconciliationView() {
                 </Table>
                 {report.unreconciledBankTransactions.length > 50 && (
                   <div className="p-2 text-center text-[10px] text-muted-foreground bg-muted/20 border-t font-medium">
-                    Mostrando los primeros 50 de {report.unreconciledBankTransactions.length} movimientos pendientes. Concilia para ver más.
+                    {t('reconciliationView.showingFirst', { count: report.unreconciledBankTransactions.length })}
                   </div>
                 )}
               </div>
@@ -600,17 +600,17 @@ export function ReconciliationView() {
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold flex items-center gap-2">
                   <Info className="w-4 h-4 text-purple-600 shrink-0" />
-                  Libro Contable ({report.unreconciledBooksCount} pendientes)
+                  {t('reconciliationView.ledgerPanel', { count: report.unreconciledBooksCount })}
                 </h3>
               </div>
               <div className="border rounded-md max-h-[400px] overflow-y-auto bg-card">
                 <Table>
                   <TableHeader className="bg-muted/50">
                     <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Referencia</TableHead>
-                      <TableHead className="text-right">Débito</TableHead>
-                      <TableHead className="text-right">Crédito</TableHead>
+                      <TableHead>{t('reconciliationView.dateHeader')}</TableHead>
+                      <TableHead>{t('reconciliationView.referenceHeader')}</TableHead>
+                      <TableHead className="text-right">{t('reconciliationView.debitHeader')}</TableHead>
+                      <TableHead className="text-right">{t('reconciliationView.creditHeader')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -638,7 +638,7 @@ export function ReconciliationView() {
                     {report.unreconciledBooksLines.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">
-                          No hay movimientos contables pendientes de conciliación.
+                          {t('reconciliationView.noPendingLedger')}
                         </TableCell>
                       </TableRow>
                     )}
@@ -646,7 +646,7 @@ export function ReconciliationView() {
                 </Table>
                 {report.unreconciledBooksLines.length > 50 && (
                   <div className="p-2 text-center text-[10px] text-muted-foreground bg-muted/20 border-t font-medium">
-                    Mostrando los primeros 50 de {report.unreconciledBooksLines.length} movimientos pendientes. Concilia para ver más.
+                    {t('reconciliationView.showingFirst', { count: report.unreconciledBooksLines.length })}
                   </div>
                 )}
               </div>
@@ -659,24 +659,24 @@ export function ReconciliationView() {
               <div className="flex flex-wrap gap-4 items-center justify-between">
                 <div className="flex items-center gap-4 text-xs">
                   <div className="space-y-1">
-                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Banco:</span>
+                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">{t('reconciliationView.bankSelection')}</span>
                     {selectedBankTx ? (
                       <span className="font-semibold font-mono text-indigo-700 bg-indigo-100/30 px-2 py-0.5 rounded">
                         {selectedBankTx.description} ({formatCurrency(selectedBankTx.amount)})
                       </span>
                     ) : (
-                      <span className="text-muted-foreground italic">Ninguno</span>
+                      <span className="text-muted-foreground italic">{t('reconciliationView.noneSelected')}</span>
                     )}
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground" />
                   <div className="space-y-1">
-                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">Selección Libros:</span>
+                    <span className="text-xxs text-muted-foreground font-semibold block uppercase">{t('reconciliationView.ledgerSelection')}</span>
                     {selectedLedgerLine ? (
                       <span className="font-semibold font-mono text-purple-700 bg-purple-100/30 px-2 py-0.5 rounded">
                         {selectedLedgerLine.entryDescription} ({formatCurrency(selectedLedgerLine.debit || selectedLedgerLine.credit)})
                       </span>
                     ) : (
-                      <span className="text-muted-foreground italic">Ninguno</span>
+                      <span className="text-muted-foreground italic">{t('reconciliationView.noneSelected')}</span>
                     )}
                   </div>
                 </div>
@@ -690,7 +690,7 @@ export function ReconciliationView() {
                       onClick={() => setTxToDelete(selectedBankTx)}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Eliminar del Extracto
+                      {t('reconciliationView.deleteFromStatement')}
                     </Button>
                   )}
                   <Button
@@ -701,7 +701,7 @@ export function ReconciliationView() {
                       setSelectedLedgerLine(null);
                     }}
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     size="sm"
@@ -710,7 +710,7 @@ export function ReconciliationView() {
                     disabled={!selectedBankTx || !selectedLedgerLine}
                   >
                     <Link2 className="w-4 h-4" />
-                    Conciliar Selección
+                    {t('reconciliationView.reconcileSelection')}
                   </Button>
                 </div>
               </div>
@@ -721,9 +721,9 @@ export function ReconciliationView() {
                   <div className="flex items-center gap-2 text-indigo-900 bg-indigo-50/50 border border-indigo-100 p-2 rounded-lg flex-1">
                     <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse shrink-0" />
                     <div>
-                      <span className="font-bold block text-indigo-950">Recomendación Contable IA</span>
+                      <span className="font-bold block text-indigo-950">{t('reconciliationView.aiRecommendation')}</span>
                       <span className="text-muted-foreground text-xxs block leading-normal mt-0.5">
-                        {loadingAi ? 'Analizando comportamiento histórico y semántico...' : aiSuggestion?.explanation || 'Sin sugerencia disponible.'}
+                        {loadingAi ? t('reconciliationView.aiAnalyzing') : aiSuggestion?.explanation || t('reconciliationView.aiNoSuggestion')}
                       </span>
                     </div>
                   </div>
@@ -735,7 +735,7 @@ export function ReconciliationView() {
                       disabled={isReconcilingAi}
                     >
                       <Sparkles className="w-4 h-4" />
-                      {isReconcilingAi ? 'Aplicando...' : 'Aplicar y Conciliar'}
+                      {isReconcilingAi ? t('reconciliationView.aiApplying') : t('reconciliationView.aiApply')}
                     </Button>
                   )}
                 </div>
@@ -747,17 +747,17 @@ export function ReconciliationView() {
           <div className="space-y-3 pt-4">
             <h3 className="text-sm font-bold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              Transacciones Conciliadas
+              {t('reconciliationView.reconciledTitle')}
             </h3>
             <div className="border rounded-md max-h-[300px] overflow-y-auto bg-card">
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Extracto Banco</TableHead>
-                    <TableHead className="text-right">Monto</TableHead>
-                    <TableHead>Diario Relacionado</TableHead>
-                    <TableHead className="text-right">Acción</TableHead>
+                    <TableHead>{t('reconciliationView.dateHeader')}</TableHead>
+                    <TableHead>{t('reconciliationView.bankStatementHeader')}</TableHead>
+                    <TableHead className="text-right">{t('common.amount')}</TableHead>
+                    <TableHead>{t('reconciliationView.relatedJournal')}</TableHead>
+                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -784,7 +784,7 @@ export function ReconciliationView() {
                           onClick={() => handleUnmatch(tx.id)}
                           className="h-7 text-destructive hover:bg-destructive/10 text-[11px] px-2 font-semibold"
                         >
-                          Desconciliar
+                          {t('reconciliationView.unmatch')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -792,7 +792,7 @@ export function ReconciliationView() {
                   {report.reconciledBankTransactions.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">
-                        No hay movimientos conciliados aún.
+                        {t('reconciliationView.noReconciled')}
                       </TableCell>
                     </TableRow>
                   )}
@@ -821,16 +821,16 @@ export function ReconciliationView() {
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h3 className="text-sm font-bold flex items-center gap-2">
                   <Upload className="w-4 h-4 text-primary shrink-0" />
-                  Importar / Escanear Extracto Bancario
+                  {t('reconciliationView.importModalTitle')}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Sube cualquier archivo (CSV, Excel, Foto o PDF). El sistema detectará el formato automáticamente.
+                  {t('reconciliationView.importModalSubtitle')}
                 </p>
               </div>
               <div className="flex bg-muted/60 p-1 rounded-lg border text-xs shrink-0">
@@ -843,7 +843,7 @@ export function ReconciliationView() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  Tabla ({parsedCsvRows.length})
+                  {t('reconciliationView.tableTab', { count: parsedCsvRows.length })}
                 </button>
                 <button
                   type="button"
@@ -854,7 +854,7 @@ export function ReconciliationView() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  Texto CSV
+                  {t('reconciliationView.csvTextTab')}
                 </button>
               </div>
             </div>
@@ -863,23 +863,23 @@ export function ReconciliationView() {
             {isPollingOcr ? (
               <div className="mb-4 border-2 border-dashed border-primary/40 rounded-xl p-4 bg-muted/20 text-center flex flex-col items-center justify-center gap-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                <p className="text-xs font-semibold">Analizando documento con Inteligencia Artificial (Gemini)...</p>
-                <p className="text-[10px] text-muted-foreground">Extrayendo transacciones y formateando tabla.</p>
+                <p className="text-xs font-semibold">{t('reconciliationView.ocrLoading')}</p>
+                <p className="text-[10px] text-muted-foreground">{t('reconciliationView.ocrLoadingSub')}</p>
               </div>
             ) : parsedCsvRows.length > 0 ? (
               <div className="mb-3 flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg p-2.5 text-xs">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span className="font-semibold text-emerald-900 dark:text-emerald-200 truncate">
-                    {parsedCsvRows.length} transacciones listas para revisión
+                    {t('reconciliationView.txReadyForReview', { count: parsedCsvRows.length })}
                   </span>
                   <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                    (puedes anexar más archivos)
+                    {t('reconciliationView.appendMore')}
                   </span>
                 </div>
                 <label htmlFor="unified-file-input-compact" className="cursor-pointer font-semibold text-primary hover:underline flex items-center gap-1 text-xs shrink-0 bg-background px-2.5 py-1 rounded-md border shadow-2xs">
                   <Plus className="w-3.5 h-3.5 text-primary" />
-                  Añadir archivo
+                  {t('reconciliationView.addFile')}
                   <input
                     id="unified-file-input-compact"
                     type="file"
@@ -911,10 +911,10 @@ export function ReconciliationView() {
                     </div>
                     <div className="text-left">
                       <span className="font-semibold text-xs text-primary group-hover:underline block">
-                        Haz clic o arrastra aquí tu archivo (CSV, Excel, Foto o PDF)
+                        {t('reconciliationView.dropzoneText')}
                       </span>
                       <span className="text-[10px] text-muted-foreground block">
-                        Detección automática: CSV/Excel directo o escaneo OCR por IA
+                        {t('reconciliationView.dropzoneSub')}
                       </span>
                     </div>
                   </div>
@@ -928,7 +928,7 @@ export function ReconciliationView() {
                   {hasInvalidCsvRows && (
                     <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 font-medium">
                       <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-                      <span>Hay filas con datos obligatorios incompletos (Fecha/Monto/Concepto). Quítalas con 🗑️ para poder continuar.</span>
+                      <span>{t('reconciliationView.invalidRowsWarning')}</span>
                     </div>
                   )}
                   <div className="border rounded-lg max-h-[300px] overflow-y-auto bg-card">
@@ -936,10 +936,10 @@ export function ReconciliationView() {
                       <Table>
                         <TableHeader className="bg-muted/50 sticky top-0 z-10">
                           <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            <TableHead className="w-24">Fecha</TableHead>
-                            <TableHead>Concepto / Transacción</TableHead>
-                            <TableHead className="text-right">Monto (RD$)</TableHead>
-                            <TableHead className="text-right w-10">Quitar</TableHead>
+                            <TableHead className="w-24">{t('reconciliationView.dateHeader')}</TableHead>
+                            <TableHead>{t('reconciliationView.conceptHeader')}</TableHead>
+                            <TableHead className="text-right">{t('reconciliationView.amountHeaderRd')}</TableHead>
+                            <TableHead className="text-right w-10">{t('reconciliationView.removeHeader')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -953,7 +953,7 @@ export function ReconciliationView() {
                                   <p className="text-foreground">{row.description}</p>
                                   {!row.isValid && (
                                     <span className="text-[9px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/60 px-1.5 py-0.5 rounded border border-amber-300">
-                                      ⚠️ Incompleto
+                                      {t('reconciliationView.incompleteRow')}
                                     </span>
                                   )}
                                 </div>
@@ -969,7 +969,7 @@ export function ReconciliationView() {
                                   variant="ghost"
                                   className="h-6 w-6 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
                                   onClick={() => handleRemoveCsvRow(row.lineIndex)}
-                                  title="Descartar esta fila"
+                                  title={t('reconciliationView.discardRow')}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -980,7 +980,7 @@ export function ReconciliationView() {
                       </Table>
                     ) : (
                       <div className="p-8 text-center text-xs text-muted-foreground">
-                        No hay transacciones cargadas. Selecciona un archivo en la zona de carga superior.
+                        {t('reconciliationView.noTxLoaded')}
                       </div>
                     )}
                   </div>
@@ -988,7 +988,7 @@ export function ReconciliationView() {
               ) : (
                 <div className="space-y-1">
                   <Label htmlFor="csv-data" className="text-xs font-semibold text-muted-foreground">
-                    Edición de Texto CSV (Delimitado por coma) *
+                    {t('reconciliationView.csvEditLabel')}
                   </Label>
                   <textarea
                     id="csv-data"
@@ -1016,16 +1016,16 @@ export function ReconciliationView() {
                     onClick={() => setIsImportOpen(false)}
                     disabled={isImporting}
                   >
-                    Cancelar
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" size="sm" disabled={isImporting || parsedCsvRows.length === 0 || hasInvalidCsvRows} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                     {isImporting ? (
                       <>
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        Importando...
+                        {t('reconciliationView.importing')}
                       </>
                     ) : (
-                      `Confirmar e Importar (${parsedCsvRows.length})`
+                      t('reconciliationView.confirmImport', { count: parsedCsvRows.length })
                     )}
                   </Button>
                 </div>
@@ -1045,7 +1045,7 @@ export function ReconciliationView() {
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
 
             {resultModal.type === 'success' ? (
@@ -1067,7 +1067,7 @@ export function ReconciliationView() {
 
             {resultModal.matchesCount !== undefined && (
               <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-lg p-3 w-full mb-4 font-mono text-xs">
-                <span className="text-muted-foreground block text-[10px] uppercase font-sans font-bold">Movimientos Emparejados</span>
+                <span className="text-muted-foreground block text-[10px] uppercase font-sans font-bold">{t('reconciliationView.matchedMovements')}</span>
                 <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">+{resultModal.matchesCount}</span>
               </div>
             )}
@@ -1076,7 +1076,7 @@ export function ReconciliationView() {
               onClick={() => setResultModal(null)}
               className="w-full h-9 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              Entendido
+              {t('reconciliationView.understood')}
             </Button>
           </div>
         </div>
@@ -1092,7 +1092,7 @@ export function ReconciliationView() {
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
 
             <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3">
@@ -1100,10 +1100,10 @@ export function ReconciliationView() {
             </div>
 
             <h3 className="text-base font-bold text-foreground">
-              ¿Eliminar Movimiento del Extracto?
+              {t('reconciliationView.deleteTxTitle')}
             </h3>
             <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">
-              ¿Estás seguro de que deseas eliminar la transacción <strong className="text-foreground">"{txToDelete.description}"</strong> ({formatCurrency(txToDelete.amount)}) importada por error?
+              {t('reconciliationView.deleteTxDesc', { desc: txToDelete.description, amount: formatCurrency(txToDelete.amount) })}
             </p>
 
             <div className="flex gap-3 w-full">
@@ -1113,7 +1113,7 @@ export function ReconciliationView() {
                 onClick={() => setTxToDelete(null)}
                 className="flex-1 h-9 text-xs font-medium"
               >
-                Cancelar
+                {t('common.cancel')}
               </Button>
               <Button
                 type="button"
@@ -1122,7 +1122,7 @@ export function ReconciliationView() {
                 className="flex-1 h-9 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white gap-2"
               >
                 {isDeletingTx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                Sí, Eliminar Movimiento
+                {t('reconciliationView.confirmDelete')}
               </Button>
             </div>
           </div>
