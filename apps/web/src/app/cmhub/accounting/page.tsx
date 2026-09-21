@@ -80,8 +80,8 @@ function AccountingContent() {
     .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
   const kpis = [
-    { title: t('accounting.totalAssets'), value: formatCurrency(totalActivos), description: t('accounting.totalAssetsDesc') },
-    { title: t('accounting.totalLiabilities'), value: formatCurrency(totalPasivos), description: t('accounting.totalLiabilitiesDesc') },
+    { title: t('accounting.totalAssets'), value: formatCurrency(totalActivos), description: t('accounting.totalAssetDesc') },
+    { title: t('accounting.totalLiabilities'), value: formatCurrency(totalPasivos), description: t('accounting.totalLiabilityDesc') },
     { title: t('accounting.equity'), value: formatCurrency(totalPatrimonio), description: t('accounting.equityDesc') },
     { title: t('accounting.monthlyIncome'), value: formatCurrency(totalIngresos), description: t('accounting.monthlyIncomeDesc') },
   ];

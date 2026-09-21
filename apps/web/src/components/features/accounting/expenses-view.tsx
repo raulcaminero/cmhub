@@ -224,7 +224,7 @@ export function ExpensesView() {
 
     const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length <= 1) {
-      setImportError('El archivo o texto está vacío.');
+      setImportError(t('expensesView.importEmptyError'));
       return;
     }
 
@@ -245,7 +245,7 @@ export function ExpensesView() {
       const isrRetVal = parts[9] ? Number(parts[9]) : 0;
 
       if (!dateVal || !rncVal || !nameVal || !ncfVal || !paymentVal || !typeVal || isNaN(amountVal)) {
-        setImportError(`Fila ${i + 1} inválida. Verifica los datos.`);
+        setImportError(t('expensesView.importRowError', { row: i + 1 }));
         return;
       }
 
@@ -271,7 +271,7 @@ export function ExpensesView() {
       setIsExcelOpen(false);
       setCsvText('');
     } catch (err: any) {
-      setImportError(err.data?.message || 'Error al importar los gastos.');
+      setImportError(err.data?.message || t('expensesView.createError'));
     }
   }
 
@@ -358,18 +358,18 @@ export function ExpensesView() {
       setPayModalOpen(false);
       setExpenseToPay(null);
     } catch (err: any) {
-      setPayError(err.data?.message || 'Error al registrar el pago del gasto.');
+      setPayError(err.data?.message || t('expensesView.payError'));
     }
   }
 
   async function handleVoid(expense: Expense) {
     if (!companyId) return;
-    if (!confirm(`¿Estás seguro de anular el gasto NCF ${expense.ncf}? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(t('expensesView.voidConfirm', { ncf: expense.ncf }))) return;
 
     try {
       await voidExpense({ companyId, id: expense.id }).unwrap();
     } catch (err: any) {
-      alert(err.data?.message || 'Error al anular el gasto.');
+      alert(err.data?.message || t('expensesView.voidError'));
     }
   }
 
@@ -448,7 +448,7 @@ export function ExpensesView() {
     setErrorMessage('');
 
     if (isForeignPayment && (!foreignCountry || !foreignTaxId)) {
-      setErrorMessage('Para pagos al exterior debes ingresar el País y el Tax ID del proveedor.');
+      setErrorMessage(t('expensesView.foreignRequiredError'));
       return;
     }
 
@@ -487,7 +487,7 @@ export function ExpensesView() {
       setForeignTaxId('');
       setForeignPaymentType('01');
     } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al registrar el gasto.');
+      setErrorMessage(err.data?.message || t('expensesView.createError'));
     }
   }
 
@@ -498,7 +498,7 @@ export function ExpensesView() {
       {/* Action Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">
-          Registra compras de proveedores con NCF y clasifícalos para la DGII.
+          {t('expensesView.mainSubtitle')}
         </p>
         <div className="flex items-center gap-2 flex-wrap justify-end">
         <Button
@@ -529,56 +529,56 @@ export function ExpensesView() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Gastos (Mes)</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('expensesView.totalExpensesMonth')}</CardTitle>
             <TrendingDown className="w-4 h-4 text-rose-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.totalSum)}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{metrics.count} compras/gastos registrados</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('expensesView.totalExpensesCountDesc', { count: metrics.count })}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">ITBIS Adelantado (606)</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('expensesView.itbisAdvanced')}</CardTitle>
             <Receipt className="w-4 h-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.itbisSum)}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Crédito fiscal generado</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('expensesView.itbisAdvancedDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Cuentas por Pagar</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('expensesView.accountsPayable')}</CardTitle>
             <CreditCard className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight text-card-foreground">{formatCurrency(metrics.pendingPayable)}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Compras a crédito pendientes</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('expensesView.accountsPayableDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Compras Inventario (09)</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('expensesView.inventoryPurchases')}</CardTitle>
             <ShoppingBag className="w-4 h-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight text-card-foreground">{metrics.count > 0 ? expenses.filter(e => e.expenseType === '09' && !e.isVoided).length : 0}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Ítems de costo de ventas</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('expensesView.inventoryPurchasesDesc')}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-2.5 px-4">
-          <CardTitle>Historial de Compras y Gastos (606)</CardTitle>
+          <CardTitle>{t('expensesView.historyTitle')}</CardTitle>
           
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <Label htmlFor="startDate" className="text-xs font-medium">Desde:</Label>
+              <Label htmlFor="startDate" className="text-xs font-medium">{t('expensesView.from')}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -589,7 +589,7 @@ export function ExpensesView() {
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <Label htmlFor="endDate" className="text-xs font-medium">Hasta:</Label>
+              <Label htmlFor="endDate" className="text-xs font-medium">{t('expensesView.to')}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -605,14 +605,14 @@ export function ExpensesView() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-[11px] font-bold">Fecha</TableHead>
-                <TableHead className="text-[11px] font-bold">Proveedor</TableHead>
+                <TableHead className="text-[11px] font-bold">{t('common.date')}</TableHead>
+                <TableHead className="text-[11px] font-bold">{t('expensesView.provider')}</TableHead>
                 <TableHead className="text-[11px] font-bold">NCF</TableHead>
-                <TableHead className="text-[11px] font-bold">Tipo de Gasto</TableHead>
-                <TableHead className="text-[11px] font-bold text-right">Monto</TableHead>
-                <TableHead className="text-[11px] font-bold text-right">ITBIS</TableHead>
-                <TableHead className="text-[11px] font-bold text-center">Estado</TableHead>
-                <TableHead className="text-[11px] font-bold text-right">Acciones</TableHead>
+                <TableHead className="text-[11px] font-bold">{t('expensesView.expenseType')}</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">{t('common.amount')}</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">{t('expensesView.itbis')}</TableHead>
+                <TableHead className="text-[11px] font-bold text-center">{t('common.status')}</TableHead>
+                <TableHead className="text-[11px] font-bold text-right">{t('common.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -620,13 +620,13 @@ export function ExpensesView() {
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-                    Cargando gastos...
+                    {t('expensesView.loading')}
                   </TableCell>
                 </TableRow>
               ) : expenses.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-xs text-muted-foreground">
-                    No se encontraron gastos registrados en este período.
+                    {t('expensesView.noExpenses')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -646,15 +646,15 @@ export function ExpensesView() {
                       <TableCell className="text-center text-[11px]">
                         {expense.isVoided ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
-                            Anulado
+                            {t('expensesView.statusVoided')}
                           </span>
                         ) : expense.paymentMethod === '04' && !(expense as any).isPaid ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                            Por Pagar
+                            {t('expensesView.statusPending')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                            Pagado
+                            {t('expensesView.statusPaid')}
                           </span>
                         )}
                       </TableCell>
@@ -671,7 +671,7 @@ export function ExpensesView() {
                               }}
                             >
                               <DollarSign className="w-3 h-3" />
-                              Pagar
+                              {t('expensesView.pay')}
                             </Button>
                           )}
                           {!expense.isVoided && (
@@ -682,7 +682,7 @@ export function ExpensesView() {
                               onClick={() => handleVoid(expense)}
                               disabled={isVoiding}
                             >
-                              Anular
+                              {t('expensesView.void')}
                             </Button>
                           )}
                         </div>
@@ -698,7 +698,7 @@ export function ExpensesView() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border">
               <div className="text-xs text-muted-foreground">
-                Mostrando página {page} de {totalPages} ({totalCount} registros en total)
+                {t('expensesView.showingPage', { page, total: totalPages, count: totalCount })}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -708,7 +708,7 @@ export function ExpensesView() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="h-8 text-xs"
                 >
-                  Anterior
+                  {t('common.previous')}
                 </Button>
                 <Button
                   size="sm"
@@ -717,7 +717,7 @@ export function ExpensesView() {
                   onClick={() => setPage((p) => p + 1)}
                   className="h-8 text-xs"
                 >
-                  Siguiente
+                  {t('common.next')}
                 </Button>
               </div>
             </div>
@@ -735,14 +735,14 @@ export function ExpensesView() {
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
             <h3 className="text-sm font-bold flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary shrink-0" />
-              Registrar Nuevo Gasto / Compra NCF
+              {t('expensesView.createTitle')}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5 mb-3">
-              Ingresa los datos de la factura o comprobante fiscal para el reporte 606.
+              {t('expensesView.createSubtitle')}
             </p>
 
             {providerName && (
@@ -761,7 +761,7 @@ export function ExpensesView() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="contactSelect" className="text-xs font-semibold text-muted-foreground block mb-1">Seleccionar Contacto (Opcional)</Label>
+                  <Label htmlFor="contactSelect" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.selectContact')}</Label>
                   <select
                     id="contactSelect"
                     onChange={(e) => handleSelectContact(e.target.value)}
@@ -777,7 +777,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="providerName" className="text-xs font-semibold text-muted-foreground block mb-1">Nombre o Razón Social Proveedor *</Label>
+                  <Label htmlFor="providerName" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.providerName')} *</Label>
                   <Input
                     id="providerName"
                     value={providerName}
@@ -789,7 +789,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="providerRnc" className="text-xs font-semibold text-muted-foreground block mb-1">RNC / Cédula Proveedor *</Label>
+                  <Label htmlFor="providerRnc" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.providerRnc')} *</Label>
                   <Input
                     id="providerRnc"
                     value={providerRnc}
@@ -813,7 +813,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="ncf" className="text-xs font-semibold text-muted-foreground block mb-1">NCF (Comprobante Fiscal) *</Label>
+                  <Label htmlFor="ncf" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.ncf')} *</Label>
                   <Input
                     id="ncf"
                     value={ncf}
@@ -834,7 +834,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="expenseType" className="text-xs font-semibold text-muted-foreground block mb-1">Tipo de Bienes y Servicios (606) *</Label>
+                  <Label htmlFor="expenseType" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.expenseType')} *</Label>
                   <select
                     id="expenseType"
                     value={expenseType}
@@ -850,12 +850,12 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="date" className="text-xs font-semibold text-muted-foreground block mb-1">Fecha Comprobante *</Label>
+                  <Label htmlFor="date" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.voucherDate')} *</Label>
                   <Input id="date" type="date" aria-label="Fecha Comprobante" value={date} onChange={(e) => setDate(e.target.value)} required className="h-9 text-xs font-medium" />
                 </div>
 
                 <div>
-                  <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground block mb-1">Monto Total Facturado *</Label>
+                  <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.amount')} *</Label>
                   <Input
                     id="amount"
                     type="number"
@@ -868,7 +868,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="itbis" className="text-xs font-semibold text-muted-foreground block mb-1">ITBIS Facturado</Label>
+                  <Label htmlFor="itbis" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.itbis')}</Label>
                   <Input
                     id="itbis"
                     type="number"
@@ -880,7 +880,7 @@ export function ExpensesView() {
                 </div>
 
                 <div>
-                  <Label htmlFor="paymentMethod" className="text-xs font-semibold text-muted-foreground block mb-1">Forma de Pago *</Label>
+                  <Label htmlFor="paymentMethod" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.paymentMethod')} *</Label>
                   <select
                     id="paymentMethod"
                     value={paymentMethod}
@@ -897,7 +897,7 @@ export function ExpensesView() {
 
                 {paymentMethod !== '04' && (
                   <div>
-                    <Label htmlFor="bankAccountId" className="text-xs font-semibold text-muted-foreground block mb-1">Cuenta de Banco / Caja de Origen</Label>
+                    <Label htmlFor="bankAccountId" className="text-xs font-semibold text-muted-foreground block mb-1">{t('expensesView.bankAccount')}</Label>
                     <select
                       id="bankAccountId"
                       value={bankAccountId}
@@ -986,16 +986,16 @@ export function ExpensesView() {
 
               <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setIsOpen(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={isCreating} className="h-8 text-xs font-medium gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground">
                   {isCreating ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Guardando...
+                      {t('common.saving')}
                     </>
                   ) : (
-                    'Guardar Gasto'
+                    t('expensesView.saveExpense')
                   )}
                 </Button>
               </div>
@@ -1014,11 +1014,11 @@ export function ExpensesView() {
               className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               <X className="h-4 w-4" />
-              <span className="sr-only">Cerrar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </button>
             <h3 className="text-sm font-bold flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary shrink-0" />
-              Registrar Pago a Proveedor
+              {t('expensesView.registerVendorPayment')}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5 mb-4">
               Proveedor: <strong>{expenseToPay.providerName}</strong> ({expenseToPay.providerRnc})<br />
@@ -1033,7 +1033,7 @@ export function ExpensesView() {
 
             <form onSubmit={handlePaySubmit} className="space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="payDate" className="text-xs font-semibold text-muted-foreground">Fecha del Pago *</Label>
+                <Label htmlFor="payDate" className="text-xs font-semibold text-muted-foreground">{t('expensesView.payDate')} *</Label>
                 <Input
                   id="payDate"
                   type="date"
@@ -1046,7 +1046,7 @@ export function ExpensesView() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="payBankId" className="text-xs font-semibold text-muted-foreground">Cuenta de Origen de Fondos</Label>
+                <Label htmlFor="payBankId" className="text-xs font-semibold text-muted-foreground">{t('expensesView.bankSource')}</Label>
                 <select
                   id="payBankId"
                   value={payBankId}
@@ -1064,10 +1064,10 @@ export function ExpensesView() {
 
               <div className="flex justify-end gap-2 pt-3 border-t mt-4">
                 <Button type="button" variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setPayModalOpen(false)}>
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button type="submit" size="sm" disabled={isPaying} className="h-8 text-xs font-medium gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
-                  {isPaying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirmar Pago'}
+                  {isPaying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : t('expensesView.confirmPayment')}
                 </Button>
               </div>
             </form>
@@ -1242,7 +1242,7 @@ export function ExpensesView() {
                   onClick={() => setIsExcelOpen(false)}
                   disabled={isImporting}
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
