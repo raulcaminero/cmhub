@@ -2,6 +2,8 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/persistence/prisma/prisma.service';
 import { RagService } from './rag.service';
 
+class RateLimitError extends Error {}
+
 @Injectable()
 export class TaxCopilotService {
   private readonly logger = new Logger(TaxCopilotService.name);
@@ -210,8 +212,17 @@ ${contextString}`;
       return finalReply;
     } catch (err: any) {
       this.logger.error(`Error in Tax Copilot Service: ${err.message}`, err.stack);
+      if (err instanceof RateLimitError) {
+        return `⏳ ${err.message}`;
+      }
       return `⚠️ Error en Tax Copilot: ${err.message}`;
     }
+  }
+
+  /** Extracts the retry delay (seconds) Google includes in 429 payloads, or 0. */
+  private parseRetryDelay(errText: string): number {
+    const m = errText.match(/retry in ([\d.]+)s/i) || errText.match(/"retryDelay":\s*"(\d+)s"/);
+    return m ? Number(m[1]) : 0;
   }
 
   private async callGemini(apiKey: string, contents: any[], tools: any[]): Promise<any> {
@@ -223,6 +234,8 @@ ${contextString}`;
 
     let lastError = '';
     const errors: string[] = [];
+    let sawRateLimit = false;
+    let retryAfterSec = 0;
 
     for (const endpoint of endpoints) {
       try {
@@ -251,13 +264,15 @@ ${contextString}`;
           throw new Error(`Bad Request (400) from Gemini API: ${errText}`);
         }
 
-        // If it's a 429 error (Too Many Requests / Quota Exceeded), we should stop looping
-        // and throw immediately so the user gets a clear rate limit message.
+        // 429 = quota exhausted for THIS model. Google's free-tier daily quota is
+        // per model, so keep going: the next model in the list has its own quota.
         if (res.status === 429) {
-          throw new Error(`Rate Limit (429): ${errText}`);
+          sawRateLimit = true;
+          retryAfterSec = Math.max(retryAfterSec, this.parseRetryDelay(errText));
+          continue;
         }
       } catch (err: any) {
-        if (err.message.includes('Bad Request (400)') || err.message.includes('Rate Limit (429)')) {
+        if (err.message.includes('Bad Request (400)')) {
           throw err;
         }
         const errorMsg = `[${endpoint}] Fetch error: ${err.message}`;
@@ -267,6 +282,13 @@ ${contextString}`;
     }
 
     this.logger.error(`All Gemini model endpoints failed:\n${errors.join('\n')}`);
+
+    // Every model is out of quota: give the user a short, friendly message
+    // (full Google payload stays in the server logs above).
+    if (sawRateLimit) {
+      const wait = retryAfterSec > 0 ? ` Intenta de nuevo en ~${Math.ceil(retryAfterSec)} segundos.` : ' Intenta de nuevo más tarde.';
+      throw new RateLimitError(`Rate Limit (429): El Asistente IA alcanzó el límite de uso del plan gratuito de Gemini.${wait}`);
+    }
     
     // If we failed, let's try to fetch the available models to help debug
     let availableModels = 'Could not fetch available models.';
