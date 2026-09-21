@@ -13,26 +13,33 @@ export function useTabMemory<T extends string>(
   const storageKey = `${storagePrefix}${pathname}`;
   const isSelfTriggeredRef = useRef(false);
 
-  // Read initial tab from search params or sessionStorage
+  // Initial tab comes ONLY from data the server also has (URL param or default),
+  // so the server HTML and the client's first render match. Reading
+  // sessionStorage here would cause a React #418 hydration mismatch.
   const getInitialTab = (): T => {
     const urlTab = searchParams.get('tab') as T | null;
     if (urlTab && validTabs.includes(urlTab)) {
       return urlTab;
     }
-    if (typeof window !== 'undefined') {
-      try {
-        const savedTab = sessionStorage.getItem(storageKey) as T | null;
-        if (savedTab && validTabs.includes(savedTab)) {
-          return savedTab;
-        }
-      } catch (e) {
-        // Ignore sessionStorage errors
-      }
-    }
     return defaultTab;
   };
 
   const [activeTab, setActiveTabState] = useState<T>(getInitialTab);
+
+  // After mount, restore the tab remembered for this path (client-only data).
+  // Only applies when the URL didn't already specify a tab.
+  useEffect(() => {
+    if (searchParams.get('tab')) return;
+    try {
+      const savedTab = sessionStorage.getItem(storageKey) as T | null;
+      if (savedTab && validTabs.includes(savedTab) && savedTab !== defaultTab) {
+        setActiveTabState(savedTab);
+      }
+    } catch (e) {
+      // Ignore sessionStorage errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   // Sync state when URL searchParams change
   useEffect(() => {
