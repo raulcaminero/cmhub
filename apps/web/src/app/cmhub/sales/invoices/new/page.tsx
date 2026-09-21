@@ -26,12 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const PAYMENT_METHODS = [
-  { code: '01', label: '01 - Efectivo' },
-  { code: '02', label: '02 - Cheques / Transferencia / Depósito' },
-  { code: '03', label: '03 - Tarjeta de Crédito / Débito' },
-  { code: '04', label: '04 - Venta a Crédito (Cuentas por Cobrar)' },
-];
+const PAYMENT_METHOD_CODES = ['01', '02', '03', '04'] as const;
 
 export default function NewInvoicePage() {
   const { t } = useTranslation();
@@ -146,12 +141,12 @@ export default function NewInvoicePage() {
     const isValidDoc = validarDocFiscal(clientRnc);
 
     if (clientRnc && !isValidDoc) {
-      setErrorMessage(`El RNC/Cédula '${clientRnc}' no es válido.`);
+      setErrorMessage(t('sales.errorInvalidRnc', { rnc: clientRnc }));
       return;
     }
 
     if (ncfType === NcfType.B01 && !clientRnc) {
-      setErrorMessage('Para comprobantes de Crédito Fiscal (B01 / E31), el RNC/Cédula del cliente es obligatorio.');
+      setErrorMessage(t('sales.errorRncRequired'));
       return;
     }
 
@@ -183,7 +178,7 @@ export default function NewInvoicePage() {
 
       router.push('/cmhub/sales?tab=invoices' as any);
     } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al emitir la factura. Verifica la secuencia NCF y saldos.');
+      setErrorMessage(err.data?.message || t('sales.errorCreateInvoice'));
     }
   }
 
@@ -191,7 +186,7 @@ export default function NewInvoicePage() {
 
   return (
     <div className="w-full space-y-6 pb-12">
-      <MobileDesktopNotice message="La emisión de comprobantes fiscales NCF requiere completar múltiples renglones. Para llenar facturas de venta complejas con mayor comodidad, te recomendamos usar una computadora." />
+      <MobileDesktopNotice message={t('sales.newInvoiceMobileNotice')} />
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
@@ -200,10 +195,10 @@ export default function NewInvoicePage() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary shrink-0" />
-              Emitir Nueva Factura de Venta
+              {t('sales.newInvoiceTitle')}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Generación de comprobante fiscal NCF y registro contable de venta.
+              {t('sales.newInvoiceSubtitle')}
             </p>
           </div>
         </div>
@@ -224,12 +219,12 @@ export default function NewInvoicePage() {
           <section className="bg-card p-5 rounded-xl border border-border/70 shadow-2xs space-y-4">
             <div className="border-b border-border pb-2 flex items-center gap-2">
               <User className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-bold tracking-tight text-foreground">1. Datos del Cliente</h2>
+              <h2 className="text-sm font-bold tracking-tight text-foreground">{t('sales.clientSection')}</h2>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Buscar Cliente Registrado</Label>
+                <Label className="text-xs font-semibold">{t('sales.searchClient')}</Label>
                 <ClientAutocomplete
                   contacts={contacts}
                   clientRnc={clientRnc}
@@ -245,7 +240,7 @@ export default function NewInvoicePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
                 <div className="space-y-1.5">
-                  <Label htmlFor="client-rnc" className="text-xs font-semibold">RNC o Cédula *</Label>
+                  <Label htmlFor="client-rnc" className="text-xs font-semibold">{t('sales.rncCedula')}</Label>
                   <Input
                     id="client-rnc"
                     placeholder="Ej. 101123456"
@@ -255,18 +250,18 @@ export default function NewInvoicePage() {
                     required
                   />
                   {isLookingUpRnc && (
-                    <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">Consultando DGII...</p>
+                    <p className="text-[10px] text-muted-foreground animate-pulse mt-0.5">{t('sales.consultingDgii')}</p>
                   )}
                   {!isLookingUpRnc && rncDgiiStatus === 'ACTIVO' && (
-                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">✓ RNC Activo en DGII</p>
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">{t('sales.rncActive')}</p>
                   )}
                   {!isLookingUpRnc && rncDgiiStatus === 'INACTIVO' && (
-                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">⚠ RNC Inactivo en DGII</p>
+                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">{t('sales.rncInactive')}</p>
                   )}
                 </div>
 
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label htmlFor="client-name" className="text-xs font-semibold">Nombre / Razón Social *</Label>
+                  <Label htmlFor="client-name" className="text-xs font-semibold">{t('sales.clientNameLabel')}</Label>
                   <Input
                     id="client-name"
                     placeholder="Ej. Juan Pérez / Cliente General"
@@ -284,7 +279,7 @@ export default function NewInvoicePage() {
           <section className="bg-card p-5 rounded-xl border border-border/70 shadow-2xs space-y-4">
             <div className="border-b border-border pb-2 flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-bold tracking-tight text-foreground">2. Detalle de Ítems, Productos y Servicios</h2>
+              <h2 className="text-sm font-bold tracking-tight text-foreground">{t('sales.itemsSection')}</h2>
             </div>
 
             <InvoiceLineEditor companyId={companyId!} lines={lines} onChange={setLines} />
@@ -294,12 +289,12 @@ export default function NewInvoicePage() {
           <section className="bg-card p-5 rounded-xl border border-border/70 shadow-2xs space-y-4">
             <div className="border-b border-border pb-2 flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-bold tracking-tight text-foreground">Retenciones de Ley (Opcional)</h2>
+              <h2 className="text-sm font-bold tracking-tight text-foreground">{t('sales.retentionsSection')}</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="inv-itbis-ret" className="text-xs font-medium text-muted-foreground">Retención ITBIS (Estado / Grandes Contribuyentes)</Label>
+                <Label htmlFor="inv-itbis-ret" className="text-xs font-medium text-muted-foreground">{t('sales.itbisRetentionLabel')}</Label>
                 <Input
                   id="inv-itbis-ret"
                   type="number"
@@ -312,7 +307,7 @@ export default function NewInvoicePage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="inv-isr-ret" className="text-xs font-medium text-muted-foreground">Retención ISR (Personas Físicas)</Label>
+                <Label htmlFor="inv-isr-ret" className="text-xs font-medium text-muted-foreground">{t('sales.isrRetentionLabel')}</Label>
                 <Input
                   id="inv-isr-ret"
                   type="number"
@@ -333,35 +328,35 @@ export default function NewInvoicePage() {
           <div className="bg-card p-5 rounded-xl border border-border/70 shadow-2xs space-y-4">
             <div className="border-b border-border pb-2 flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-bold tracking-tight text-foreground">Comprobante y Pago</h2>
+              <h2 className="text-sm font-bold tracking-tight text-foreground">{t('sales.ncfPaymentSection')}</h2>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="inv-ncf-type" className="text-xs font-semibold">Tipo de Comprobante (NCF) *</Label>
+                <Label htmlFor="inv-ncf-type" className="text-xs font-semibold">{t('sales.ncfTypeLabel')}</Label>
                 <Select value={ncfType} onValueChange={(val) => setNcfType(val as NcfType)}>
                   <SelectTrigger id="inv-ncf-type" className="w-full text-xs h-10">
-                    <SelectValue placeholder="Seleccionar NCF" />
+                    <SelectValue placeholder={t('sales.selectNcfPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NcfType.B01}>Crédito Fiscal (B01)</SelectItem>
-                    <SelectItem value={NcfType.B02}>Consumo (B02)</SelectItem>
-                    <SelectItem value={NcfType.E31}>E-Crédito Fiscal (E31)</SelectItem>
-                    <SelectItem value={NcfType.E32}>E-Consumo (E32)</SelectItem>
+                    <SelectItem value={NcfType.B01}>{t('sales.ncfB01')}</SelectItem>
+                    <SelectItem value={NcfType.B02}>{t('sales.ncfB02')}</SelectItem>
+                    <SelectItem value={NcfType.E31}>{t('sales.ncfE31')}</SelectItem>
+                    <SelectItem value={NcfType.E32}>{t('sales.ncfE32')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="inv-payment" className="text-xs font-semibold">Forma de Pago *</Label>
+                <Label htmlFor="inv-payment" className="text-xs font-semibold">{t('sales.paymentMethodLabel')}</Label>
                 <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val)}>
                   <SelectTrigger id="inv-payment" className="w-full text-xs h-10">
-                    <SelectValue placeholder="Seleccionar forma de pago" />
+                    <SelectValue placeholder={t('sales.selectPaymentPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((p) => (
-                      <SelectItem key={p.code} value={p.code}>
-                        {p.label}
+                    {PAYMENT_METHOD_CODES.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {t(`sales.paymentMethod${code}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -370,13 +365,13 @@ export default function NewInvoicePage() {
 
               {paymentMethod !== '04' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-bank" className="text-xs font-semibold">Cuenta de Banco / Caja</Label>
+                  <Label htmlFor="inv-bank" className="text-xs font-semibold">{t('sales.bankAccountLabel')}</Label>
                   <Select value={bankAccountId || 'default'} onValueChange={(val) => setBankAccountId(val === 'default' ? '' : val)}>
                     <SelectTrigger id="inv-bank" className="w-full text-xs h-10">
-                      <SelectValue placeholder="Seleccionar cuenta de banco" />
+                      <SelectValue placeholder={t('sales.selectBankPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Por defecto (Caja General 1101)</SelectItem>
+                      <SelectItem value="default">{t('sales.defaultCashAccount')}</SelectItem>
                       {bankAccounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.code} - {a.name}
@@ -392,19 +387,19 @@ export default function NewInvoicePage() {
           {/* Invoice Summary Totals */}
           <div className="bg-card p-5 rounded-xl border border-border/70 shadow-2xs space-y-4">
             <h3 className="text-xs font-semibold text-muted-foreground border-b border-border pb-2 uppercase tracking-wider">
-              Resumen Factura
+              {t('sales.invoiceSummary')}
             </h3>
             <div className="space-y-2.5">
               <div className="flex justify-between items-center text-xs text-muted-foreground">
-                <span>Subtotal Neto:</span>
+                <span>{t('sales.netSubtotal')}</span>
                 <span className="font-mono font-medium">{formatCurrency(Math.max(0, amount - itbis))}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-muted-foreground">
-                <span>ITBIS Facturado (18%):</span>
+                <span>{t('sales.itbisCharged')}</span>
                 <span className="font-mono font-medium">{formatCurrency(itbis)}</span>
               </div>
               <div className="flex justify-between items-center text-base font-bold text-foreground border-t border-border pt-3">
-                <span>Total Facturado:</span>
+                <span>{t('sales.totalInvoiced')}</span>
                 <span className="font-mono text-primary text-lg">{formatCurrency(amount)}</span>
               </div>
             </div>
@@ -418,7 +413,7 @@ export default function NewInvoicePage() {
               className="w-full text-xs h-11 gap-2 font-bold shadow-md"
             >
               {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Emitir y Guardar Factura
+              {t('sales.submitInvoice')}
             </Button>
 
             <Button
@@ -427,7 +422,7 @@ export default function NewInvoicePage() {
               onClick={() => router.push('/cmhub/sales?tab=invoices' as any)}
               className="w-full text-xs h-10 border-primary text-primary hover:bg-primary/10 font-semibold"
             >
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </div>
         </div>

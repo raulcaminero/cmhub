@@ -130,49 +130,49 @@ function SalesContent() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Ventas del Mes</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('sales.monthlySalesTitle')}</CardTitle>
             <DollarSign className="w-4 h-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight">{formatCurrency(metrics.monthlySalesAmount)}</div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {metrics.monthlySalesCount} {metrics.monthlySalesCount === 1 ? 'factura emitida este mes' : 'facturas emitidas este mes'}
+              {t('sales.monthlySalesDesc', { count: metrics.monthlySalesCount })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Cotizaciones Pendientes</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('sales.pendingQuotationsTitle')}</CardTitle>
             <FileText className="w-4 h-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight">{formatCurrency(metrics.pendingQuotationsTotal)}</div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {metrics.pendingQuotationsCount} {metrics.pendingQuotationsCount === 1 ? 'cotización por aprobar' : 'cotizaciones por aprobar'}
+              {t('sales.pendingQuotationsDesc', { count: metrics.pendingQuotationsCount })}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Catálogo Activo</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('sales.activeCatalogTitle')}</CardTitle>
             <Package className="w-4 h-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight">{metrics.activeProductsCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Productos y servicios disponibles</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('sales.activeCatalogDesc')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Ticket Promedio</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">{t('sales.avgTicketTitle')}</CardTitle>
             <TrendingUp className="w-4 h-4 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold tracking-tight">{formatCurrency(metrics.avgTicket)}</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Promedio por venta emitida</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('sales.avgTicketDesc')}</p>
           </CardContent>
         </Card>
       </div>

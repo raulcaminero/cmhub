@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Package } from 'lucide-react';
 import { useGetProductsQuery, Product } from '@/services/products.api';
 import { useCurrency } from '@/hooks/use-company';
+import { useTranslation } from '@/lib/use-translation';
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ interface InvoiceLineEditorProps {
 export default function InvoiceLineEditor({ companyId, lines, onChange }: InvoiceLineEditorProps) {
   const { data: products } = useGetProductsQuery({ companyId });
   const formatCurrency = useCurrency();
+  const { t } = useTranslation();
 
   const handleAddLine = () => {
     const newLine: EditableLine = {
@@ -104,7 +106,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
       <div className="flex items-center justify-between">
         <Label className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
           <Package className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-          Detalle de Ítems / Servicios
+          {t('sales.lineEditorLabel')}
         </Label>
         <Button
           type="button"
@@ -113,7 +115,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
           className="text-xs h-8 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-2xs gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" />
-          Agregar Línea
+          {t('sales.addLine')}
         </Button>
       </div>
 
@@ -122,12 +124,12 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
           <table className="w-full text-xs text-left">
             <thead className="bg-muted/70 border-b text-muted-foreground font-semibold uppercase">
               <tr>
-                <th className="py-2.5 px-3 w-1/3">Catálogo / Descripción</th>
-                <th className="py-2.5 px-2 text-center w-16">Cant.</th>
-                <th className="py-2.5 px-2 text-right w-24">P. Unitario</th>
-                <th className="py-2.5 px-2 text-center w-16">Desc %</th>
-                <th className="py-2.5 px-2 text-center w-20">ITBIS %</th>
-                <th className="py-2.5 px-3 text-right w-28">Subtotal</th>
+                <th className="py-2.5 px-3 w-1/3">{t('sales.catalogDescription')}</th>
+                <th className="py-2.5 px-2 text-center w-16">{t('sales.qty')}</th>
+                <th className="py-2.5 px-2 text-right w-24">{t('sales.unitPrice')}</th>
+                <th className="py-2.5 px-2 text-center w-16">{t('sales.discountPct')}</th>
+                <th className="py-2.5 px-2 text-center w-20">{t('sales.itbisPct')}</th>
+                <th className="py-2.5 px-3 text-right w-28">{t('common.subtotal')}</th>
                 <th className="py-2.5 px-2 w-10 text-center"></th>
               </tr>
             </thead>
@@ -146,10 +148,10 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                           onValueChange={(val) => handleLineChange(line.id, 'productId', val === 'none' ? '' : val)}
                         >
                           <SelectTrigger className="w-full text-[11px] h-7 px-2">
-                            <SelectValue placeholder="-- Seleccionar del Catálogo (Opcional) --" />
+                            <SelectValue placeholder={t('sales.selectCatalogPlaceholder')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">-- Seleccionar del Catálogo (Opcional) --</SelectItem>
+                            <SelectItem value="none">{t('sales.selectCatalogPlaceholder')}</SelectItem>
                             {products.filter(p => p.isActive).map((p) => (
                               <SelectItem key={p.id} value={p.id}>
                                 [{p.code}] {p.name} - {formatCurrency(Number(p.price))}
@@ -161,7 +163,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                       <Input
                         value={line.description}
                         onChange={(e) => handleLineChange(line.id, 'description', e.target.value)}
-                        placeholder="Descripción o servicio realizado..."
+                        placeholder={t('sales.descriptionPlaceholder')}
                         className="h-7 text-xs font-medium"
                       />
                     </td>
@@ -203,7 +205,7 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
                       >
                         <option value={18}>18%</option>
                         <option value={16}>16%</option>
-                        <option value={0}>0% (Exento)</option>
+                        <option value={0}>{t('sales.exempt')}</option>
                       </select>
                     </td>
                     <td className="p-2 text-right font-mono align-top pt-3 font-semibold text-foreground">
@@ -231,19 +233,19 @@ export default function InvoiceLineEditor({ companyId, lines, onChange }: Invoic
         {/* Calculation summary footer */}
         <div className="bg-muted/40 p-3 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
           <div className="text-muted-foreground font-medium">
-            {lines.length} {lines.length === 1 ? 'línea' : 'líneas'} en el detalle
+            {t('sales.lineCount', { count: lines.length })}
           </div>
           <div className="flex gap-4 font-mono">
             <div>
-              <span className="text-muted-foreground mr-1.5">Subtotal:</span>
+              <span className="text-muted-foreground mr-1.5">{t('common.subtotal')}:</span>
               <span className="font-semibold text-foreground">{formatCurrency(totalSubtotal)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground mr-1.5">ITBIS 18%:</span>
+              <span className="text-muted-foreground mr-1.5">{t('sales.itbisPct')} 18%:</span>
               <span className="font-semibold text-foreground">{formatCurrency(totalItbis)}</span>
             </div>
             <div className="text-indigo-600 dark:text-indigo-300 font-bold bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
-              <span className="mr-1.5">Total:</span>
+              <span className="mr-1.5">{t('common.total')}:</span>
               <span>{formatCurrency(grandTotal)}</span>
             </div>
           </div>
