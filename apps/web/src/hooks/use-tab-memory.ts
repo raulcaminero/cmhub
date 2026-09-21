@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 
 export function useTabMemory<T extends string>(
   defaultTab: T,
@@ -10,7 +10,6 @@ export function useTabMemory<T extends string>(
 ) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const storageKey = `${storagePrefix}${pathname}`;
   const isSelfTriggeredRef = useRef(false);
 
@@ -62,17 +61,19 @@ export function useTabMemory<T extends string>(
       } catch (e) {}
 
       if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        params.set('tab', newTab);
-        const newUrl = `${pathname}?${params.toString()}`;
-        router.replace(newUrl, { scroll: false });
+        // Native replaceState: Next.js syncs useSearchParams with it, and it
+        // never enters the App Router transition queue, so it can't cancel or
+        // race a pending <Link> navigation from the sidebar.
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', newTab);
+        window.history.replaceState(null, '', url.pathname + url.search);
 
         setTimeout(() => {
           isSelfTriggeredRef.current = false;
-        }, 500);
+        }, 0);
       }
     },
-    [validTabs, activeTab, storageKey, pathname, router]
+    [validTabs, activeTab, storageKey]
   );
 
   return { activeTab, changeTab, setActiveTab: setActiveTabState };
