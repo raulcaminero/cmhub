@@ -48,20 +48,6 @@ import { GeneralLedgerView } from '@/components/features/accounting/general-ledg
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
-const MONTHS = [
-  { code: '01', name: 'Enero' },
-  { code: '02', name: 'Febrero' },
-  { code: '03', name: 'Marzo' },
-  { code: '04', name: 'Abril' },
-  { code: '05', name: 'Mayo' },
-  { code: '06', name: 'Junio' },
-  { code: '07', name: 'Julio' },
-  { code: '08', name: 'Agosto' },
-  { code: '09', name: 'Septiembre' },
-  { code: '10', name: 'Octubre' },
-  { code: '11', name: 'Noviembre' },
-  { code: '12', name: 'Diciembre' },
-];
 
 import { useTabMemory } from '@/hooks/use-tab-memory';
 
@@ -69,8 +55,13 @@ type ReportsTab = 'tax' | 'financials' | 'ledger';
 const VALID_TABS: ReportsTab[] = ['tax', 'financials', 'ledger'];
 
 function ReportsContent() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const companyId = useAppSelector((state) => state.company.active?.id);
+
+  const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+    code: String(i + 1).padStart(2, '0'),
+    name: new Intl.DateTimeFormat(locale, { month: 'long' }).format(new Date(2000, i, 1)),
+  }));
   const token = useAppSelector((state) => state.auth.accessToken);
   const [mounted, setMounted] = useState(false);
   const formatCurrency = useCurrency();
@@ -222,7 +213,7 @@ function ReportsContent() {
       return (
         <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-xs">
           <PieChart className="w-10 h-10 mb-2 opacity-40" />
-          No hay gastos registrados para analizar.
+          {t('reports.noExpensesChart')}
         </div>
       );
     }
@@ -268,7 +259,7 @@ function ReportsContent() {
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-[10px] text-muted-foreground font-medium uppercase">Total Gastos</span>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase">{t('reports.totalExpensesLabel')}</span>
             <span className="text-xs font-bold tracking-tight font-mono">
               {formatCurrency(totalExpense, { maximumFractionDigits: 0 })}
             </span>
@@ -358,10 +349,10 @@ function ReportsContent() {
             <CardContent>
               <form onSubmit={handlePeriodChange} className="flex flex-wrap items-end gap-3 max-w-md">
                 <div className="space-y-1">
-                  <Label htmlFor="yearSelect" className="text-xs font-semibold text-muted-foreground block">Año</Label>
+                  <Label htmlFor="yearSelect" className="text-xs font-semibold text-muted-foreground block">{t('common.year')}</Label>
                   <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val)}>
                     <SelectTrigger id="yearSelect" className="h-9 w-28 text-xs font-medium">
-                      <SelectValue placeholder="Año" />
+                      <SelectValue placeholder={t('common.year')} />
                     </SelectTrigger>
                     <SelectContent>
                       {YEARS.map((y) => (
@@ -372,10 +363,10 @@ function ReportsContent() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label htmlFor="monthSelect" className="text-xs font-semibold text-muted-foreground block">Mes</Label>
+                  <Label htmlFor="monthSelect" className="text-xs font-semibold text-muted-foreground block">{t('common.month')}</Label>
                   <Select value={selectedMonth} onValueChange={(val) => setSelectedMonth(val)}>
                     <SelectTrigger id="monthSelect" className="h-9 w-36 text-xs font-medium">
-                      <SelectValue placeholder="Mes" />
+                      <SelectValue placeholder={t('common.month')} />
                     </SelectTrigger>
                     <SelectContent>
                       {MONTHS.map((m) => (
@@ -473,11 +464,11 @@ function ReportsContent() {
           <div className="flex justify-end gap-3 print:hidden">
             <Button size="sm" onClick={handleDownloadFinancials} className="h-8 text-xs gap-1.5 font-semibold shadow-2xs">
               <Download className="w-3.5 h-3.5" />
-              Exportar a Excel (.csv)
+              {t('reports.exportExcel')}
             </Button>
             <Button size="sm" onClick={handlePrint} className="h-8 text-xs gap-1.5 font-semibold shadow-2xs">
               <Printer className="w-3.5 h-3.5" />
-              Imprimir / PDF
+              {t('reports.print')}
             </Button>
           </div>
 
@@ -485,53 +476,53 @@ function ReportsContent() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Margen de Utilidad Neta</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reports.netMarginTitle')}</CardTitle>
                 <Percent className="w-4 h-4 text-emerald-500" />
               </CardHeader>
               <CardContent>
                 <div className={`text-lg font-bold tracking-tight ${financialMetrics.netMargin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {financialMetrics.netMargin.toFixed(1)}%
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Utilidad Neta / Ingresos Totales</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reports.netMarginDesc')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Razón Corriente / Liquidez</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reports.currentRatioTitle')}</CardTitle>
                 <Scale className="w-4 h-4 text-indigo-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold tracking-tight text-foreground font-mono">
                   {financialMetrics.currentRatio.toFixed(2)}x
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Activos / Pasivos (Capacidad pago)</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reports.currentRatioDesc')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Utilidad Neta del Período</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reports.netIncomeTitle')}</CardTitle>
                 <DollarSign className="w-4 h-4 text-blue-500" />
               </CardHeader>
               <CardContent>
                 <div className={`text-lg font-bold tracking-tight ${financialMetrics.netIncome >= 0 ? 'text-foreground' : 'text-rose-600'}`}>
                   {formatCurrency(financialMetrics.netIncome)}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Ingresos menos Gastos</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reports.netIncomeDesc')}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground">Patrimonio Neto</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground">{t('reports.equityTitle')}</CardTitle>
                 <ShieldCheck className="w-4 h-4 text-purple-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold tracking-tight text-foreground">
                   {formatCurrency(financialMetrics.totalEquity)}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Capital y reservas de empresa</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t('reports.equityDesc')}</p>
               </CardContent>
             </Card>
           </div>
@@ -544,17 +535,19 @@ function ReportsContent() {
                 <CardTitle className="text-sm font-bold flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Scale className="w-4 h-4 text-primary shrink-0" />
-                    Comparativo Ingresos vs Gastos
+                    {t('reports.incomeVsExpenses')}
                   </span>
                   <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border ${
                     financialMetrics.netIncome >= 0
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400'
                       : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400'
                   }`}>
-                    {financialMetrics.netIncome >= 0 ? `Ganancia: ${formatCurrency(financialMetrics.netIncome)}` : `Pérdida: ${formatCurrency(financialMetrics.netIncome)}`}
+                    {financialMetrics.netIncome >= 0
+                      ? t('reports.profit', { amount: formatCurrency(financialMetrics.netIncome) })
+                      : t('reports.loss', { amount: formatCurrency(financialMetrics.netIncome) })}
                   </span>
                 </CardTitle>
-                <CardDescription className="text-[11px] mt-0.5">Proporción y resultado operativo del período</CardDescription>
+                <CardDescription className="text-[11px] mt-0.5">{t('reports.operatingDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-2">
                 <div className="space-y-3">
@@ -562,7 +555,7 @@ function ReportsContent() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                        <ArrowUpRight className="w-3.5 h-3.5" /> Ingresos Totales
+                        <ArrowUpRight className="w-3.5 h-3.5" /> {t('reports.totalRevenue')}
                       </span>
                       <span className="font-mono">{formatCurrency(financialMetrics.totalRevenue)}</span>
                     </div>
@@ -578,7 +571,7 @@ function ReportsContent() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
-                        <ArrowDownRight className="w-3.5 h-3.5" /> Gastos Totales
+                        <ArrowDownRight className="w-3.5 h-3.5" /> {t('reports.totalExpenseBar')}
                       </span>
                       <span className="font-mono">{formatCurrency(financialMetrics.totalExpense)}</span>
                     </div>
@@ -593,7 +586,7 @@ function ReportsContent() {
 
                 {/* Efficiency KPI */}
                 <div className="p-3 bg-muted/30 rounded-lg border text-xs flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">Relación Gastos / Ingresos</span>
+                  <span className="text-muted-foreground font-medium">{t('reports.expenseRatio')}</span>
                   <span className="font-bold font-mono">
                     {financialMetrics.totalRevenue > 0 ? `${((financialMetrics.totalExpense / financialMetrics.totalRevenue) * 100).toFixed(1)}%` : 'N/A'}
                   </span>
@@ -606,13 +599,13 @@ function ReportsContent() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <PieChart className="w-4 h-4 text-primary shrink-0" />
-                  Distribución de Gastos por Categoría
+                  {t('reports.expenseDistribution')}
                 </CardTitle>
-                <CardDescription className="text-[11px] mt-0.5">Desglose porcentual de gastos por cuenta contable</CardDescription>
+                <CardDescription className="text-[11px] mt-0.5">{t('reports.expenseDistributionDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingFinancials ? (
-                  <p className="text-xs text-muted-foreground animate-pulse py-6">Cargando gráfico...</p>
+                  <p className="text-xs text-muted-foreground animate-pulse py-6">{t('reports.loadingChart')}</p>
                 ) : (
                   renderExpenseDonut()
                 )}
