@@ -22,7 +22,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
-  const { isModuleActive } = useModules();
+  const { isUsAccountingEnabled } = useModules();
   
   const [isPending, startTransition] = useTransition();
   const [pendingPath, setPendingPath] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
   const NAV_ITEMS = [
     { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
     { href: '/cmhub/sales', label: t('nav.sales'), icon: ShoppingCart },
-    ...(isModuleActive('accounting')
+    ...(isUsAccountingEnabled
       ? [{ href: '/cmhub/accounting', label: t('nav.accounting'), icon: BookOpen }]
       : []),
     { href: '/cmhub/contacts', label: t('nav.contacts'), icon: Users },
