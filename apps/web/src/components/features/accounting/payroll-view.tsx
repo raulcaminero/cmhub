@@ -184,11 +184,11 @@ export function PayrollView() {
 
   async function handleDeleteEmployee(id: string) {
     if (!companyId) return;
-    if (confirm('¿Estás seguro de que deseas eliminar este empleado?')) {
+    if (confirm(t('payrollView.deleteEmployeeConfirm'))) {
       try {
         await deleteEmployee({ companyId, id }).unwrap();
       } catch (err) {
-        alert('Error al eliminar el empleado.');
+        alert(t('payrollView.deleteEmployeeError'));
       }
     }
   }
@@ -211,11 +211,11 @@ export function PayrollView() {
 
   async function handleDeletePayroll(id: string) {
     if (!companyId) return;
-    if (confirm('¿Estás seguro de que deseas eliminar (anular) esta nómina? El asiento contable asociado también será eliminado.')) {
+    if (confirm(t('payrollView.deletePayrollConfirm'))) {
       try {
         await deletePayroll({ companyId, id }).unwrap();
       } catch (err) {
-        alert('Error al eliminar la nómina.');
+        alert(t('payrollView.deletePayrollError'));
       }
     }
   }
@@ -224,7 +224,7 @@ export function PayrollView() {
   const handleDownloadTSS = (pay: Payroll) => {
     const items = pay.items || [];
     if (items.length === 0) {
-      alert('Esta nómina no tiene ítems de empleados para exportar.');
+      alert(t('payrollView.exportNoItems'));
       return;
     }
 

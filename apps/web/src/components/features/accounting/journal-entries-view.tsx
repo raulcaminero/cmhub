@@ -66,17 +66,17 @@ export function JournalEntriesView() {
     try {
       await postEntry({ companyId, id }).unwrap();
     } catch (err: any) {
-      alert(err.data?.message || 'Error al aprobar el asiento.');
+      alert(err.data?.message || t('entries.postError'));
     }
   }
 
   async function handleVoid(id: string) {
     if (!companyId) return;
-    if (!confirm('¿Estás seguro de que deseas anular este asiento contable? Esta acción no se puede deshacer.')) return;
+    if (!confirm(t('entries.voidConfirm'))) return;
     try {
       await voidEntry({ companyId, id }).unwrap();
     } catch (err: any) {
-      alert(err.data?.message || 'Error al anular el asiento.');
+      alert(err.data?.message || t('entries.voidError'));
     }
   }
 
@@ -124,7 +124,7 @@ export function JournalEntriesView() {
     setErrorMessage('');
 
     if (!isBalanced) {
-      setErrorMessage('El asiento contable no está cuadrado. Débitos y créditos deben ser iguales.');
+      setErrorMessage(t('entries.errorNotBalanced'));
       return;
     }
 
@@ -136,7 +136,7 @@ export function JournalEntriesView() {
     }));
 
     if (cleanLines.some((l) => !l.accountId)) {
-      setErrorMessage('Todas las líneas deben tener una cuenta contable seleccionada.');
+      setErrorMessage(t('entries.errorNoAccount'));
       return;
     }
 
@@ -159,7 +159,7 @@ export function JournalEntriesView() {
         { accountId: '', debit: 0, credit: 0, description: '' },
       ]);
     } catch (err: any) {
-      setErrorMessage(err.data?.message || 'Error al crear el asiento contable.');
+      setErrorMessage(err.data?.message || t('entries.createError'));
     }
   }
 
@@ -168,7 +168,7 @@ export function JournalEntriesView() {
       {/* Action Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between min-h-[32px] gap-3">
         <p className="text-xs text-muted-foreground">
-          Registro de la contabilidad general de la empresa.
+          {t('entries.mainSubtitle')}
         </p>
         <Button size="sm" className="gap-2 font-semibold shadow-2xs shrink-0" onClick={() => setIsOpen(true)}>
           <Plus className="w-4 h-4" />
@@ -291,7 +291,7 @@ export function JournalEntriesView() {
                   <Label htmlFor="entry-desc">{t('entries.description')}</Label>
                   <Input
                     id="entry-desc"
-                    placeholder="Ej. Registro de ventas del día"
+                    placeholder={t('entries.description')}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     required
@@ -303,7 +303,7 @@ export function JournalEntriesView() {
                   <Label htmlFor="entry-ref">{t('entries.reference')}</Label>
                   <Input
                     id="entry-ref"
-                    placeholder="Ej. Fact-001"
+                    placeholder={t('entries.reference')}
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
                   />
