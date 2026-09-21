@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useTransition } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import { CompanySwitcher } from './company-switcher';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
@@ -13,30 +12,9 @@ import { ThemeToggle } from '@/components/theme-toggle';
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const dispatch = useAppDispatch();
   const { data: profile } = useGetProfileQuery();
-  const pathname = usePathname();
-  const router = useRouter();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Clear pending state when path changes
-  useEffect(() => {
-    setPendingPath(null);
-  }, [pathname]);
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    setDropdownOpen(false);
-    
-    if (pathname === href) return;
-    
-    setPendingPath(href);
-    startTransition(() => {
-      router.push(href);
-    });
-  };
 
   // Click outside to close dropdown menu
   useEffect(() => {
@@ -119,56 +97,44 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
               <Link
                 href="/cmhub/settings?tab=preferences"
-                prefetch={false}
-                onClick={(e) => handleNavClick(e, '/cmhub/settings?tab=preferences')}
-                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0 relative ${isPending && pendingPath === '/cmhub/settings?tab=preferences' ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={() => setDropdownOpen(false)}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-purple-500/10 flex items-center justify-center shrink-0">
                   <Palette className="w-3.5 h-3.5 text-purple-500" />
                 </div>
-                <div className="flex-1">
+                <div>
                   <p className="font-medium text-sm leading-tight">Preferencias</p>
                   <p className="text-[10px] text-muted-foreground">Tema e idioma</p>
                 </div>
-                {isPending && pendingPath === '/cmhub/settings?tab=preferences' && (
-                  <div className="absolute right-4 w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
-                )}
               </Link>
 
               <Link
                 href="/cmhub/settings?tab=security"
-                prefetch={false}
-                onClick={(e) => handleNavClick(e, '/cmhub/settings?tab=security')}
-                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0 relative ${isPending && pendingPath === '/cmhub/settings?tab=security' ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={() => setDropdownOpen(false)}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0">
                   <Shield className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
-                <div className="flex-1">
+                <div>
                   <p className="font-medium text-sm leading-tight">Seguridad</p>
                   <p className="text-[10px] text-muted-foreground">Cambiar contraseña</p>
                 </div>
-                {isPending && pendingPath === '/cmhub/settings?tab=security' && (
-                  <div className="absolute right-4 w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
-                )}
               </Link>
 
               <Link
                 href="/cmhub/settings?tab=company"
-                prefetch={false}
-                onClick={(e) => handleNavClick(e, '/cmhub/settings?tab=company')}
-                className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0 relative ${isPending && pendingPath === '/cmhub/settings?tab=company' ? 'opacity-50 pointer-events-none' : ''}`}
+                onClick={() => setDropdownOpen(false)}
+                className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-muted transition-colors rounded-md mx-0"
               >
                 <div className="w-7 h-7 rounded-md bg-orange-500/10 flex items-center justify-center shrink-0">
                   <Settings className="w-3.5 h-3.5 text-orange-500" />
                 </div>
-                <div className="flex-1">
+                <div>
                   <p className="font-medium text-sm leading-tight">Configuraciones</p>
                   <p className="text-[10px] text-muted-foreground">Empresa y equipo</p>
                 </div>
-                {isPending && pendingPath === '/cmhub/settings?tab=company' && (
-                  <div className="absolute right-4 w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
-                )}
               </Link>
             </div>
 
