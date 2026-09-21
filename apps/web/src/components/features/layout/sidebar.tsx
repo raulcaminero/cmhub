@@ -7,7 +7,6 @@ import { useModules } from '@/hooks/use-company';
 import {
   LayoutDashboard,
   BookOpen,
-  FileText,
   BarChart3,
   Receipt,
   Settings,
@@ -18,18 +17,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { useState, useEffect } from 'react';
-import { getStoredTabForPath } from '@/hooks/use-tab-memory';
-
 export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const { showTaxModule, showNcfModule } = useModules();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { showTaxModule } = useModules();
 
   const NAV_ITEMS = [
     { href: '/cmhub', label: t('nav.dashboard'), icon: LayoutDashboard, exact: true },
@@ -41,26 +32,9 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     { href: '/cmhub/settings', label: t('nav.settings'), icon: Settings },
   ];
 
-  const getTargetHref = (baseHref: string) => {
-    if (!mounted || baseHref === '/cmhub') return baseHref;
-    const storedTab = getStoredTabForPath(baseHref);
-    return storedTab ? `${baseHref}?tab=${storedTab}` : baseHref;
-  };
-
-  const handleNavClick = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        sessionStorage.setItem('cmhub_nav_from_sidebar', 'true');
-      } catch (e) {}
-    }
-    if (onClose) {
-      onClose();
-    }
-  };
-
   return (
     <>
-      {/* 1. Desktop Sidebar */}
+      {/* Desktop Sidebar */}
       <aside className="group/sidebar hidden md:flex w-16 hover:w-56 transition-all duration-300 ease-in-out flex-col bg-sidebar text-sidebar-foreground shrink-0 z-30 border-r border-sidebar-border shadow-sm overflow-hidden">
         <div className="flex items-center gap-3 px-3.5 py-4 border-b border-sidebar-border shrink-0">
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0 shadow-sm">
@@ -75,16 +49,14 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <nav className="flex-1 px-2.5 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            const targetHref = getTargetHref(item.href);
             return (
               <Link
                 key={item.href}
-                href={targetHref as any}
-                onClick={handleNavClick}
+                href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
                 )}
                 title={item.label}
@@ -99,7 +71,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         </nav>
       </aside>
 
-      {/* 2. Mobile Drawer Sidebar */}
+      {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
           onClick={onClose}
@@ -107,6 +79,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         />
       )}
 
+      {/* Mobile Drawer */}
       <aside
         className={cn(
           'md:hidden fixed top-0 bottom-0 left-0 w-64 z-50 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden',
@@ -136,16 +109,15 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
         <nav className="flex-1 px-2.5 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden">
           {NAV_ITEMS.map((item) => {
             const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            const targetHref = getTargetHref(item.href);
             return (
               <Link
                 key={item.href}
-                href={targetHref as any}
-                onClick={handleNavClick}
+                href={item.href}
+                onClick={onClose}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all relative group/item',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs'
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
                 )}
                 title={item.label}
